@@ -29,7 +29,7 @@
 | Название | RS918 N96K-Pro |
 | Каталог | RS918_Nizar96K_Pro |
 | Версия прошивки (числовая) | 2.9.48 (сохраняется для совместимости EEPROM-логики) |
-| Строка продукта | 2.9.48-n96kp2 (UHSDR_PRODUCT_VERSION, v1.1) |
+| Строка продукта | 2.9.48-n96kp3 (UHSDR_PRODUCT_VERSION, v1.2) |
 | Ветка git | main, теги nizar-baseline -> cleanup-done -> p0/* -> v1.0 |
 | Атрибуция | UHSDR / DF8OE, Nizar 3V8MN, RS918 N96K-Pro |
 
