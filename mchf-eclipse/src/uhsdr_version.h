@@ -33,7 +33,7 @@
 // UHSDR_PRODUCT_VERSION is the human visible product version, keep it in sync with UHSDR_VER_* above.
 // UHSDR_VERSION below stays derived from it, so the fork is distinguishable from official 2.9.48.
 #define     UHSDR_PRODUCT_NAME      "RS918 N96K-Pro"
-#define     UHSDR_PRODUCT_VERSION   "2.9.48-n96kp2"
+#define     UHSDR_PRODUCT_VERSION   "2.9.48-n96kp3"
 #define     UHSDR_PRODUCT_REPO      ""                             // no public product repository yet (local tree)
 
 // trailing characters are needed for identifying version and building date+time in binary

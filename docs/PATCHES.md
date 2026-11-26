@@ -3,32 +3,40 @@
 Источники: аудит исходного дерева Nizar (`_audit/REPORT.md`, `_audit/parts/*`), план
 [PLAN-DEV.md](../PLAN-DEV.md) и отчёты исполнителей в `_audit/dev/*` (вне репозитория).
 
-Нумерация: **P0** — исправления до любого применения прошивки (вошли в v1.0); **P1** — качество,
-безопасность и конфигурация (v1.1); **P2** — бэкпорты upstream и инфраструктура (v1.1).
+Нумерация: **P0** — исправления до любого применения прошивки (v1.0); **P1** — качество,
+безопасность и конфигурация (v1.1); **P2** — бэкпорты upstream и инфраструктура (v1.1);
+**A1/A2** — этап A (v1.2): закрытие остаточных P2/P3-замечаний независимого ревью S3c по VSWR
+и порт NR+FreeDV #1749.
 Историческое замечание: в PLAN-DEV.md патч гигиены репозитория носил номер P1-1; в v1.1 номера
 P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающая с маркерами в коде, а патч гигиены ниже
 для однозначности называется **P1-H**.
 
-Правила: каждое изменение помечено в коде комментарием `// N96K P0-x / P1-x / P2: <кратко>`;
+Правила: каждое изменение помечено в коде комментарием `// N96K P0-x / P1-x / P2 / A1 / A2: <кратко>`;
 диффы минимальные; поведение и алгоритмы Nizar не меняются — только исправление дефекта или
 добавление защиты.
 
-Срез статусов — 2026-11-26, HEAD `1e352326`; тег **v1.0** = `82056486` (P0-патчи и воспроизводимая
-сборка). Финальная релизная сборка v1.1 и артефакты `release/v1.1` ещё не сделаны, поэтому цифры
-с пометкой «**проверяется финальной сборкой**» взяты из проверочных сборок рабочего дерева
-(`_tmp/build-p2-docs` — HEAD + bump версии; `_tmp/build-p2-backports` — с P2-4), остальные — из
-`release/v1.0` и [BUILD.md](BUILD.md). Статусы:
+Срез статусов — 2026-11-26, HEAD `557e39f1` (этап A, v1.2); теги **v1.0** = `82056486` и
+**v1.1** (финальная сборка — артефакты `release/v1.1`). Цифры v1.2 — чистая сборка HEAD
+`557e39f1` + bump `n96kp3` (`_tmp/build-p-docs-v12`); финальные артефакты `release/v1.2` и
+тег v1.2 — при упаковке релиза; остальные цифры — из `release/v1.0`/`release/v1.1` и
+[BUILD.md](BUILD.md). Статусы:
 «реализовано» = код в дереве; «сборка подтверждена» = `python tools/build.py firmware` завершился
 с exit 0; «на железе не проверялось» = полевых испытаний не было.
 
-Независимое ревью v1.1 (S3c, агент p-verify2) на момент среза ещё не завершено: его замечания
-могут скорректировать статусы/риски ниже; отчёт — `_audit/dev/` (вне репозитория).
+Независимое ревью v1.1 (S3c, агент p-verify2) завершено: P1-дефектов в коде не найдено,
+замечания F1–F13 — `_audit/dev/p-verify2.md` (вне репозитория); этап A закрывает F2/F6 (A1) и
+F3 (A2 — в конфигурации с включённым FreeDV). Независимое ревью v1.2 (S3d, агент p-verify3) на
+момент среза в процессе — его замечания могут скорректировать статусы/риски ниже.
 
 Проверенные размеры: **v1.0** — `fw-mchf.bin` 320 024 Б (32,6 %), RAM 42 616 Б, CCM 63 476/65 536;
-`bl-mchf.bin` 31 496 Б (загрузчик 4.1.2). **v1.1** — `fw-mchf.bin` 321 128 Б
-(32,7 %, финальная сборка, тег v1.1), RAM 42 616 Б, CCM 63 476/65 536; `bl-mchf.bin`
-31 620 Б (загрузчик 5.0.4, 96,5 %, запас 1 148 Б). Предупреждений: v1.0 — 80 строк; v1.1 — 78 строк
-(64 компилятора, 24 уникальных текста + 14 строк линковки: 13 newlib-nano + lto-wrapper).
+`bl-mchf.bin` 31 496 Б (загрузчик 4.1.2). **v1.1** — `fw-mchf.bin` 321 128 Б (32,7 %, финальная
+сборка, тег v1.1), RAM 42 616 Б, CCM 63 476/65 536; `bl-mchf.bin` 31 620 Б (5.0.4, 96,5 %,
+запас 1 148 Б). **v1.2** — `fw-mchf.bin` **321 392 Б** (32,7 % области 960 КиБ, запас
+**661 648 Б**; чистая сборка HEAD `557e39f1` + bump `n96kp3`), RAM 42 616 Б,
+**CCM 63 476/65 536 (свободно 2 060 Б)**; `bl-mchf.bin` 31 620/32 768 Б (5.0.4, запас 1 148 Б).
+Предупреждений: v1.0 — 80 строк; v1.1/v1.2 — **78 строк** (64 предупреждения компилятора,
+24 уникальных текста + 14 строк линковки: 13 newlib-nano + lto-wrapper); этап A новых
+предупреждений не добавил.
 
 ## Сводная таблица
 
@@ -44,7 +52,7 @@ P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающ
 | P0-6 | Идентификация/брендинг: `UHSDR_REPO`, строки продукта, README/docs | `src/uhsdr_version.h`, `README.md`, `docs/**` | REPORT §6.3, §10 п.9 | закрыт в v1.0 (версия/загрузчик — v1.1) |
 | P1-H | Гигиена репозитория: `.gitattributes`, кодировки/EOL (в PLAN-DEV.md — P1-1) | `.gitattributes`, `.editorconfig`, `iir_2_8k.c`, `iir_2_9k.c` | REPORT §7 U7 | закрыт в v1.0 |
 
-### v1.1 — тег планируется (P1/P2)
+### v1.1 — тег `v1.1` (P1/P2)
 
 | ID | Тема | Файлы (основные) | Источник | Статус |
 |---|---|---|---|---|
@@ -54,9 +62,16 @@ P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающ
 | P1-4 | EEPROM read fallback (закрыт UB `value16`) | `drivers/ui/ui_configuration.c` | audit R7 | реализовано; сборка — PASS |
 | P1-5/CAT | Закрыты EEPROM-VFO-select и clone RX `df.tune_new` при TX; эмуляция 0x65; поправка про get_vfo | `drivers/cat/cat_driver.c` | audit R8, Hamlib 4.3 | реализовано; сборка из чистого HEAD — PASS; с Hamlib/WSJT-X/железом не проверено |
 | P2-1 | Загрузчик upstream 5.0.4: 8 файлов, совместимость API и SBLA/SBLS | `src/bootloader/*`, `src/uhsdr_version.h`, docs/BUILD.md, docs/SAFETY.md | upstream 2.12.2 | реализовано; оба таргета собираются; загрузчик не прошивался |
-| P2-2 | FreeDV/Codec2 rev 4121 + фикс #1749 | `drivers/freedv/**`, files.mak, tools/build.py, Makefile | upstream 2.12.2 | vendor синхронизирован; сборка — PASS; интеграционный слой не пересинхронизирован |
+| P2-2 | FreeDV/Codec2 rev 4121 + фикс #1749 | `drivers/freedv/**`, files.mak, tools/build.py, Makefile | upstream 2.12.2 | vendor синхронизирован; сборка — PASS; **FreeDV в сборке не включён** (`IS_SMALL_BUILD`); интеграционный слой не пересинхронизирован |
 | P2-3 | CI/Docker с pinned toolchain + host-тесты ЦОС | `Dockerfile`, `docker/verify_artifacts.py`, `.github/workflows/build.yml`, `tests/**`, docs/CI.md | audit §9 | реализовано; host-tests 1134/0/3 — PASS; docker build не запускался |
 | P2-4 | Бэкпорты AGC restore #1730, Tune Power #1750, CW-decoder #1881 | см. раздел P2-4 | upstream 2.12.2 | порт выполнен; сборка/тесты — PASS; на железе нет |
+
+### v1.2 — этап A (тег планируется)
+
+| ID | Тема | Файлы (основные) | Источник | Статус |
+|---|---|---|---|---|
+| A1 | VSWR: принудительный минимальный drive при активном foldback; завершение trial в зоне гистерезиса | `drivers/ui/radio_management.c/.h` | S3c F2/F6 (`p-verify2`) | реализовано; `-fsyntax-only`, изолированная сборка (+208 Б), Unicorn-симуляция реальных функций 58/58 PASS (baseline 7 FAIL); на железе нет |
+| A2 | NR+FreeDV #1749: `AudioNr_Prepare()` при выходе из DIGI; NR pass-through при активном FreeDV | `drivers/audio/audio_nr.c/.h`, `audio_driver.c` | S3c F3 (`p-verify2`), upstream `df9ef3f9`/`27945d8b` | реализовано; сборка (+48 Б), RAM/CCM 0, host-tests PASS; **FreeDV в сборке не включён** (гейты — upstream-parity на будущее) |
 
 ---
 
@@ -426,6 +441,17 @@ Mode-флаги 2.12.2 F4-конфига (`-DFREEDV_MODE_EN_DEFAULT=0` и др.)
 Новый API (700D, squelch, выбор режима из меню) не включён. Compat-блок нужно переносить при
 следующем обновлении Codec2. Vendor-файлы в рабочем дереве CRLF (git нормализует при коммите).
 
+**Корректировка статуса (v1.2, по `_audit/dev/pa-nrfreedv.md`).** **FreeDV в данной сборке
+не включён** — это само по себе важное ограничение, а не «ещё не проверено на железе». Продукт
+собирается с `IS_SMALL_BUILD` (`hardware/uhsdr_board.h:70`), поэтому `USE_FREEDV` не определён
+(`uhsdr_board.h:114-117`) — как и в исходном форке Nizar; FreeDV-функций в прошивке нет, режим
+недоступен из UI. Vendor-дерево FreeDV действительно обновлено до rev 4121, но это только исходники
+(`drivers/freedv/**`): к vendor-фиксам NR+FreeDV (A2) добавлены гейты upstream-parity. Формулировка
+v1.1 «FreeDV/Codec2 rev 4121 + #1749» относилась к vendor-коду, а не к работающей в прошивке функции.
+**Включение FreeDV — отдельная задача**: требует `-DUSE_FREEDV` и проверки **пре-существующего
+рассинхрона guard'ов** `audio_driver.c:662-723` (определение `IIR_biquad_FreeDV_I/Q` только при
+`!IS_SMALL_BUILD`) vs `audio_driver.c:2434-2435` (использование под `USE_FREEDV`).
+
 ## P2-3 — CI/Docker с фиксированным тулчейном + host-тесты ЦОС
 
 **Проблема (аудит §9).** Сборка зависела от локального Eclipse/тулчейна, не было автоматического
@@ -500,17 +526,121 @@ EEPROM-поля: при откате на v1.0 настройки Clarity/CW-ф�
 (безопасная деградация — default). Раскладка EEPROM по-прежнему несовместима с другими сборками
 UHSDR. Это последняя серия бэкпортов v1.1; EEPROM signature #1675 и DMA size #1664 не переносились.
 
-## Проверка документации и версии (v1.1)
+## A1 — Минимальный drive при активном VSWR-foldback (P2 F2 / P3 F6 из S3c)
 
-- Версия продукта: `UHSDR_PRODUCT_VERSION = "2.9.48-n96kp2"`; числовые `UHSDR_VER_* = 2.9.48` не
-  менялись; `UHSDR_BOOT_VERS = 5.0.4`. Строка на устройстве: `UHSDR_VERSION = "fwv-2.9.48-n96kp2"`,
-  отображение `UHSDR_VERSION+4` = `2.9.48-n96kp2` (13 символов; буферы UI — `snprintf(out, 32, …)`
-  в `ui_menu.c:723-728`, запас большой).
-- `tests/check_versions.py` ждёт `2.9.48-n96kp2`; `python tests/run_all.py` — PASS
-  (1134 проверки, 0 failed, 3 known).
-- Все цифры v1.1 сверяются с `build/build-summary.json` / `release/v1.1` финальной сборкой
-  (**проверяется финальной сборкой**); проверочные сборки: `_tmp/build-p2-docs` (HEAD + bump
-  версии) и `_tmp/build-p2-backports` (с P2-4: fw 321 128 Б) — артефакты не входят в релиз.
+**Проблема (F2, P2).** Инвариант «при активном foldback нельзя вернуть полную мощность» из P1-3 был
+нестрогим: смена уровня мощности в TX (PWR-энкодер, пункт меню band power adjust, CAT, Tune) снова
+вызывала `RadioManagement_SetBandPowerFactor()` с пользовательским `ts.power_level`, и в состоянии
+recovery-trial (PA bias **включён**, драйв минимальный) на время до следующего измерения (~50–60 мс)
+в рассогласование уходил полный драйв. Симуляция реального кода воспроизводит это на baseline:
+`factor=0.55, bias_on=1`.
+
+**Проблема (F6, P3).** Trial, завершавшийся внутри зоны гистерезиса `[порог − 0.5; порог]`, не
+прерывался: PA оставалась забиасенной на минимальном драйве неограниченно долго (лишний нагрев и
+непрерывный минимальный сигнал) — расхождение с отчётом автора P1-3.
+
+**Исправление (маркер `N96K A1`; +42/−5, 2 файла).**
+- `radio_management.c:1317-1333` — в начале `RadioManagement_SetBandPowerFactor()` вычисляется
+  `effective_power_level`: если `ts.txrx_mode == TRX_MODE_TX` и `RadioManagement_IsVswrFoldbackActive()`,
+  уровень принудительно заменяется на `PA_LEVEL_MINIMAL` (0.316 в rescale; 0.1738 при `adj=110`).
+  `ts.power_level` **не модифицируется** — сохраняется запрос пользователя, а release заново вызывает
+  `SetBandPowerFactor()` уже с ним. Замена применена во всех трёх местах применения фактора
+  (out-of-band ветка, выбор таблицы `ts.pwr_adj`, `switch (effective_power_level)` уровня); вне
+  foldback поведение бит-в-бит прежнее (`effective_power_level == ts.power_level`).
+- `radio_management.c:1841-1852`, `.h:251-253` — публичный
+  `RadioManagement_IsVswrFoldbackActive()` (возвращает `vswr_foldback_active`; во время trial флаг
+  тоже TRUE). `SetBandPowerFactor()` — единственная функция, пишущая `ts.tx_power_factor` (grep:
+  запись только здесь; init — `uhsdr_main.c`), поэтому других обходных путей смены драйва нет.
+- `radio_management.c:2029-2035` — ветка «внутри гистерезиса» теперь вызывает
+  `RadioManagement_DisablePaBias()`, сбрасывает `vswr_foldback_trial/retry/recovery` и возвращается
+  в ожидание; следующий trial начнётся через `VSWR_PROTECTION_RETRY_CNT` (≈0,5 с) — как после
+  «плохого» trial. Константы (ARM/RETRY/RECOVERY, гистерезис 0.5) и fast-attack/slow-decay не менялись.
+
+**Проверки.** `-fsyntax-only` по флагам `release/v1.1/compile_commands.json` — rc=0, новых
+предупреждений на добавленных строках нет. Изолированная сборка (git archive HEAD + только патч):
+**FLASH 321 128 → 321 336 Б (+208 Б)**, RAM/CCM без изменений, набор предупреждений идентичен.
+Симуляция **реального кода** продукта: функции `RadioManagement_PowerLevelChange()`,
+`RadioManagement_SetBandPowerFactor()`, вся state machine `RadioManagement_CheckVswrProtection()` и
+статики дословно вырезаны из `radio_management.c`, скомпилированы arm-none-eabi-gcc для Cortex-M4
+и выполнены в эмуляторе Unicorn одним и тем же драйвером сценариев для patched/baseline:
+**patched 58/58 PASS, baseline 7/58 FAIL** — ровно F2/F6 (полный драйв при bias ON в trial; trial с
+bias ON в гистерезисе; прерванный recovery). Release/OFF/TX-переходы/20 циклов «9 хороших + 1
+плохое» — без регрессий; `ts.power_level` после release восстанавливается (S7: 2 Вт → фактор 0.2846).
+Артефакты — `_audit/dev/pa-vswr.md`, `_tmp/sim-pa-vswr/` (вне репозитория).
+
+**Ограничения.** Аппарата нет: **F1 (ложные trip на фронте TX/после dynamic tune) остаётся** и
+требует стенда — A1 его не закрывает. Симуляция моделирует кадэнс измерений (10 мс × 5), а не
+аналоговый тракт. Host-тесты код VSWR не покрывают (как и раньше).
+
+## A2 — NR+FreeDV: сброс NR после FreeDV и bypass NR при активном FreeDV (#1749)
+
+**Проблема (F3, P2).** Upstream #1749 («AudioNr fix for silence after using FreeDV and NR») состоит
+из трёх фиксов; в v1.1 был портирован только `750551fc` (`-DFDV_ARM_MATH`). NR и FreeDV делят
+`MultiModeBuffer` union (`mmb`): после работы FreeDV в NR-буферах остаются не-аудио значения
+(вплоть до NaN для следующих IIR-фильтров), а при активном FreeDV NR писал в тот же union и мог
+портить IQ-буферы. Симптом — тишина/NaN после сценария «FreeDV → NR».
+
+**Исправление (маркер `N96K A2`; upstream `df9ef3f9` + `27945d8b`; +58/−2, 3 файла).**
+- `audio_nr.c:249-254`, `audio_nr.h:108-110` — `AudioNr_Prepare()`: сброс
+  `NR_current_buffer_idx`/`NR_was_here` (перенесены из `alternateNR_handle()` на file scope, чтобы
+  функция могла их сбросить; RAM/CCM не растут) и `memset` всего общего union
+  (`NR_BUFFER_NUM * sizeof(mmb.nr_audio_buff[0])` = 8192 Б; покрывает и IQ-буферы FreeDV).
+- `audio_driver.c:1511-1522` — вызов `AudioNr_Prepare()` из `AudioDriver_SetRxAudioProcessing()`
+  при выходе из `DEMOD_DIGI`. Upstream вызывает из `RadioManagement_SetDemodMode()`, но в этом
+  продукте она вызывает `AudioDriver_SetRxAudioProcessing()` **до** записи нового `ts.dmod_mode`,
+  поэтому старый режим внутри функции ещё виден — это эквивалентный хук и единственный путь смены
+  режима (CAT: `cat_driver.c:1191` → `RadioManagement_SetDemodMode()` — покрыт).
+- `audio_driver.c:4358-4366` и `audio_nr.c:258-268` — ранний pass-through NR при
+  `ts.dmod_mode == DEMOD_DIGI && ts.digital_mode == DigitalMode_FreeDV` (под `#ifdef USE_FREEDV`,
+  как в upstream). Второй гейт (в `alternateNR_handle()`, PendSV/UI-путь) — **дополнительно к
+  upstream**: в этом продукте именно он (при активном NR) пишет NR-выход в общий union из PendSV и
+  без гейта ломал бы IQ-буферы FreeDV.
+- NB — общий буфер не использует (`AudioDriver_NoiseBlanker_int()` работает со своим
+  `delay_buf[32]`), гейт не нужен. `f365c8a4` (H7 mute/memset) уже закрыт более сильной
+  инициализацией P0-3 (`audio_driver.c:4443-4447`); `6e73b644` (UI Nizar, «NR min 1») не делался.
+- Nizar-код не тронут: алгоритм NR, 96k/12k-тракт, `NR_dec_buffer`, фильтры, UI — без изменений.
+
+**Проверки.** `-fsyntax-only` в боевой конфигурации и с `-DUSE_FREEDV` (`audio_nr.c`,
+`freedv_uhsdr.c`) — exit 0; `-DUSE_FREEDV audio_driver.c` — только 2 **пре-существующие** ошибки
+`IIR_biquad_FreeDV_I/Q undeclared` (`audio_driver.c:2434-2435`). Изолированная сборка: FLASH
+321 128 → 321 176 Б (**+48 Б**), RAM/CCM — 0. Бинарные проверки: дизассемблер хука в
+`AudioDriver_SetRxAudioProcessing` (сброс индексов + `memset` 8192 Б), статические assert'ы
+`sizeof(MultiModeBuffer_t) == 8192 == NR_BUFFER_NUM*sizeof(NR_Buffer) >= 3*sizeof(FDV_IQ_Buffer)`
+(мутация 8191 ловится компилятором). Host-tests: 1134/0/3 PASS.
+
+**ВАЖНОЕ ОГРАНИЧЕНИЕ: FreeDV в данной сборке не включён.** Продукт собирается с `IS_SMALL_BUILD`
+(`hardware/uhsdr_board.h:70`), а `USE_FREEDV` определяется только при `#ifndef IS_SMALL_BUILD`
+(`uhsdr_board.h:114-117`) — так же, как в исходном форке Nizar. Проверено фактически: в
+`release/v1.1/fw-mchf.elf` и в пересборке v1.2 **нет ни одной FreeDV-функции**
+(`freedv_open`, `freedv_comprx`, `FreeDv_HandleFreeDv`); `DigitalMode_FreeDV` отсутствует в enum,
+пункт меню FreeDV вырезан. Следствия:
+1) в прошитом бинаре сценарий «FreeDV → NR» невозможен — гейты A2 вырезаются препроцессором;
+2) порт сделан upstream-parity «на будущее»: при будущем включении FreeDV он заработает без
+   доработок; `AudioNr_Prepare()` (гейт `USE_ALTERNATE_NR`) активен на любом выходе из `DEMOD_DIGI`;
+3) **включение FreeDV — отдельная задача**: требует `-DUSE_FREEDV` и проверки **пре-существующего
+   рассинхрона guard'ов** — `IIR_biquad_FreeDV_I/Q` определены только при `!IS_SMALL_BUILD`
+   (`audio_driver.c:662-723`), а используются под `USE_FREEDV` (`audio_driver.c:2434-2435`), плюс
+   бюджет RAM/flash и ревизия обвязки 2.9.48 против vendor 2.12.2. Утверждать, что FreeDV
+   «работает» или «исправлен в бою», **нельзя**.
+
+## Проверка документации и версии (v1.2)
+
+- Версия продукта: `UHSDR_PRODUCT_VERSION`: `2.9.48-n96kp2` → **`2.9.48-n96kp3`**; числовые
+  `UHSDR_VER_* = 2.9.48` не менялись (их разбирает Makefile и использует логика версий/EEPROM);
+  `UHSDR_BOOT_VERS = 5.0.4` не менялся. Строка на устройстве:
+  `UHSDR_VERSION = "fwv-2.9.48-n96kp3"`, отображение `UHSDR_VERSION+4` = `2.9.48-n96kp3`
+  (13 символов — та же длина, что n96kp2; буферы UI — `snprintf(out, 32, …)` в
+  `ui_menu.c:723-728`, запас большой).
+- `tests/check_versions.py` ждёт `2.9.48-n96kp3`; `python tests/run_all.py` — PASS
+  (**1134 проверки, 0 failed, 3 known, 0 skipped**). Приватная сборка версии n96kp3 — PASS.
+- Все цифры v1.2 — из **чистой сборки HEAD `557e39f1` + bump `n96kp3`**
+  (`_tmp/build-p-docs-v12`, см. [BUILD.md](BUILD.md) §3): `fw-mchf.bin` **321 392 Б**, flash 32,7 %
+  (запас **661 648 Б**), RAM **42 616 Б**, **CCM 63 476/65 536** (свободно 2 060), `bl-mchf.bin`
+  31 620/32 768 Б (запас 1 148), предупреждений **78 строк** = fw 70 + bl 8 (64 компилятора:
+  24 уникальных текста + 14 строк линковки: 13 newlib-nano + lto-wrapper; новых от этапа A нет).
+  **Размер зависит от содержимого строки версии:** тот же код с `n96kp2` даёт 321 384 Б, с
+  `n96kp3` — 321 392 Б (+8 Б; проверено A/B-сборками одного дерева, различие — только
+  `uhsdr_version.h`). Финальные артефакты `release/v1.2` и тег v1.2 — при упаковке релиза.
 
 ## Что не менялось
 
@@ -521,6 +651,11 @@ UHSDR. Это последняя серия бэкпортов v1.1; EEPROM sign
   новые записи добавлены в свободные/резервные id: 426 (P1-1), 430 и 524 (P2-4),
   `EEPROM_FIRST_UNUSED` 524 → 525, `MAX_VAR_ADDR` 523 → 524 (см. P2-4).
 - CMSIS/HAL и прочие вендорные библиотеки — не переписывались; Codec2/FreeDV обновлён только
-  в P2-2 (до upstream rev 4121, с одним задокументированным compat-блоком).
+  в P2-2 (до upstream rev 4121, с одним задокументированным compat-блоком); в сборке FreeDV
+  отключён (`IS_SMALL_BUILD`, см. P2-2/A2).
 - Доработки Nizar не откатывались: изменения v1.1 — аддитивные (новые поля/пункты/enum в конец,
   новые ветки), а заменённый в P1-3 блок foldback — код самого v1.0-патча P0-4, не Nizar.
+- Этап A (v1.2) поведение Nizar не менял: A1 сохраняет прежнее поведение вне foldback
+  (`effective_power_level == ts.power_level`), A2 только сбрасывает NR-состояние после DIGI и
+  добавляет гейты под `#ifdef USE_FREEDV`; ЦОС-коэффициенты, фильтры, EEPROM-раскладка и UI не
+  тронуты, новых EEPROM-слотов нет.

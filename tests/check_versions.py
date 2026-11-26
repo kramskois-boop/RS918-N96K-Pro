@@ -25,7 +25,7 @@ VERSION_HEADER = os.path.join("mchf-eclipse", "src", "uhsdr_version.h")
 
 EXPECTED_UHSDR = ("2", "9", "48")
 EXPECTED_PRODUCT_NAME = "RS918 N96K-Pro"
-EXPECTED_PRODUCT_VERSION = "2.9.48-n96kp2"
+EXPECTED_PRODUCT_VERSION = "2.9.48-n96kp3"
 EXPECTED_BOOT_VERS = "5.0.4"
 ACCEPTED_BOOT_VERS = {
     "4.1.2": "P2 bootloader 5.0.4 port is a separate, parallel workstream; "
