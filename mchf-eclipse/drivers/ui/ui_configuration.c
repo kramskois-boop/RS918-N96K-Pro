@@ -77,6 +77,9 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
     { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_3   ,&ts.agc_wdsp_tau_decay[3],   700,350,5000},  // Mid
     { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_4   ,&ts.agc_wdsp_tau_decay[4],   700,350,5000},  // Fast
     { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_HANG_DECAY,&ts.agc_wdsp_tau_hang_decay, 500, 60,5000},
+    // N96K P2: backport of upstream cfbaae73 (#1730) - AGC "Clarity" (pop ratio) is a user AGC setting
+    // and was the only one of the AGC menu parameters which was not restored after a reboot.
+    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_POP_THRES   ,&ts.agc_wdsp_pop_thres,      95,  0,  255},
     { ConfigEntry_UInt8   , EEPROM_MIC_GAIN               ,&ts.tx_gain[TX_AUDIO_MIC],MIC_GAIN_DEFAULT,MIC_GAIN_MIN,MIC_GAIN_MAX},
     { ConfigEntry_UInt8   , EEPROM_LINE_GAIN              ,&ts.tx_gain[TX_AUDIO_LINEIN_L],LINE_GAIN_DEFAULT,LINE_GAIN_MIN,LINE_GAIN_MAX},
     { ConfigEntry_UInt32_16, EEPROM_SIDETONE_FREQ         ,&ts.cw_sidetone_freq,CW_SIDETONE_FREQ_DEFAULT,CW_SIDETONE_FREQ_MIN,CW_SIDETONE_FREQ_MAX},
@@ -253,6 +256,9 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
     { ConfigEntry_UInt8   , EEPROM_ENABLE_PTT_RTS       ,  &ts.enable_ptt_rts,0,0,1},
 	{ ConfigEntry_Int32_16, EEPROM_CW_DECODER_THRESH    ,  &cw_decoder_config.thresh,CW_DECODER_THRESH_DEFAULT,CW_DECODER_THRESH_MIN,CW_DECODER_THRESH_MAX},
 	{ ConfigEntry_Int32_16, EEPROM_CW_DECODER_BLOCKSIZE ,  &cw_decoder_config.blocksize,CW_DECODER_BLOCKSIZE_DEFAULT,CW_DECODER_BLOCKSIZE_MIN,CW_DECODER_BLOCKSIZE_MAX},
+	// N96K P2: backport of upstream 528aa185 (#1881) - persist all CW decoder menu flags
+	// (noise cancel, spike cancel, 3 Goertzels, snap, CW LED) in one EEPROM word.
+	{ ConfigEntry_UInt16  , EEPROM_CW_DECODER_FLAGS     ,  &cw_decoder_config.flags,CW_DECODER_FLAGS_DEFAULT,0,0x7fff},
 	{ ConfigEntry_UInt8   , EEPROM_LCD_BRIGHTNESS       ,  &ts.lcd_backlight_brightness,3,0,5},
 	{ ConfigEntry_Int16   , EEPROM_TX_COMPRESS_OUT_GAIN ,  &ts.tx_comp_out_gain,25,10,40},
 	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_THRESH ,  &ts.agc_wdsp_hang_thresh, 40,1,120},
@@ -890,6 +896,9 @@ void   UiConfiguration_LoadEepromValues( void )
 	ts.flags2                      &= ~FLAGS2_HIGH_BAND_BIAS_REDUCE;   // pas de reduction du Bias pour bandes hautes
 	ts.flags2                      &= ~FLAGS2_LOW_BAND_BIAS_REDUCE;    // pas de reduction du Bias pour bandes basses
 	cw_decoder_config.show_CW_LED   = ((ts.flags2  & FLAGS2_SHOW_CW_LED) != 0);
+	// N96K P2: Nizar keeps the CW LED setting in FLAGS2 (EEPROM_FLAGS2). Because show_CW_LED is a
+	// bit of cw_decoder_config.flags, the bitfield write above already updates the persisted flags
+	// word, so both storages stay consistent automatically.
 
 	ts.twenty_watt_meter = ((ts.flags2  & FLAGS2_TWENTY_WATT_POWER) != 0);
 
@@ -921,6 +930,9 @@ void   UiConfiguration_LoadEepromValues( void )
     if (ts.tx_equalizer > 0) { ts.EQ_custom_display = false; }  else { ts.EQ_custom_display = true; }
 
     ts.float_Fix_audio_Gain       = 0.4 + 0.2 * ts.agc_wdsp_hang_enable;
+    // N96K P2: recompute the derived AGC values after the EEPROM values have been restored
+    // (port of the upstream cfbaae73 / #1730 "AGC values are not restored" fix)
+    ts.float_agc_wdsp_pop_thres   = 4.00 + 0.01 * ts.agc_wdsp_pop_thres;
 
     if ( ts.agc_wdsp_slope )  {  ts.agc_wdsp_action = 1; } else ts.agc_wdsp_action = 0; // Affichage AGC PAd
 

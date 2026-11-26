@@ -2665,6 +2665,12 @@ static float32_t  gain_statique_AGC = 1;
 
 void  AudioDriver_SetupAgcWdsp()
 {
+    // N96K P2: backport of upstream cfbaae73 (#1730, "AGC values are not restored").
+    // All user adjustable AGC parameters are kept in ts.agc_wdsp_* and are loaded from EEPROM before
+    // AudioDriver_Init() calls this function. They must NOT be reset to hard-coded defaults here,
+    // otherwise a reboot / parameter change would silently replace the user settings (the defect
+    // fixed by cfbaae73 in upstream's audio_agc.c). Only the non-persistent run-time state of the AGC
+    // (ring buffers, indices, derived multipliers) is initialised in this function.
     static    bool   initialised         = false;
 	float32_t        tmp;
     float32_t        sample_rate         = IQ_SAMPLE_RATE_F / (float32_t)ads.decimation_rate;  // 12000= 48000/4
@@ -2782,6 +2788,9 @@ loadWcpAGC(a);
     }
     //    var_gain     = 32.0;  // slope of the AGC --> this is 10 * 10^(slope / 20) --> for 10dB slope, this is 30.0
     agc_wdsp.var_gain  =  powf (10.0, ((float32_t)ts.agc_wdsp_slope -10 ) / 200.0 ); // 10^(slope / 200)
+    // N96K P2: keep the cached float value of the persisted AGC "Clarity" setting in sync, it is
+    // the AGC peak/median coefficient used by AudioDriver_RxAgcWdsp() (cfbaae73, #1730).
+    ts.float_agc_wdsp_pop_thres = 4.00 + 0.01 * ts.agc_wdsp_pop_thres;
 
     //    hangtime     = 0.250;                // hangtime
     agc_wdsp.hangtime  = (float32_t) ts.agc_wdsp_hang_time / 1000.0;

@@ -62,7 +62,8 @@ cw_config_t cw_decoder_config =
 		.spikecancel        = 0,
 		.use_3_goertzels    = false,
 		.snap_enable        = true,
-		.show_CW_LED        = true // menu choice whether the user wants the CW LED indicator to be working or not
+		.show_CW_LED        = true, // menu choice whether the user wants the CW LED indicator to be working or not
+		// N96K P2: the whole flags word (see cw_config_t) is now stored in EEPROM_CW_DECODER_FLAGS
 };
 
 static void CW_Decode(void);

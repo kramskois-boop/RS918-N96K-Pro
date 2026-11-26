@@ -837,6 +837,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
     // case statement local variables defined for convenience here
     bool var_change = false;
     uint8_t temp_var_u8; // used to temporarily represent some configuration values as uint8_t value
+    bool temp_var_bool;  // N96K P2: menu helper argument for bitfield values which cannot be passed by address
 
 
     if(mode == MENU_PROCESS_VALUE_CHANGE)
@@ -2025,27 +2026,20 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
             break;
 #endif
             case MENU_CW_DECODER_NOISECANCEL:    // On/Off
-										var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.noisecancel_enable,
-																			  0,
-																			  1,
-																			  1,
-																			  1
-																			 );
-
-										switch(cw_decoder_config.noisecancel_enable)
-										{
-											case 0:  	txt_ptr = " OFF";	break;
-											case 1:		txt_ptr = "  ON";	break;
-										}
+										temp_var_bool = cw_decoder_config.noisecancel_enable;
+										var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &temp_var_bool, 0, options, &clr);
+										cw_decoder_config.noisecancel_enable = temp_var_bool;
 										break;
 
         case MENU_CW_DECODER_SPIKECANCEL:    // On/Off
-									var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.spikecancel,
-																		  0,
-																		  2,
-																		  0,
-																		  1
-																		 );
+									temp_var_u8 = cw_decoder_config.spikecancel;
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
+																				  0,
+																				  2,
+																				  0,
+																				  1
+																				 );
+									cw_decoder_config.spikecancel = temp_var_u8;
 
 									switch(cw_decoder_config.spikecancel)
 									{
@@ -4617,12 +4611,17 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 						 break;
 
      case MENU_CW_DECODER_USE_3_GOERTZEL:
-						 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.use_3_goertzels,0,options,&clr);
+						 temp_var_bool = cw_decoder_config.use_3_goertzels;
+						 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &temp_var_bool, 0, options, &clr);
+						 cw_decoder_config.use_3_goertzels = temp_var_bool;
 						 break;
 
      case MENU_CW_DECODER_SHOW_CW_LED:
-							 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.show_CW_LED,0,options,&clr);
+							 temp_var_bool = cw_decoder_config.show_CW_LED;
+							 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &temp_var_bool, 0, options, &clr);
+							 cw_decoder_config.show_CW_LED = temp_var_bool;
 
+							 // N96K P2: keep the Nizar FLAGS2 storage of the CW LED in sync (it is what is saved in EEPROM_FLAGS2)
 							 if (cw_decoder_config.show_CW_LED == false)
 							 {
 								 Board_RedLed(LED_STATE_OFF);
@@ -4636,7 +4635,9 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
 
      case MENU_CW_DECODER_SNAP_ENABLE:
-							 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.snap_enable,0,options,&clr);
+							 temp_var_bool = cw_decoder_config.snap_enable;
+							 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &temp_var_bool,0,options,&clr);
+							 cw_decoder_config.snap_enable = temp_var_bool;
 							 if (var_change)
 							 {
 								 if (ts.dmod_mode == DEMOD_CW)

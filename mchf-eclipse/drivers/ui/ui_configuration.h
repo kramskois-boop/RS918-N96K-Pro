@@ -620,7 +620,10 @@ void		UiConfiguration_UpdateMacroCap(void);
 #define EEPROM_EXPFLAGS1                            427     // Flags for options in Debug/Expert menu - see variable "expflags1"
 #define EEPROM_XVERTER_OFFSET_TX_HIGH               428     // Secondary frequency by which the display is offset for transverter use, high word
 #define EEPROM_XVERTER_OFFSET_TX_LOW                429     // Secondary frequency by which the display is offset for transverter use, low word
-#define EEPROM_FUTURE_RESERVE0                      430
+// N96K P2: backport of upstream 528aa185 (#1881). The first reserved ID of the 2.9.48 layout is
+// now used for the CW decoder flags word (the same EEPROM ID as in upstream 2.12.2), no existing
+// slot moves. The remaining reserved IDs 431..449 stay reserved.
+#define EEPROM_CW_DECODER_FLAGS                     430     // CW decoder flags word, see cw_config_t.flags
 #define EEPROM_FUTURE_RESERVE1                      431
 #define EEPROM_FUTURE_RESERVE2                      432
 #define EEPROM_FUTURE_RESERVE3                      433
@@ -717,7 +720,10 @@ void		UiConfiguration_UpdateMacroCap(void);
 #define EEPROM_TX_IQ_12M_GAIN_BALANCE_TRANS_OFF	  522
 #define EEPROM_TX_IQ_12M_PHASE_BALANCE_TRANS_OFF  523
 
-#define EEPROM_FIRST_UNUSED 				      524  // this is the index of the config value which holds the number of used config entries
+// N96K P2: backport of upstream cfbaae73 (#1730) - the AGC "Clarity" setting is a user parameter
+// like the other AGC WDSP settings, so it has to be persisted and restored after a reboot.
+#define EEPROM_AGC_WDSP_POP_THRES                     524
+#define EEPROM_FIRST_UNUSED 				      525  // this is the index of the config value which holds the number of used config entries
 													   // , not the value itself (which is in fact EEPROM_FIRST_UNUSED)
 													   // change this if new value ids are introduced, must be correct at any time
 #define  MAX_VAR_ADDR  ( EEPROM_FIRST_UNUSED - 1 )

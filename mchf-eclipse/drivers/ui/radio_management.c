@@ -206,6 +206,12 @@ bool RadioManagement_PowerLevelChange(uint8_t band, uint8_t power_level)
     return retval;
 }
 
+// N96K P2: backport of upstream 6d7efe50/684a04c1/de6b5e0d/eb40e0dc (#1750).
+// Tune may temporarily switch the PA to another power level. The override is remembered here
+// instead of being inferred from ts.tune_power_level at the end of Tune, so that exiting Tune
+// always restores the user level, even if the TUNE POWER LEVEL menu setting is changed meanwhile.
+static bool tune_power_overridden = false;
+
 bool RadioManagement_Tune(bool tune)
 {
     bool retval = tune;
@@ -213,23 +219,38 @@ bool RadioManagement_Tune(bool tune)
     {
         if(tune)   ///  Tx Tune ON
         {
-            if(ts.tune_power_level != PA_LEVEL_TUNE_KEEP_CURRENT)
+            if((ts.tune_power_level != PA_LEVEL_TUNE_KEEP_CURRENT) && (tune_power_overridden == false))
             {
                 ts.power_temp  = ts.power_level;             //store tx level and set tune level
                 ts.power_level = ts.tune_power_level;
+                tune_power_overridden = true;
             }
             // DDS on
 
             RadioManagement_SwitchTxRx(TRX_MODE_TX,true);                // tune ON
+            // N96K P2: entering TX recomputes ts.tx_power_factor for the temporarily changed
+            // ts.power_level in RadioManagement_SwitchTxRx(), so Tune uses the tune power level.
             retval = (ts.txrx_mode  == TRX_MODE_TX);
+            if ((retval == false) && tune_power_overridden)              // TX was refused, undo the override
+            {
+                ts.power_level        = ts.power_temp;
+                tune_power_overridden = false;
+                RadioManagement_SetBandPowerFactor(RadioManagement_GetBand(df.tune_new));
+            }
         }
         else
         {
         	RadioManagement_SwitchTxRx(TRX_MODE_RX,true);                // tune OFF
-            if(ts.tune_power_level != PA_LEVEL_TUNE_KEEP_CURRENT)
+            if(tune_power_overridden)                                    // restore tx level
             {
-                ts.power_level = ts.power_temp; // restore tx level
+                ts.power_level        = ts.power_temp;
+                tune_power_overridden = false;
             }
+            // N96K P2: restore the power factor and the "PWR" display value of the user power level
+            // (upstream #1750: after Tune the power display/factor kept the tune level until the next
+            // TX). Done after leaving TX, the call is harmless outside TX (codec sidetone update only
+            // happens in TX) and it also restores ts.current_pwr_adj used by the PWR indicator.
+            RadioManagement_SetBandPowerFactor(RadioManagement_GetBand(df.tune_new));
 
             retval = false; // no longer tuning
         }
