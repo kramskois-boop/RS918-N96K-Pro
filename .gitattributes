@@ -1,0 +1,42 @@
+# N96K P1-1: repository normalization rules (audit U7)
+#
+# Default: Git auto-detects text and normalizes CRLF -> LF on check-in,
+# so commits made from Windows do not create pseudo-diffs.
+* text=auto
+
+# Source code and documentation: LF in the working tree on all platforms
+*.c             text eol=lf
+*.h             text eol=lf
+*.mak           text eol=lf
+*.md            text eol=lf
+*.py            text eol=lf
+*.txt           text eol=lf
+*.xml           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.json          text eol=lf
+*.sh            text eol=lf
+Makefile        text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+.editorconfig   text eol=lf
+
+# Nizar's IIR filter tables: UTF-8 sources, LF (N96K P1-1)
+mchf-eclipse/drivers/audio/filters/iir_16k5_96ks.c text eol=lf
+mchf-eclipse/drivers/audio/filters/iir_2_8k.c text eol=lf
+mchf-eclipse/drivers/audio/filters/iir_2_9k.c text eol=lf
+
+# Binary documents and build artifacts: no EOL conversion, no text diffs
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.JPG   binary
+*.jpeg  binary
+*.gif   binary
+*.bmp   binary
+*.odt   binary
+*.bin   binary
+*.elf   binary
+*.map   binary
+*.hex   binary
+*.s19   binary

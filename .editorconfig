@@ -14,3 +14,8 @@ charset = utf-8
 indent_style = tab
 indent_size = 4
 trim_trailing_whitespace = true
+
+# N96K P1-1: same UTF-8/LF scope as .gitattributes (audit U7)
+[*.{mak,md,py,txt,xml,yml,yaml,json,sh}]
+charset = utf-8
+end_of_line = lf

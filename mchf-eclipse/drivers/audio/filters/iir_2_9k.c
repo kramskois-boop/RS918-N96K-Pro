@@ -12,6 +12,8 @@
 **  Licence:		GNU GPLv3                                                      **
 ************************************************************************************/
 
+// N96K P1-1: Latin-1 bytes in French comments -> UTF-8 (EOL already LF; audit U7).
+
 #include "filters.h"
 
 // alternative filter designed with MATLAB fdatools by DD4WH 2016-02-03 (original)
@@ -63,14 +65,14 @@ const arm_iir_lattice_instance_f32 IIR_2k9_LPF =
 // Rx Audio LPF 2.9K IIR filter ;  Elleptic stop band = -60 db  ( 4.16 ms max) 26/03/2021 by Nizar 3V8MN
 // lattice ARMA coefficients designed with MATLAb fdatools
 // LPF 2k9 ,  Elleptic 10em ordre, stop band = -60 db  ( 4.16 ms max)  (  0.00db Ripples band )
-// Lattice (treuillis) coeff calculés par Mathlab-2018 avec la fonction suivante :
+// Lattice (treuillis) coeff calculÃ©s par Mathlab-2018 avec la fonction suivante :
 // format long
 // a = [ 1.0000000000000000000, -1.089291497568376290,  3.18880662662342296,  -2.62320968698032031, 3.5861386745406536,   -2.16722448328987971,   1.700216889871764,   -0.699094834888498351, 0.303862577748830542, -0.06784122639445334,   0.010443110346194253]
 // b = [ 0.0227111434659762512,  0.0851848513765560966, 0.217862647208957849,  0.390677614166482945, 0.549209859958141067, 0.611513917657108763,  0.549209859958141067, 0.390677614166482945, 0.217862647208957849,  0.0851848513765560966, 0.0227111434659762512 ]
 // [k,v] = tf2latc(b,a)
-// NB : Les coeffs doivent etre copié avec l'ordre inverse de ceux affichés sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
+// NB : Les coeffs doivent etre copiÃ© avec l'ordre inverse de ceux affichÃ©s sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
 // NB : pas d'inversion de signe des coeffs lors du copiage depuis l'editeur de Mathlab.
-// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, à ne pas inverser
+// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, Ã  ne pas inverser
 
 /*
 
@@ -112,14 +114,14 @@ const arm_iir_lattice_instance_f32 IIR_2k9_LPF =
 // Rx Audio LPF 2.9K IIR filter ;  Elleptic stop band = -60 db  ( 12.1 ms max) 17/05/2021 by Nizar 3V8MN
 // lattice ARMA coefficients designed with MATLAb fdatools
 // LPF 2k9 (0.4827) ,  Elleptic 10em ordre, stop band = -60 db  ( 12.1 ms max)  (  0.25db Ripples band )
-// Lattice (treuillis) coeff calculés par Mathlab-2018 avec la fonction suivante :
+// Lattice (treuillis) coeff calculÃ©s par Mathlab-2018 avec la fonction suivante :
 // format long
 // a = [ 1.00000000000000000000,  -2.0239572199821918, 5.03917102307387754, -6.66488828018858026,   8.5987950367699284,     -7.7773846310129553,  6.25141891845310216,   -3.74867873671110274,  1.82540584884270229, -0.6083493034633638,   0.130052620745269221 ]
 // b = [ 0.0212937463260357696,   0.0596616183982141202, 0.150401258901012991, 0.247078691598676636, 0.344942775080490538,  0.374829095917828825, 0.344942775080490494,   0.247078691598676636, 0.150401258901012969, 0.0596616183982141202,  0.0212937463260357696]
 // [k,v] = tf2latc(b,a)
-// NB : Les coeffs doivent etre copié avec l'ordre inverse de ceux affichés sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
+// NB : Les coeffs doivent etre copiÃ© avec l'ordre inverse de ceux affichÃ©s sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
 // NB : pas d'inversion de signe des coeffs lors du copiage depuis l'editeur de Mathlab.
-// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, à ne pas inverser
+// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, Ã  ne pas inverser
 
 /*
 
@@ -162,14 +164,14 @@ const arm_iir_lattice_instance_f32 IIR_2k9_LPF =
 // Rx Audio LPF 2.9K IIR filter ;  Elleptic stop band = -60 db  ( 9.33 ms max) 19/05/2021 by Nizar 3V8MN
 // lattice ARMA coefficients designed with MATLAb fdatools
 // LPF 2k9 (0.4827) ,  Elleptic 10em ordre, stop band = -60 db  ( 9.33 ms max)  (  0.10db Ripples band )
-// Lattice (treuillis) coeff calculés par Mathlab-2018 avec la fonction suivante :
+// Lattice (treuillis) coeff calculÃ©s par Mathlab-2018 avec la fonction suivante :
 // format long
 // a = [ 1.00000000000000000000,   -1.85781284599709284, 4.64541738850331054, -5.78995454247741304,   7.39040319639857923,     -6.36562124250726047,  5.00596832889701115,   -2.86528058721712853,   1.34657398376517223, -0.426293366530627793,    0.0841417290302548437 ]
 // b = [ 0.0212788594308721191,   6.333222735739395760E-2, 1.588812712944448480E-1, 2.663033531622172050E-1, 3.710025598920459360E-1,  4.059454995908597040E-1, 3.710025598920459360E-1,  2.663033531622172050E-1, 1.588812712944448480E-1, 6.333222735739395760E-2,  2.127885943087211910E-2]
 // [k,v] = tf2latc(b,a)
-// NB : Les coeffs doivent etre copié avec l'ordre inverse de ceux affichés sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
+// NB : Les coeffs doivent etre copiÃ© avec l'ordre inverse de ceux affichÃ©s sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
 // NB : pas d'inversion de signe des coeffs lors du copiage depuis l'editeur de Mathlab.
-// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, à ne pas inverser
+// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, Ã  ne pas inverser
 
 /*
 
@@ -212,14 +214,14 @@ const arm_iir_lattice_instance_f32 IIR_2k9_LPF =
 // Rx Audio LPF 2.9K IIR filter ;  Elleptic stop band = -68 db  ( 14.5 ms max) 20/07/2021 by Nizar 3V8MN
 // lattice ARMA coefficients designed with MATLAb fdatools
 // LPF 2k9 (0.4827) ,  Elleptic 10em ordre, stop band = -68 db  ( 14.5 ms max)  (  1.00db Ripples band )
-// Lattice (treuillis) coeff calculés par Mathlab-2018 avec la fonction suivante :
+// Lattice (treuillis) coeff calculÃ©s par Mathlab-2018 avec la fonction suivante :
 // format long
 // a = [ 1.00000000000000000000,   -2.488385432861901060E0,   6.035187664503271600E0, -8.971820591867990300E0,   1.165203172960717740E1, -1.143074105373583340E1, 9.416875964557364750E0,   -6.032338054600828950E0,   3.059993602433302320E0, -1.084640287962705510E0,  2.525563924887936910E-1 ]
 // b = [ 1.423875286601797850E-2,   4.131335520664955570E-2, 1.038926052541168990E-1,  1.726918040623030230E-1, 2.408450235113829940E-1,  2.627568507597077390E-1,  2.408450235113829940E-1,  1.726918040623030230E-1,  1.038926052541168990E-1,  4.131335520664955570E-2,  1.423875286601797850E-2]
 // [k,v] = tf2latc(b,a)
-// NB : Les coeffs doivent etre copié avec l'ordre inverse de ceux affichés sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
+// NB : Les coeffs doivent etre copiÃ© avec l'ordre inverse de ceux affichÃ©s sur mathlab ( copier/coller, ajouter les virgules, puis inverser l'ordre des coeffs)
 // NB : pas d'inversion de signe des coeffs lors du copiage depuis l'editeur de Mathlab.
-// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, à ne pas inverser
+// NB : les correspondances entre k (10 coeff)  et v (11 coeff) sont correctes, Ã  ne pas inverser
 
 
 

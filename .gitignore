@@ -1,6 +1,9 @@
-docs/
+# N96K P1-1: docs/ is handwritten product documentation - version it;
+# ignore only generated documentation output (audit U7 follow-up)
+docs/generated/
 mchf-eclipse/.settings/org.eclipse.cdt.managedbuilder.core.prefs
-.metadata*.rar
+.metadata
+*.rar
 *.zip
 *.7z
 build/
@@ -11,3 +14,13 @@ __pycache__/
 *.pyc
 firmware/
 release/
+
+# N96K P1-1: archives and build outputs not covered above (audit U7)
+*.tar.gz
+*.tgz
+*.tar.xz
+*.hex
+*.s19
+*.bin
+*.elf
+*.map
