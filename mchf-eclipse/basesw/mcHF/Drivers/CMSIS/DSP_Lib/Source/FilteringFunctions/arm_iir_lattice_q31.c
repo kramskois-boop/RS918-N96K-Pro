@@ -67,19 +67,15 @@
  * After all multiply-accumulates are performed, the 2.62 accumulator is saturated to 1.32 format and then truncated to 1.31 format.    
  */
 
-void arm_iir_lattice_q31(
-  const arm_iir_lattice_instance_q31 * S,
-  q31_t * pSrc,
-  q31_t * pDst,
-  uint32_t blockSize)
+void arm_iir_lattice_q31(   const arm_iir_lattice_instance_q31 * S,  q31_t * pSrc,  q31_t * pDst,  uint32_t blockSize)
 {
-  q31_t fcurr, fnext = 0, gcurr = 0, gnext;      /* Temporary variables for lattice stages */
-  q63_t acc;                                     /* Accumlator */
-  uint32_t blkCnt, tapCnt;                       /* Temporary variables for counts */
-  q31_t *px1, *px2, *pk, *pv;                    /* Temporary pointers for state and coef */
-  uint32_t numStages = S->numStages;             /* number of stages */
-  q31_t *pState;                                 /* State pointer */
-  q31_t *pStateCurnt;                            /* State current pointer */
+  q31_t      fcurr, fnext = 0, gcurr = 0, gnext;   /* Temporary variables for lattice stages */
+  q63_t      acc;                                  /* Accumlator */
+  uint32_t   blkCnt, tapCnt;                       /* Temporary variables for counts */
+  q31_t      *px1, *px2, *pk, *pv;                 /* Temporary pointers for state and coef */
+  uint32_t   numStages = S->numStages;             /* number of stages */
+  q31_t      *pState;                              /* State pointer */
+  q31_t      *pStateCurnt;                         /* State current pointer */
 
   blkCnt = blockSize;
 
@@ -197,14 +193,14 @@ void arm_iir_lattice_q31(
 
     while(tapCnt > 0u)
     {
-      gcurr = *px1++;
+      gcurr   =  *px1++;
       /* Process sample for last taps */
-      fnext = __QSUB(fcurr, (q31_t) (((q63_t) gcurr * (*pk)) >> 31));
-      gnext = __QADD(gcurr, (q31_t) (((q63_t) fnext * (*pk++)) >> 31));
+      fnext   =  __QSUB(fcurr, (q31_t) (((q63_t) gcurr * (*pk)) >> 31));
+      gnext   =  __QADD(gcurr, (q31_t) (((q63_t) fnext * (*pk++)) >> 31));
       /* Output samples for last taps */
-      acc += ((q63_t) gnext * *pv++);
-      *px2++ = gnext;
-      fcurr = fnext;
+      acc    +=  ((q63_t) gnext * *pv++);
+      *px2++  =  gnext;
+      fcurr   =  fnext;
 
       tapCnt--;
 
@@ -235,12 +231,12 @@ void arm_iir_lattice_q31(
   tapCnt = numStages >> 2u;
 
   /* copy data */
-  while(tapCnt > 0u)
+  while ( tapCnt > 0u )
   {
-    *pStateCurnt++ = *pState++;
-    *pStateCurnt++ = *pState++;
-    *pStateCurnt++ = *pState++;
-    *pStateCurnt++ = *pState++;
+    *pStateCurnt++  =  *pState++;
+    *pStateCurnt++  =  *pState++;
+    *pStateCurnt++  =  *pState++;
+    *pStateCurnt++  =  *pState++;
 
     /* Decrement the loop counter */
     tapCnt--;
@@ -250,13 +246,14 @@ void arm_iir_lattice_q31(
   /* Calculate remaining number of copies */
   tapCnt = (numStages) % 0x4u;
 
-  /* Copy the remaining q31_t data */
-  while(tapCnt > 0u)
-  {
-    *pStateCurnt++ = *pState++;
 
-    /* Decrement the loop counter */
-    tapCnt--;
+  /* Copy the remaining q31_t data */
+  while( tapCnt > 0u )
+  {
+      *pStateCurnt++ = *pState++;
+
+     /* Decrement the loop counter */
+      tapCnt--;
   };
 
 #else

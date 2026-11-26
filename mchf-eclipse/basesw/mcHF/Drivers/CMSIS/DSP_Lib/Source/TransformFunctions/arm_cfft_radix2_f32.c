@@ -41,6 +41,7 @@
 
 #include "arm_math.h"
 
+/*
 void arm_radix2_butterfly_f32(
   float32_t * pSrc,
   uint32_t fftLen,
@@ -59,6 +60,9 @@ extern void arm_bitreversal_f32(
     uint16_t fftSize,
     uint16_t bitRevFactor,
     uint16_t * pBitRevTab);
+
+
+    */
 
 /**   
 * @ingroup groupTransforms   
@@ -79,6 +83,7 @@ extern void arm_bitreversal_f32(
 * @return none.
 */
 
+/*
 void arm_cfft_radix2_f32(
 const arm_cfft_radix2_instance_f32 * S,
 float32_t * pSrc)
@@ -86,25 +91,26 @@ float32_t * pSrc)
 
    if(S->ifftFlag == 1u)
    {
-      /*  Complex IFFT radix-2  */
+      //  Complex IFFT radix-2
       arm_radix2_butterfly_inverse_f32(pSrc, S->fftLen, S->pTwiddle,
       S->twidCoefModifier, S->onebyfftLen);
    }
    else
    {
-      /*  Complex FFT radix-2  */
+      //  Complex FFT radix-2
       arm_radix2_butterfly_f32(pSrc, S->fftLen, S->pTwiddle,
       S->twidCoefModifier);
    }
 
    if(S->bitReverseFlag == 1u)
    {
-      /*  Bit Reversal */
+      ///  Bit Reversal
       arm_bitreversal_f32(pSrc, S->fftLen, S->bitRevFactor, S->pBitRevTable);
    }
 
 }
 
+*/
 
 /**    
 * @} end of ComplexFFT group    
@@ -125,6 +131,8 @@ float32_t * pSrc)
 * @return none.   
 */
 
+
+/*
 void arm_radix2_butterfly_f32(
 float32_t * pSrc,
 uint32_t fftLen,
@@ -140,7 +148,7 @@ uint16_t twidCoefModifier)
 
 #ifndef ARM_MATH_CM0_FAMILY
 
-   /*  Initializations for the first stage */
+   //  Initializations for the first stage
    n2 = fftLen >> 1;
    ia = 0;
    i = 0;
@@ -151,14 +159,14 @@ uint16_t twidCoefModifier)
       cosVal = pCoef[ia * 2];
       sinVal = pCoef[(ia * 2) + 1];
 
-      /*  Twiddle coefficients index modifier */
+      //  Twiddle coefficients index modifier
       ia += twidCoefModifier;
 
-      /*  index calculation for the input as, */
-      /*  pSrc[i + 0], pSrc[i + fftLen/1] */
+      //  index calculation for the input as,
+      //  pSrc[i + 0], pSrc[i + fftLen/1]
       l = i + n2;
 
-      /*  Butterfly implementation */
+      //  Butterfly implementation
       a0 = pSrc[2 * i] + pSrc[2 * l];
       xt = pSrc[2 * i] - pSrc[2 * l];
 
@@ -482,4 +490,4 @@ float32_t onebyfftLen)
 
 #endif //      #ifndef ARM_MATH_CM0_FAMILY
 
-}
+} */

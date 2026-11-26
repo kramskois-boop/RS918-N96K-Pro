@@ -45,7 +45,7 @@ void softdds_setFreqDDS(soft_dds_t* softdds_p, float32_t freq, uint32_t samp_rat
         softdds_p->acc = 0;
     }
     // Calculate new step
-    softdds_p->step = softdds_stepForSampleRate(freq,samp_rate);
+    softdds_p->step = softdds_stepForSampleRate( freq , samp_rate );
 }
 
 
@@ -72,12 +72,12 @@ static inline uint32_t softdds_phase_shift90(uint32_t k)
 }
 
 
-void softdds_genIQSingleTone(soft_dds_t* dds, float32_t *i_buff,float32_t *q_buff,uint16_t size)
+void softdds_genIQSingleTone( soft_dds_t* dds, float32_t *i_buff,  float32_t *q_buff, uint16_t size)
 {
-	for(uint16_t i = 0; i < size; i++)
+	for ( uint32_t i = 0; i < size; i++ )
 	{
 		// Calculate next sample
-		uint32_t k    = softdds_nextSampleIndex(dds);
+		uint32_t k    = softdds_nextSampleIndex( dds );
 
 		// Load I value (sin)
 		*i_buff = DDS_TABLE[k];

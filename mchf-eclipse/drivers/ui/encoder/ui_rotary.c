@@ -79,9 +79,9 @@ const encoder_io_t encoderIO[4] =
 
 void UiRotaryEncoderInit(uint8_t id)
 {
-    const encoder_io_t* encIO = &encoderIO[id];
+    const encoder_io_t* encIO     = &encoderIO[id];
     // Init encoder one
-    encSel[id].value_old      = 0;
+    encSel[id].value_old          = 0;
     encSel[id].value_new          = ENCODER_RANGE;
     encSel[id].de_detent          = 0;
     encSel[id].tim                = encIO->tim;

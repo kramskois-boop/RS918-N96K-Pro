@@ -91,14 +91,14 @@
 #define AUDIO_OUT_STREAMING_CTRL                      0x02
 
 
-#define AUDIO_OUT_PACKET                              (uint32_t)(((USBD_AUDIO_FREQ * 2 * 2) /1000)) 
+#define AUDIO_OUT_PACKET                              (uint32_t)(((USBD_AUDIO_FREQ*2*2)/1000))
 #define AUDIO_DEFAULT_VOLUME                          70
     
 /* Number of sub-packets in the audio transfer buffer. You can modify this value but always make sure
   that it is an even number and higher than 3 */
 #define AUDIO_OUT_PACKET_NUM                          80
 /* Total size of the audio transfer buffer */
-#define AUDIO_TOTAL_BUF_SIZE                          ((uint32_t)(AUDIO_OUT_PACKET * AUDIO_OUT_PACKET_NUM))
+#define AUDIO_TOTAL_BUF_SIZE                          ((uint32_t)(AUDIO_OUT_PACKET*AUDIO_OUT_PACKET_NUM))
     
     /* Audio Commands enumeration */
 typedef enum

@@ -77,6 +77,9 @@ void arm_bitreversal_q15(
  * @return none.  
  */
 
+/*
+
+
 void arm_cfft_radix2_q15(
   const arm_cfft_radix2_instance_q15 * S,
   q15_t * pSrc)
@@ -96,10 +99,14 @@ void arm_cfft_radix2_q15(
   arm_bitreversal_q15(pSrc, S->fftLen, S->bitRevFactor, S->pBitRevTable);
 }
 
+*/
+
+
 /**   
  * @} end of ComplexFFT group   
  */
 
+/*
 void arm_radix2_butterfly_q15(
   q15_t * pSrc,
   uint32_t fftLen,
@@ -740,3 +747,5 @@ void arm_radix2_butterfly_inverse_q15(
 #endif //             #ifndef ARM_MATH_CM0_FAMILY
 
 }
+
+*/

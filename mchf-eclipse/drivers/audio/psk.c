@@ -224,7 +224,7 @@ psk_ctrl_t psk_ctrl_config =
 PskState  psk_state;
 
 void Bpsk_ResetWin() {
-	softdds_setFreqDDS(&psk_bit_dds, psk_speeds[psk_ctrl_config.speed_idx].value / 2, ts.samp_rate, true);
+	softdds_setFreqDDS(&psk_bit_dds, psk_speeds[psk_ctrl_config.speed_idx].value / 2, ts.samp_rate_48k, true);
 }
 
 void Bpsk_ModulatorInit(void)
@@ -281,8 +281,8 @@ void PskDecoder_Init(void)
 
 	psk_state.tx_idx = 0;
 
-	softdds_setFreqDDS(&psk_dds, PSK_OFFSET, ts.samp_rate, true);
-	psk_state.tx_bit_len = lround(ts.samp_rate / psk_speeds[psk_ctrl_config.speed_idx].value * 2);
+	softdds_setFreqDDS(&psk_dds, PSK_OFFSET, ts.samp_rate_48k, true);
+	psk_state.tx_bit_len = lround(ts.samp_rate_48k / psk_speeds[psk_ctrl_config.speed_idx].value * 2);
 	psk_state.tx_zeros = - psk_speeds[psk_ctrl_config.speed_idx].zeros;
 	psk_state.rate = psk_speeds[psk_ctrl_config.speed_idx].rate;
 	Bpsk_ModulatorInit();
@@ -331,10 +331,10 @@ void BpskDecoder_ProcessSample(float32_t sample)
 
 	psk_state.rx_samples_in[psk_state.rx_bnd_idx] = sample;
 	fsample = Psk_IirNext(psk_speeds[psk_ctrl_config.speed_idx].bpf_b, psk_speeds[psk_ctrl_config.speed_idx].bpf_a, psk_state.rx_samples_in,
-		psk_state.rx_samples, psk_state.rx_bnd_idx, PSK_BND_FLT_LEN);
-	psk_state.rx_samples[psk_state.rx_bnd_idx] = fsample;
-	psk_state.rx_bnd_idx++;
-	psk_state.rx_bnd_idx %= PSK_BND_FLT_LEN;
+		      psk_state.rx_samples, psk_state.rx_bnd_idx, PSK_BND_FLT_LEN);
+	          psk_state.rx_samples[psk_state.rx_bnd_idx] = fsample;
+	          psk_state.rx_bnd_idx++;
+	          psk_state.rx_bnd_idx %= PSK_BND_FLT_LEN;
 
 	psk_state.rx_vco[psk_state.rx_idx] = PskCosDDS[(int)(psk_state.rx_phase * PSK_COS_DDS_LEN)]; // TODO This shall be replaced with soft_dds
 	psk_state.rx_sin_prod[psk_state.rx_idx] = psk_state.rx_vco[(psk_state.rx_idx - PSK_SHIFT_90 + PSK_BUF_LEN) % PSK_BUF_LEN] * fsample;
@@ -481,7 +481,7 @@ int16_t Psk_Modulator_GenSample()
 		Bpsk_ResetWin();
 		if (psk_state.tx_ending)
 		{
-			ts.tx_stop_req = true;
+			ts.tx_immediate_stop_req = true;
 		}
 	}
 

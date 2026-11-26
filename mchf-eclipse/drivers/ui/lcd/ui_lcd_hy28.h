@@ -30,12 +30,14 @@
 #define Blue           		RGB(0x50,0x50,0xFF)	// Brighter Blue	//Original - 0x001F =#0000FF
 #define Blue2          		0x051F				// =#00A0FF
 #define Red            		RGB(0xFF,0x38,0x38)	// Brighter (easier to see) Red	//Original 0xF800 =#FF0000
+#define Red0            	RGB(0xFF,0x60,0x60)	// Brighter (easier to see) Red	//Original 0xF800 =#FF0000
 #define	Red2				RGB(0xFF,0x80,0x80)	// Even "brighter" red (almost pink)
 #define Red3				RGB(0xFF,0xC0,0xC0) // A sort of pink-ish, pale red
 #define Magenta        		RGB(0xFF,0x30,0xFF)	// Brighter Magenta	//Original 0xF81F =#FF00FF
 #define Green          		0x07E0				// =#00FF00
 #define Cyan           		0x7FFF
 #define Yellow         		RGB(0xFF,0xFF,0x20)	// "Yellower" and brighter	//Original - 0xFFE0 =#FFFF00
+#define Yellow_Light   		RGB(0xFF,0xFF,0x88)	// "Yellower Light" and brighter	//Original - 0xFFE0 =#FFFF00 NIZZ
 
 #define Orange				RGB(0xFF,0xA8,0x20)	//"Orange-er" and brighter	//Original - RGB(0xF6,0xA0,0x1A)
 #define Cream				RGB(0xED,0xE7,0xD7)
@@ -76,11 +78,14 @@ typedef enum
     DISPLAY_NONE = 0,
     DISPLAY_HY28A_SPI,
     DISPLAY_HY28B_SPI,
+	DISPLAY_ILI7789_SPI,                // rajouté en sept 2025   320x240
+	DISPLAY_ILI9341_SPI,                // rajoute en sept 2025   320x240
     DISPLAY_HY28B_PARALLEL,
     DISPLAY_RA8875_SPI,
     DISPLAY_RA8875_PARALLEL,
     DISPLAY_ILI9486_PARALLEL,
     DISPLAY_RPI_SPI,
+	DISPLAY_ST7796_SPI,                 // rajoute en sept 2025   480x320
     DISPLAY_HY32D_PARALLEL_SSD1289,
 
 	// keep this always at the end of the enum
@@ -97,7 +102,7 @@ typedef struct  RegisterValueSetInfo_s {
     size_t size;
 } RegisterValueSetInfo_t;
 
-#define REGVAL_DATA (0xffff) // we indicate that the value is to be written using WriteData instead of WriteReg
+#define REGVAL_DATA  (0xffff) // we indicate that the value is to be written using WriteData instead of WriteReg
 #define REGVAL_DELAY (0x0000) // we indicate that the value is to be used as delay in ms instead of WriteReg
 
 typedef struct
@@ -122,7 +127,7 @@ typedef struct
 {
     uint8_t display_type;           // existence/identification of display type
     uint16_t DeviceCode;      // LCD ident code
-    bool use_spi;
+    bool    use_spi;
     int16_t lcd_cs;
     uint16_t MAX_X;
     uint16_t MAX_Y;
@@ -149,8 +154,9 @@ uint16_t UiLcdHy28_TextWidth(const char *str, uchar font);
 uint16_t UiLcdHy28_TextHeight(uint8_t font);
 
 void 	UiLcdHy28_DrawStraightLine(ushort Xpos, ushort Ypos, ushort Length, uchar Direction,ushort color);
-void    UiLcdHy28_DrawStraightLineDouble(ushort Xpos, ushort Ypos, ushort Length, uchar Direction,ushort color);
-void    UiLcdHy28_DrawStraightLineTriple(ushort Xpos, ushort Ypos, ushort Length, uchar Direction,ushort color);
+void    UiLcdHy28_DrawStraightLineDouble   (ushort Xpos, ushort Ypos, ushort Length, uchar Direction,ushort color);
+void    UiLcdHy28_DrawStraightLineTriple   (ushort Xpos, ushort Ypos, ushort Length, uchar Direction,ushort color);
+/// void    UiLcdHy28_DrawStraightLineQuadriple(ushort Xpos, ushort Ypos, ushort Length, uchar Direction,ushort color);
 void 	UiLcdHy28_DrawHorizLineWithGrad(ushort Xpos, ushort Ypos, ushort Length,ushort gradient_start);
 
 void 	UiLcdHy28_DrawEmptyRect(ushort Xpos, ushort Ypos, ushort Height, ushort Width, ushort color);
@@ -171,24 +177,25 @@ void    UiLcdHy28_BacklightEnable(bool on);
 
 typedef struct
 {
-    uint8_t state;
-
-    uint16_t xraw;
-    uint16_t yraw;
-    int16_t xraw_m1;
-    int16_t xraw_m2;
-    int16_t yraw_m1;
-    int16_t yraw_m2;
-    int16_t focus_xprev;
-    int16_t focus_yprev;
-    //int32_t xraw_avgBuff;
-    //int32_t yraw_avgBuff;
-    int16_t hr_x;
-    int16_t hr_y;
-    uint16_t xraw_prev;
-    uint16_t yraw_prev;
-    int32_t cal[6];
-    bool present;
+    uint8_t   state;
+    uint16_t  x_actuel;
+    uint16_t  y_actuel;
+    int16_t   x_last;
+    int16_t   x_last_last;
+    int16_t   x_last_last_last;
+    int16_t   y_last;
+    int16_t   y_last_last;
+    int16_t   y_last_last_last;
+ // int16_t   x_precedent;
+ // int16_t   y_precedent;
+//  int32_t   xraw_avgBuff;
+//  int32_t   yraw_avgBuff;
+    int16_t   hr_x;
+    int16_t   hr_y;
+    uint16_t  xraw_prev;
+    uint16_t  yraw_prev;
+    int32_t   cal[6];
+    bool      present;
 
 } mchf_touchscreen_t;
 
@@ -198,12 +205,12 @@ typedef struct
 #define TP_DATASETS_PROCESSED	0xff
 #define TP_DATASETS_NONE		0x00
 
-extern mchf_touchscreen_t mchf_touchscreen;
+extern  mchf_touchscreen_t mchf_touchscreen;
 
-void    UiLcdHy28_TouchscreenDetectPress();
-void 	UiLcdHy28_TouchscreenReadCoordinates();
+void    UiLcdHy28_Touchscreen_DetectPress_Read_and_Filter_Coordinates();
+void 	UiLcdHy28_Touchscreen_Read_and_Filter_Coordinates();
 bool    UiLcdHy28_TouchscreenHasProcessableCoordinates();
-void    UiLcdHy28_TouchscreenInit(uint8_t mirror);
+void    UiLcdHy28_TouchscreenInit( uint8_t mirror );
 
 
 /*

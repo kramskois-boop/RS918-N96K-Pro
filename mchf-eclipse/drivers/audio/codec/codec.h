@@ -20,7 +20,7 @@
 
 #include "ui_configuration.h"
 #ifdef UI_BRD_MCHF
-#define CODEC_SPEAKER_MAX_VOLUME    16
+#define CODEC_SPEAKER_MAX_VOLUME    40    //  16
 #else
 #define CODEC_SPEAKER_MAX_VOLUME AUDIO_GAIN_MAX
 #endif
@@ -34,9 +34,9 @@
  */
 void     Codec_SwitchTxRxMode(uint8_t txrx_mode);
 void     Codec_MCUInterfaceInit(uint32_t AudioFreq);
-void 	 Codec_VolumeLineOut(uint8_t txrx_mode);
+void 	 Codec_Volume_Line_Out(uint8_t txrx_mode);
 void     Codec_VolumeSpkr(uint8_t vol);
-void 	 Codec_LineInGainAdj(uint8_t gain);
+void 	 Codec_Line_In_Gain_Adj(uint8_t gain);
 void     Codec_IQInGainAdj(uint8_t gain);
 void 	 Codec_MuteDAC(bool state);
 

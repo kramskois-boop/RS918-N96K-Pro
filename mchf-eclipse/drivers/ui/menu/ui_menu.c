@@ -108,40 +108,58 @@ bool __attribute__ ((noinline)) UiDriverMenuItemChangeUInt8(int var, uint8_t mod
 {
     uint8_t old_val = *val_ptr;
 
-    if(var >= 1)	 	// setting increase?
-    {
-        ts.menu_var_changed = 1;	// indicate that a change has occurred
-        if (*val_ptr < val_max)
-        {
-            (*val_ptr)+= increment;
-        }
-    }
-    else if(var <= -1)	 	// setting decrease?
-    {
-        ts.menu_var_changed = 1;
-        if (*val_ptr > val_min)
-        {
-            (*val_ptr)-= increment;
-        }
+   if (increment != 0xFF)  // different de -1
+   {
+		if(var >= 1)	 	// setting increase?
+		{
+			ts.menu_var_changed = 1;	// indicate that a change has occurred
+			if (*val_ptr < val_max)
+			{
+				(*val_ptr) += increment;
+			}
+		}
+		else if(var <= -1)	 	// setting decrease?
+		{
+			ts.menu_var_changed = 1;
+			if (*val_ptr > val_min)
+			{
+				(*val_ptr) -= increment;
+			}
 
-    }
-    if(*val_ptr < val_min)
-    {
-        ts.menu_var_changed = 1;
-        *val_ptr = val_min;
-    }
-    if(*val_ptr > val_max)
-    {
-        ts.menu_var_changed = 1;
-        *val_ptr = val_max;
-    }
+		}
+   }
+   else
+   {
+	   if(var >= 1)	 	// setting increase?
+		{
+			ts.menu_var_changed = 1;	// indicate that a change has occurred
+			if (*val_ptr > val_min)
+			{
+				(*val_ptr) -= 1;
+			}
+		}
+		else if(var <= -1)	 	// setting decrease?
+		{
+			ts.menu_var_changed = 1;
+			if (*val_ptr < val_max)
+			{
+				(*val_ptr) += 1;
+			}
+
+		}
+   }
+
+
+    if      (*val_ptr < val_min)     {  ts.menu_var_changed = 1;   *val_ptr  = val_min;  }
+    else if (*val_ptr > val_max)     {  ts.menu_var_changed = 1;   *val_ptr  = val_max;  }
+
     if(mode == MENU_PROCESS_VALUE_SETDEFAULT)
     {
         ts.menu_var_changed = 1;
-        *val_ptr = val_default;
+        *val_ptr            = val_default;
     }
 
-    return old_val != *val_ptr;
+    return (old_val != *val_ptr);
 }
 
 bool __attribute__ ((noinline)) UiDriverMenuItemChangeUInt32(int var, uint32_t mode, volatile uint32_t* val_ptr,uint32_t val_min,uint32_t val_max, uint32_t val_default, uint32_t increment)
@@ -169,7 +187,7 @@ bool __attribute__ ((noinline)) UiDriverMenuItemChangeUInt32(int var, uint32_t m
         ts.menu_var_changed = 1;
         *val_ptr = val_min;
     }
-    if(*val_ptr > val_max)
+    else if(*val_ptr > val_max)
     {
         ts.menu_var_changed = 1;
         *val_ptr = val_max;
@@ -308,8 +326,8 @@ bool UiDriverMenuItemChangeEnableOnOffBool(int var, uint8_t mode, volatile bool*
 {
     uint8_t temp = *val_ptr;
 
-    bool res = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp, val_default, options, clr_ptr);
-    *val_ptr = temp;
+    bool     res = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp, val_default, options, clr_ptr);
+        *val_ptr = temp;
     return res;
 }
 bool UiDriverMenuItemChangeEnableOnOffFlag(int var, uint8_t mode, volatile uint16_t* val_ptr, uint8_t val_default, char* options, uint32_t* clr_ptr, uint16_t mask)
@@ -323,20 +341,18 @@ bool UiDriverMenuItemChangeEnableOnOffFlag(int var, uint8_t mode, volatile uint1
     return res;
 }
 
+//**************************************************************************************************
 
 bool __attribute__ ((noinline)) UiMenu_ChangeFilterPathMemory(int var, uint8_t mode, char* options, uint32_t* clr_ptr, uint16_t filter_mode,uint8_t memory_idx)
 {
     uint32_t temp_var = ts.filter_path_mem[filter_mode][memory_idx];
-    uint16_t old_fp = temp_var;
+    uint16_t old_fp   = temp_var;
     // for now just a single location CW for testing
-    bool tchange = UiDriverMenuItemChangeUInt32(var, mode, &temp_var,
-                   0,
-                   AUDIO_FILTER_PATH_NUM,
-                   0,
-                   1);
+    bool tchange = UiDriverMenuItemChangeUInt32(var, mode, &temp_var,  0,   AUDIO_FILTER_PATH_NUM, 6,  1);
+
     if(tchange)     // did something change?
     {
-        uint16_t fp = AudioFilter_NextApplicableFilterPath(PATH_ALL_APPLICABLE|PATH_DONT_STORE | (temp_var< old_fp?PATH_DOWN:PATH_UP),filter_mode,old_fp);
+        uint16_t  fp = AudioFilter_NextApplicableFilterPath(PATH_ALL_APPLICABLE|PATH_DONT_STORE | (temp_var< old_fp?PATH_DOWN:PATH_UP),filter_mode,old_fp);
         if (fp >= old_fp && temp_var < old_fp)
         {
             // wrap around -> we need to insert "0"
@@ -344,18 +360,29 @@ bool __attribute__ ((noinline)) UiMenu_ChangeFilterPathMemory(int var, uint8_t m
         }
         ts.filter_path_mem[filter_mode][memory_idx] = fp;
     }
+
+    // if (ts.filter_path_mem[filter_mode][memory_idx] == 0) ts.filter_path_mem[filter_mode][memory_idx] = 6;
+
     if (ts.filter_path_mem[filter_mode][memory_idx] > 0)
     {
-        const char *filter_names[2];
+        const  char  *filter_names[2];
         AudioFilter_GetNamesOfFilterPath(ts.filter_path_mem[filter_mode][memory_idx],filter_names);
         sprintf(options, "   %s/%s", filter_names[0],filter_names[1]);
     }
-    else
+
+
+   else
     {
         sprintf(options, "      UNUSED");
     }
-    return tchange;
+
+    // on a omis le unused filter option pour eviter de causer des plantages du filtrage,
+    // on a mis une valeur par defaut de 4
+
+    return  tchange;
 }
+
+//************************************************************************************************
 
 void UiMenu_HandleDemodModeDisable(int var, uint8_t mode, char* options, uint32_t* clr_ptr, uint16_t demod_mode_disable)
 {
@@ -392,17 +419,17 @@ void UiMenu_HandleIQAdjust(int var, uint8_t mode, char* options, uint32_t* clr_p
     // RX        IQ_TRANS_ON    RadioManagement_GetRealFreqTranslationMode(txrx_mode, ts.dmod_mode, ts.iq_freq_mode) != FREQ_IQ_CONV_MODE_OFF && (is_ssb(ts.dmod_mode) || ts.dmod_mode == DEMOD_CW)
     // TX        IQ_TRANS_ON    RadioManagement_GetRealFreqTranslationMode(txrx_mode, ts.dmod_mode, ts.iq_freq_mode) != FREQ_IQ_CONV_MODE_OFF && (is_ssb(ts.dmod_mode) || ts.dmod_mode == DEMOD_CW)
 
-    iq_trans_idx_t current_trans_idx =  RadioManagement_GetRealFreqTranslationMode(ts.txrx_mode, ts.dmod_mode, ts.iq_freq_mode) == FREQ_IQ_CONV_MODE_OFF? IQ_TRANS_OFF : IQ_TRANS_ON;
+    iq_trans_idx_t   current_trans_idx =  RadioManagement_GetRealFreqTranslationMode(ts.txrx_mode, ts.dmod_mode, ts.iq_freq_mode) == FREQ_IQ_CONV_MODE_OFF? IQ_TRANS_OFF : IQ_TRANS_ON;
 
     bool trans_mode_match = current_trans_idx == valid_for && (is_ssb(ts.dmod_mode) || ts.dmod_mode == DEMOD_CW);
 
-    if(trans_mode_match && (ts.txrx_mode == txrx_mode))       // only allow adjustment if in right mode
+    if ( trans_mode_match && (ts.txrx_mode == txrx_mode))       // only allow adjustment if in right mode
     {
         tchange = UiDriverMenuItemChangeInt32(var, mode, &val_ptr->value[valid_for],
-                min,
-                max,
-                min,
-                1);
+																min,
+																max,
+																0,   // min,  NIZZZ valeur zero par defaut
+																1);
         if(tchange)
         {
             AudioManagement_CalcIqPhaseGainAdjust(ts.tune_freq);
@@ -412,13 +439,17 @@ void UiMenu_HandleIQAdjust(int var, uint8_t mode, char* options, uint32_t* clr_p
     {
         *clr_ptr = Orange;
     }
-    if (val_ptr->value[valid_for] == IQ_BALANCE_OFF)
+
+
+ /*   if (val_ptr->value[valid_for] == IQ_BALANCE_OFF)
     {
         snprintf(options,32, " OFF");
     }
-    else
+    else */
+
     {
-        snprintf(options,32, "%4d", (int)val_ptr->value[valid_for]);
+    	if (min == -126)  { snprintf(options,32, "%5d", (int)val_ptr->value[valid_for]*48/10); } // affichage correction Phase // NIZZZ coeff pour normaliser avec l'affichage IQ deja existant
+    	else              { snprintf(options,32, "%5d", (int)val_ptr->value[valid_for]*70/10); } // affichage correction Amplitude
     }
 }
 
@@ -474,6 +505,56 @@ void __attribute__ ((noinline)) UiMenu_MapColors(uint32_t color ,char* options,v
     }
     *clr_ptr = cnv->value;
 }
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+
+void UiMenu_Set_Spectrum_BackGround_color (char *  menu_text, uint32_t * menu_color )
+{
+	switch ( ts.spectrum_back_ground_color )
+	{
+		case 0 :
+			    if (menu_text  != NULL) { strcpy( menu_text, "Black");       }
+			    if (menu_color != NULL) { *menu_color = RGB( 150, 150, 150); }
+			    ts.color_spectrum_Back_ground         = RGB(  0,  0,  0);
+			    break;
+
+		case 1 :
+				if (menu_text  != NULL) { strcpy( menu_text, " Mgnt");       }
+				if (menu_color != NULL) { *menu_color = RGB( 250,   0, 250); }
+				ts.color_spectrum_Back_ground         = RGB( 170,   0, 150);
+				break;
+
+		case 2 :
+				if (menu_text  != NULL) { strcpy( menu_text, " Blue") ;     }
+				if (menu_color != NULL) { *menu_color = RGB( 100, 100, 255);}
+				ts.color_spectrum_Back_ground         = RGB(   0,   0, 180);
+				break;
+
+		case 3 :
+				if (menu_text  != NULL) { strcpy( menu_text, "Green" );     }
+				if (menu_color != NULL) { *menu_color = RGB(  0,   225,  0);}
+				ts.color_spectrum_Back_ground         = RGB(  0,  130,   110);
+				break;
+	}
+
+
+	uint16_t   BWHbgr = ts.scope_backgr_transparence;
+	BWHbgr  <<= 8;
+	BWHbgr   /= 100;
+	uint16_t  colR = (ts.color_spectrum_Back_ground >> 8) & 0xf8;  colR = (colR * BWHbgr) >> 8;
+	uint16_t  colG = (ts.color_spectrum_Back_ground >> 3) & 0xfc;  colG = (colG * BWHbgr) >> 8;
+	uint16_t  colB = (ts.color_spectrum_Back_ground << 3) & 0xf8;  colB = (colB * BWHbgr) >> 8;
+
+	ts.color_spectrum_Back_ground = RGB ( colR, colG, colB );	//background color of the active demodulation filter highlight
+
+}
+//****************************************************************************************************
+
+
+//**************************************************************************************************************
+
+
 void __attribute__ ((noinline)) UiDriverMenuMapStrings(char* output, uint32_t value ,const uint32_t string_max, const char** strings)
 {
     strcpy(output,(value <= string_max)?strings[value]:"UNDEFINED");
@@ -493,204 +574,201 @@ const char* UiMenu_GetSystemInfo(uint32_t* m_clr_ptr, int info_item)
 
     switch (info_item)
     {
-    case INFO_DISPLAY:
-    {
-        outs = UiLcdHy28_DisplayInfoGet(ts.display->display_type)->name;
-        break;
-    }
-    case INFO_DISPLAY_CTRL:
-    {
-        // const char* disp_com = ts.display_type==3?"parallel":"SPI";
-        // snprintf(out,32,"ILI%04x %s",ts.DeviceCode,disp_com);
-        snprintf(out,32,"ILI%04x",ts.display->DeviceCode);
-        break;
-    }
+		case INFO_DISPLAY:
+					{
+						outs = UiLcdHy28_DisplayInfoGet(ts.display->display_type)->name;
+						break;
+					}
+    	case INFO_DISPLAY_CTRL:
+					{
+						// const char* disp_com = ts.display_type==3?"parallel":"SPI";
+						// snprintf(out,32,"ILI%04x %s",ts.DeviceCode,disp_com);
+						snprintf(out,32,"ILI%04x",ts.display->DeviceCode);
+						break;
+					}
 #ifdef USE_OSC_SI570
-    case INFO_SI570:
-    {
-        if (Si570_IsPresent()) {
-            float suf = Si570_GetStartupFrequency();
-            int vorkomma = (int)(suf);
-            int nachkomma = (int) roundf((suf-vorkomma)*10000);
-            snprintf(out,32,"%xh / %u.%04u MHz",(Si570_GetI2CAddress() >> 1),vorkomma,nachkomma);
-        }
-        else
-        {
-            outs = "Not found!";
-            if (osc == NULL)
-            {
-            	*m_clr_ptr = Red;
-            }
-        }
-    }
-    break;
+    	case INFO_SI570:
+					{
+						if (Si570_IsPresent()) {
+							float suf = Si570_GetStartupFrequency();
+							int vorkomma = (int)(suf);
+							int nachkomma = (int) roundf((suf-vorkomma)*10000);
+							snprintf(out,32,"%xh / %u.%04u MHz",(Si570_GetI2CAddress() >> 1),vorkomma,nachkomma);
+						}
+						else
+						{
+							outs = "Not found!";
+							if (osc == NULL)
+							{
+								*m_clr_ptr = Red;
+							}
+						}
+					}
+					break;
 #endif
 #ifdef USE_OSC_SI5351A
-    case INFO_SI5351A:
-    {
-        if (Si5351a_IsPresent()) {
-        	outs = "Detected";
-        }
-        else
-        {
-            outs = "Not found!";
-            if (osc == NULL)
-            {
-            	*m_clr_ptr = Red;
-            }
-        }
-    }
-    break;
+    	case INFO_SI5351A:
+					{
+						if (Si5351a_IsPresent()) {
+							outs = "Detected";
+						}
+						else
+						{
+							outs = "Not found!";
+							if (osc == NULL)
+							{
+								*m_clr_ptr = Red;
+							}
+						}
+					}
+					break;
 #endif
-    case INFO_TP:
-        outs = (ts.tp->present == 0)?"n/a":"XPT2046";
-        break;
-    case INFO_RFBOARD:
-        switch(ts.rf_board)
-        {
-        case FOUND_RF_BOARD_OVI40:
-            outs = "OVI40 RF Board";
-            break;
-        default:
-            outs = "mcHF RF Board";
-            break;
-        }
-        break;
-    case INFO_FLASH:
-            snprintf(out,32,"%d",(STM32_GetFlashSize()));
-            break;
-    case INFO_CPU:
-            snprintf(out,32,"%xh",(STM32_GetSignature()));
-            break;
-    case INFO_RAM:
-            snprintf(out,32,"%d",(ts.ramsize));
-            break;
-    case INFO_EEPROM:
-    {
-        const char* label = "";
-        switch(ts.configstore_in_use)
-         {
-         case CONFIGSTORE_IN_USE_I2C:
-             label = " [used]";
-             *m_clr_ptr = Green;
-             break; // in use & ok
-         case CONFIGSTORE_IN_USE_ERROR: // not ok
-             label = " [error]";
-             *m_clr_ptr = Red;
-             break;
-		 default:
-            label = " [not used]";
-            if (ts.ser_eeprom_type >= SERIAL_EEPROM_DESC_REAL &&
-                    SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].size < SERIAL_EEPROM_MIN_USEABLE_SIZE)
-            {
-                label = " [too small]";
-            }
+    	case INFO_TP:
+							outs = (ts.tp->present == 0)?"n/a":"XPT2046";
+							break;
+    	case INFO_RFBOARD:
+							switch(ts.rf_board)
+							{
+								case FOUND_RF_BOARD_OVI40: 	outs = "OVI40 RF Board";	break;
+								default:					outs = "mcHF RF Board";		break;
+							}
+							break;
+        case INFO_FLASH:
+							snprintf(out,32,"%d",(STM32_GetFlashSize()));
+							break;
+    	case INFO_CPU:
+							snprintf(out,32,"%xh",(STM32_GetSignature()));
+							break;
+    	case INFO_RAM:
+							snprintf(out,32,"%d",(ts.ramsize));
+							break;
+    	case INFO_EEPROM:
+							{
+								const char* label = "";
+								switch(ts.configstore_in_use)
+								 {
+									 case CONFIGSTORE_IN_USE_I2C:
+																 label = " [used]";
+																 *m_clr_ptr = Green;
+																 break; // in use & ok
+									 case CONFIGSTORE_IN_USE_ERROR: // not ok
+																 label = " [error]";
+																 *m_clr_ptr = Red;
+																 break;
+									 default:
+															label = " [not used]";
+															if (ts.ser_eeprom_type >= SERIAL_EEPROM_DESC_REAL &&
+																	SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].size < SERIAL_EEPROM_MIN_USEABLE_SIZE)
+															{
+																label = " [too small]";
+															}
 
-             *m_clr_ptr = Red;
-         }
+															 *m_clr_ptr = Red;
+								 }
 
-        const char* i2c_size_unit = "K";
-        uint i2c_size = 0;
+								const char* i2c_size_unit = "K";
+								uint i2c_size = 0;
 
-        if(ts.ser_eeprom_type >= 0 && ts.ser_eeprom_type < SERIAL_EEPROM_DESC_NUM)
-        {
-            i2c_size = SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].size / 1024;
-        }
+								if(ts.ser_eeprom_type >= 0 && ts.ser_eeprom_type < SERIAL_EEPROM_DESC_NUM)
+								{
+									i2c_size = SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].size / 1024;
+								}
 
-        // in case we have no or very small eeprom (less than 1K)
-        if (i2c_size == 0)
-        {
-            i2c_size = SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].size;
-            i2c_size_unit = "B";
-        }
-        snprintf(out,48,"%s/%u%s%s",SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].name, i2c_size, i2c_size_unit, label);
-    }
-    break;
-    case INFO_BL_VERSION:
-    {
-        const uint8_t* begin = (uint8_t*)0x8000000;
-        outs = "Unknown BL";
+								// in case we have no or very small eeprom (less than 1K)
+								if (i2c_size == 0)
+								{
+									i2c_size = SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].size;
+									i2c_size_unit = "B";
+								}
+								snprintf(out,48,"%s/%u%s%s",SerialEEPROM_eepromTypeDescs[ts.ser_eeprom_type].name, i2c_size, i2c_size_unit, label);
+							}
+							break;
+    	case INFO_BL_VERSION:
+					{
+						const uint8_t* begin = (uint8_t*)0x8000000;
+						outs = "Unknown BL";
 
-        // We search for string "Version: " in bootloader memory
-        for(int i=0; i < 32768-8; i++)
-        {
-            if( begin[i] == 'V' && begin[i+1] == 'e' && begin[i+2] == 'r'
-                    && begin[i+3] == 's' && begin[i+4] == 'i' && begin[i+5] == 'o'
-                    && begin[i+6] == 'n' && begin[i+7] == ':' && begin[i+8] == ' ')
-            {
-                snprintf(out,32, "%s", &begin[i+9]);
-                outs = out;
-                break;
-            }
-            else if (begin[i] == 'M' && begin[i+1] == '0' && begin[i+2] == 'N'
-                    && begin[i+3] == 'K' && begin[i+4] == 'A' && begin[i+5] == ' '
-                    && begin[i+6] == '2' && begin[i+11] == 0xb5)
-            {
-                outs = "M0NKA 0.0.0.9";
-                break;
-            }
-            else if (begin[i] == 'M' && begin[i+1] == '0' && begin[i+2] == 'N'
-                    && begin[i+3] == 'K' && begin[i+4] == 'A' && begin[i+5] == ' '
-                    && begin[i+6] == '2' && begin[i+11] == 0xd1)
-            {
-                outs = "M0NKA 0.0.0.14";
-                break;
-            }
-        }
-    }
-    break;
-    case INFO_FW_VERSION:
-    {
-  		#ifdef OFFICIAL_BUILD
-  		  #ifdef IS_SMALL_BUILD
-      		snprintf(out,32, "S%s", UHSDR_VERSION+4);
-		  #else
-      		snprintf(out,32, "D%s", UHSDR_VERSION+4);
-		  #endif
-		#else
-    	  snprintf(out,32, "%s", UHSDR_VERSION+4);
-    	#endif
-    }
-    break;
-    case INFO_BUILD:
-    {
-        snprintf(out,32, "%s", UHSDR_BUILD_DAT+4);
-    }
-    break;
-    case INFO_RTC:
-    {
-        snprintf(out,32, "%s", ts.rtc_present?"Yes":"N/A");
-    }
-    break;
-    case INFO_VBAT:
-    {
-        snprintf(out,32, "%s", ts.vbat_present?"Yes":"N/A");
-    }
-    break;
-    case INFO_CODEC:
-    {
-        snprintf(out,32, "%s", ts.codec_present?"Yes":"N/A");
-    }
-    break;
-    case INFO_LICENCE:
-    {
-        snprintf(out,32, "%s", UHSDR_LICENCE);
-    }
-    break;
+						// We search for string "Version: " in bootloader memory
+						for(int i=0; i < 32768-8; i++)
+						{
+							if( begin[i] == 'V' && begin[i+1] == 'e' && begin[i+2] == 'r'
+									&& begin[i+3] == 's' && begin[i+4] == 'i' && begin[i+5] == 'o'
+									&& begin[i+6] == 'n' && begin[i+7] == ':' && begin[i+8] == ' ')
+							{
+								snprintf(out,32, "%s", &begin[i+9]);
+								outs = out;
+								break;
+							}
+							else if (begin[i] == 'M' && begin[i+1] == '0' && begin[i+2] == 'N'
+									&& begin[i+3] == 'K' && begin[i+4] == 'A' && begin[i+5] == ' '
+									&& begin[i+6] == '2' && begin[i+11] == 0xb5)
+							{
+								outs = "M0NKA 0.0.0.9";
+								break;
+							}
+							else if (begin[i] == 'M' && begin[i+1] == '0' && begin[i+2] == 'N'
+									&& begin[i+3] == 'K' && begin[i+4] == 'A' && begin[i+5] == ' '
+									&& begin[i+6] == '2' && begin[i+11] == 0xd1)
+							{
+								outs = "M0NKA 0.0.0.14";
+								break;
+							}
+						}
+					}
+					break;
+		case INFO_FW_VERSION:
+					{
+						#ifdef OFFICIAL_BUILD
+						  #ifdef IS_SMALL_BUILD
+							snprintf(out,32, "S%s", UHSDR_VERSION+4);
+						  #else
+							snprintf(out,32, "D%s", UHSDR_VERSION+4);
+						  #endif
+						#else
+						  snprintf(out,32, "%s", UHSDR_VERSION+4);
+						#endif
+					}
+					break;
+
+#ifndef  TUNISIANN
+    	case INFO_BUILD:
+					{
+						snprintf(out,32, "%s", UHSDR_BUILD_DAT+4);
+					}
+#endif
+					break;
+    	case INFO_RTC:
+					{
+						snprintf(out,32, "%s", ts.rtc_present?"Yes":"N/A");
+					}
+					break;
+    	case INFO_VBAT:
+					{
+						snprintf(out,32, "%s", ts.vbat_present?"Yes":"N/A");
+					}
+					break;
+    	case INFO_CODEC:
+					{
+						snprintf(out,32, "%s", ts.codec_present?"Yes":"N/A");
+					}
+					break;
+    	case INFO_LICENCE:
+					{
+						snprintf(out,32, "%s", UHSDR_LICENCE);
+					}
+					break;
 
 #ifdef TRX_HW_LIC
-    case INFO_HWLICENCE:
-    {
-        snprintf(out,32, "%s", TRX_HW_LIC);
-    }
-    break;
+					case INFO_HWLICENCE:
+					{
+						snprintf(out,32, "%s", TRX_HW_LIC);
+					}
+					break;
 #endif
-    default:
-        outs = "NO INFO";
+		default:	   outs = "NO INFO";
     }
-    if (outs == NULL) {
-        outs = out;
-    }
+
+    if (outs == NULL) { outs = out;  }
     return outs;
 }
 
@@ -698,30 +776,21 @@ const char* UiMenu_GetSystemInfo(uint32_t* m_clr_ptr, int info_item)
 
 bool __attribute__ ((noinline)) UiDriverMenuBandPowerAdjust(int var, uint8_t mode, uint8_t band_mode, uint8_t pa_level, char* options, uint32_t* clr_ptr)
 {
-    volatile uint8_t* adj_ptr;
-    adj_ptr = &ts.pwr_adj[pa_level == PA_LEVEL_FULL?ADJ_FULL_POWER:ADJ_5W][band_mode];
-
-    bool tchange = false;
-    if((band_mode == RadioManagement_GetBand(df.tune_old/TUNE_MULT)) && (ts.power_level == pa_level))
+    volatile uint8_t* adj_ptr = &ts.pwr_adj[pa_level == PA_LEVEL_FULL?ADJ_FULL_POWER:ADJ_5W][band_mode];
+    bool  tchange  = false;
+    if((band_mode == RadioManagement_GetBand(df.tune_old)) && (ts.power_level == pa_level))
     {
         tchange = UiDriverMenuItemChangeUInt8(var, mode, adj_ptr,
                                               TX_POWER_FACTOR_MIN,
-                                              RadioManagement_IsPowerFactorReduce(df.tune_old/TUNE_MULT)?TX_POWER_FACTOR_MAX:TX_POWER_FACTOR_MAX/4,
-                                              TX_POWER_FACTOR_MIN,
+                                              RadioManagement_IsPowerFactorReduce(df.tune_old)?TX_POWER_FACTOR_MAX:TX_POWER_FACTOR_MAX/2,
+											  TX_POWER_FACTOR_MIN,
                                               1
                                              );
 
-        if(tchange)	 		// did something change?
-        {
-            RadioManagement_SetBandPowerFactor(ts.band);	// yes, update the power factor
-            if(!ts.iq_freq_mode)	// Is translate mode *NOT* active?
-            {
-                Codec_TxSidetoneSetgain(ts.txrx_mode);				// adjust the sidetone gain
-            }
-        }
+        if(tchange)	{  RadioManagement_SetBandPowerFactor(band_mode); }	// yes, update the power factor if any adjustement changes
     }
-    else	// not enabled
-        *clr_ptr = Orange;
+    else	*clr_ptr = Orange;   // not enabled
+
     //
     sprintf(options, "  %u", *adj_ptr);
     return tchange;
@@ -788,171 +857,208 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
     switch(select)          //  DSP_NR_STRENGTH_MAX
     {
     case MENU_DSP_NR_STRENGTH:  // DSP Noise reduction strength
-    	nr_step = DSP_NR_STRENGTH_STEP;
-    	if(ts.dsp_nr_strength >= 190)
-    	{
-    		nr_step = 1;
-    	}
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_nr_strength,
-                                              DSP_NR_STRENGTH_MIN,
-                                              DSP_NR_STRENGTH_MAX,
-                                              DSP_NR_STRENGTH_DEFAULT,
-											  nr_step
-                                             );
-        if(var_change)
-        {
-        	if(ts.dsp_nr_strength == 189)
-        	{
-        		ts.dsp_nr_strength = 185;
-        	}
-        	// did it change?
-            if(ts.dsp_active & DSP_NR_ENABLE)   // only change if DSP active
-            {
-				// this causes considerable noise
-				//AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-				// we do this instead
-			    ts.nr_alpha = 0.799 + ((float32_t)ts.dsp_nr_strength / 1000.0);
-            }
-        }
-#ifdef OBSOLETE_NR
-        if(!(ts.dsp_active & DSP_NR_ENABLE))    // make red if DSP not active
-        {
-            clr = Orange;
-        }
-        else
-        {
-            if(ts.dsp_nr_strength >= DSP_STRENGTH_RED)
-                clr = Red;
-            else if(ts.dsp_nr_strength >= DSP_STRENGTH_ORANGE)
-                clr = Orange;
-            else if(ts.dsp_nr_strength >= DSP_STRENGTH_YELLOW)
-                clr = Yellow;
-        }
-#endif
-        //
-        snprintf(options,32, "  %u", ts.dsp_nr_strength);
-        break;
+								/*	nr_step = DSP_NR_STRENGTH_STEP;
+									if(ts.dsp_nr_strength >= 170)
+									{
+										nr_step = 1;
+									}*/
+    							{
+    								uint8_t last_dsp_nr_strength = ts.dsp_nr_strength;
+
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_nr_strength,  0,
+																											  250,
+																											  16,
+																											  2 );
+
+								   if (last_dsp_nr_strength == 0)
+								   {
+									   if (ts.switch_pause < 650 )   ts.switch_pause += 650; // pour éviter le ditt/buzzer
+								   }
+    							}
+									 /*	if(var_change)
+									{
+										if(ts.dsp_nr_strength > 180)
+										{
+											ts.dsp_nr_strength = 180;
+										}
+										// did it change?
+										if(ts.dsp_active & DSP_NR_ENABLE)   // only change if DSP NR active
+										{
+											// this causes considerable noise
+											//AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
+											// we do this instead
+											ts.nr_alpha = 0.000 + (((float32_t)ts.dsp_nr_strength  + 20)/  200.1);
+										}
+									}*/
+									//
+									snprintf(options,32, "  %u", ts.dsp_nr_strength);
+									break;
+
+
+
+ //   case  MENU_DSP_NR_DEPTH:
+						/*	var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_nr_reduction_coeff,    0,
+																											  120,
+																											  0,
+																											  5 );
+
+							snprintf( options, 32, "0.%02d", ts.dsp_nr_reduction_coeff);
+							break;  */
+
+    	/*					var_change = UiDriverMenuItemChangeUInt8 (var, mode, &ts.DNR_Masque_Length, 2,16 , 14, 1 );
+    						snprintf( options, 32, " %u", ts.DNR_Masque_Length );
+
+    						switch (ts.DNR_Masque_Length)
+    						{
+    							case 2 : ts.DNR_Masque= 0x0003; break;
+    							case 3 : ts.DNR_Masque= 0x0007; break;
+    							case 4 : ts.DNR_Masque= 0x000F; break;
+    							case 5 : ts.DNR_Masque= 0x001F; break;
+								case 6 : ts.DNR_Masque= 0x003F; break;
+								case 7 : ts.DNR_Masque= 0x007F; break;
+								case 8 : ts.DNR_Masque= 0x00FF; break;
+								case 9 : ts.DNR_Masque= 0x01FF; break;
+								case 10: ts.DNR_Masque= 0x03FF; break;
+								case 11: ts.DNR_Masque= 0x07FF; break;
+								case 12: ts.DNR_Masque= 0x0FFF; break;
+								case 13: ts.DNR_Masque= 0x1FFF; break;
+								case 14: ts.DNR_Masque= 0x3FFF; break;
+								case 15: ts.DNR_Masque= 0x7FFF; break;
+								case 16: ts.DNR_Masque= 0xFFFF; break;
+    						}
+
+    					break;  */
+
     case MENU_AM_DISABLE: // AM mode enable/disable
-        UiMenu_HandleDemodModeDisable(var, mode, options, &clr, DEMOD_AM_DISABLE);
-        break;
+							UiMenu_HandleDemodModeDisable(var, mode, options, &clr, DEMOD_AM_DISABLE);
+							break;
+
     case MENU_DIGI_DISABLE: // AM mode enable/disable
-        UiMenu_HandleDemodModeDisable(var, mode, options, &clr, DEMOD_DIGI_DISABLE);
-        break;
+							UiMenu_HandleDemodModeDisable(var, mode, options, &clr, DEMOD_DIGI_DISABLE);
+							break;
+
     case MENU_CW_DISABLE: // AM mode enable/disable
-        UiMenu_HandleDemodModeDisable(var, mode, options, &clr, DEMOD_CW_DISABLE);
-        break;
+							UiMenu_HandleDemodModeDisable(var, mode, options, &clr, DEMOD_CW_DISABLE);
+							break;
+
     case MENU_DEMOD_SAM:    // Enable demodulation mode SAM
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_SAM_ENABLE);
-        break;
+							var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_SAM_ENABLE);
+							break;
+
     case MENU_SSB_AUTO_MODE_SELECT:     // Enable/Disable auto LSB/USB select
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.lsb_usb_auto_select,
-                                              0,
-                                              AUTO_LSB_USB_MAX,
-                                              AUTO_LSB_USB_OFF,
-                                              1
-                                             );
-        switch(ts.lsb_usb_auto_select)
-        {
-        case AUTO_LSB_USB_ON:       // LSB on bands < 10 MHz
-            txt_ptr = "     ON";        // yes
-            break;
-        case AUTO_LSB_USB_60M:  // USB on 60 meters?
-            txt_ptr = "USB 60M";        // yes
-            break;
-        default:
-        txt_ptr = "    OFF";        // no (obviously!)
-        }
-        break;
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.lsb_usb_auto_select,
+																												  0,
+																												  AUTO_LSB_USB_MAX,
+																												  AUTO_LSB_USB_OFF,
+																												  1	 );
+									ts.lsb_usb_auto_select  = 0; // forcer sans mode SSB automatique selon bande
+
+									switch(ts.lsb_usb_auto_select)
+									{
+										case AUTO_LSB_USB_ON:       // LSB on bands < 10 MHz
+															txt_ptr = "     ON";        // yes
+															break;
+										case AUTO_LSB_USB_60M:  // USB on 60 meters?
+															txt_ptr = "USB 60M";        // yes
+															break;
+										default:			txt_ptr = "    OFF";        // no (obviously!)
+									}
+									break;
+
         case MENU_FM_MODE_ENABLE:   // Enable/Disable FM
-            var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_FM_MODE_ENABLE);
-            break;
+								var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_FM_MODE_ENABLE);
+								break;
+
         case MENU_FM_GEN_SUBAUDIBLE_TONE:   // Selection of subaudible tone for FM transmission
-        UiDriverMenuItemChangeUInt32(var, mode, &ts.fm_subaudible_tone_gen_select,
-                                     0,
-                                     NUM_SUBAUDIBLE_TONES,
-                                     FM_SUBAUDIBLE_TONE_OFF,
-                                     1
-                                    );
+								UiDriverMenuItemChangeUInt32(var, mode, &ts.fm_subaudible_tone_gen_select,
+																											 0,
+																											 NUM_SUBAUDIBLE_TONES,
+																											 FM_SUBAUDIBLE_TONE_OFF,
+																											 1 );
 
-        if(ts.fm_subaudible_tone_gen_select)        // tone select not zero (tone activated
-        {
-            AudioManagement_CalcSubaudibleGenFreq();        // calculate frequency word
-            int a = (int)(ads.fm_subaudible_tone_gen_freq * 10);        // convert to integer, Hz*10
-            snprintf(options,32, "%d.%01dHz", a/10, a%10);
-        }
-        else                                // tone is off
-        {
-            snprintf(options,32, "     OFF");       // make it dislay "off"
-            ads.fm_subaudible_tone_word = 0;    // set word to 0 to turn it off
-        }
-        //
-        if(ts.dmod_mode != DEMOD_FM)    // make orange if we are NOT in FM mode
-        {
-            clr = Orange;
-        }
-        else if(ads.fm_subaudible_tone_det_freq > 200)      // yellow for tones above 200 Hz as they are more audible
-        {
-            clr = Yellow;
-        }
-        break;
+								if(ts.fm_subaudible_tone_gen_select)        // tone select not zero (tone activated
+								{
+									AudioManagement_CalcSubaudibleGenFreq();        // calculate frequency word
+									int a = (int)(ads.fm_subaudible_tone_gen_freq * 10);        // convert to integer, Hz*10
+									snprintf(options,32, "%d.%01dHz", a/10, a%10);
+								}
+								else                                // tone is off
+								{
+									snprintf(options,32, "     OFF");       // make it dislay "off"
+									ads.fm_subaudible_tone_word = 0;    // set word to 0 to turn it off
+								}
+								//
+								if(ts.dmod_mode != DEMOD_FM)    // make orange if we are NOT in FM mode
+								{
+									clr = Orange;
+								}
+								else if(ads.fm_subaudible_tone_det_freq > 200)      // yellow for tones above 200 Hz as they are more audible
+								{
+									clr = Yellow;
+								}
+								break;
+
     case MENU_FM_DET_SUBAUDIBLE_TONE:   // Selection of subaudible tone for FM reception
-        UiDriverMenuItemChangeUInt32(var, mode, &ts.fm_subaudible_tone_det_select,
-                                     0,
-                                     NUM_SUBAUDIBLE_TONES,
-                                     FM_SUBAUDIBLE_TONE_OFF,
-                                     1
-                                    );
+									UiDriverMenuItemChangeUInt32(var, mode, &ts.fm_subaudible_tone_det_select,
+																												 0,
+																												 NUM_SUBAUDIBLE_TONES,
+																												 FM_SUBAUDIBLE_TONE_OFF,
+																												 1
+																												);
 
-        if(ts.fm_subaudible_tone_det_select)        // tone select not zero (tone activated
-        {
-            AudioManagement_CalcSubaudibleDetFreq();        // calculate frequency word
-            int a = (int)(ads.fm_subaudible_tone_det_freq * 10);        // convert to integer, Hz*10
-            snprintf(options,32, "%d.%01dHz", a/10, a%10);
-        }
-        else                                // tone is off
-        {
-            snprintf(options,32, "     OFF");       // make it dislay "off"
-            ads.fm_subaudible_tone_word = 0;    // set word to 0 to turn it off
-        }
+									if(ts.fm_subaudible_tone_det_select)        // tone select not zero (tone activated
+									{
+										AudioManagement_CalcSubaudibleDetFreq();        // calculate frequency word
+										int a = (int)(ads.fm_subaudible_tone_det_freq * 10);        // convert to integer, Hz*10
+										snprintf(options,32, "%d.%01dHz", a/10, a%10);
+									}
+									else                                // tone is off
+									{
+										snprintf(options,32, "     OFF");       // make it dislay "off"
+										ads.fm_subaudible_tone_word = 0;    // set word to 0 to turn it off
+									}
 
-        if(ts.dmod_mode != DEMOD_FM)    // make orange if we are NOT in FM
-        {
-            clr = Orange;
-        }
-        else if(ads.fm_subaudible_tone_det_freq > 200)      // yellow for tones above 200 Hz as they are more audible
-        {
-            clr = Yellow;
-        }
-        break;
+									if(ts.dmod_mode != DEMOD_FM)    // make orange if we are NOT in FM
+									{
+										clr = Orange;
+									}
+									else if(ads.fm_subaudible_tone_det_freq > 200)      // yellow for tones above 200 Hz as they are more audible
+									{
+										clr = Yellow;
+									}
+									break;
+
     case MENU_FM_TONE_BURST_MODE:
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.fm_tone_burst_mode,
-                                    0,
-                                    FM_TONE_BURST_MAX,
-                                    FM_TONE_BURST_OFF,
-                                    1
-                                   );
-        switch(ts.fm_tone_burst_mode) {
-        case FM_TONE_BURST_1750_MODE:           // if it was 1750 Hz mode, load parameters
-            ads.fm_tone_burst_active = 0;                               // make sure it is turned off
-            txt_ptr = "1750 Hz";
-            ads.fm_tone_burst_word = FM_TONE_BURST_1750;
-            break;
-        case FM_TONE_BURST_2135_MODE:       // if it was 2135 Hz mode, load information
-            ads.fm_tone_burst_active = 0;                               // make sure it is turned off
-            txt_ptr = "2135 Hz";
-            ads.fm_tone_burst_word = FM_TONE_BURST_2135;
-            break;
-        default:                                                    // anything else, turn it off
-            txt_ptr = "    OFF";
-            ads.fm_tone_burst_word = FM_TONE_BURST_OFF;
-            ads.fm_tone_burst_active = 0;
-        }
+							UiDriverMenuItemChangeUInt8(var, mode, &ts.fm_tone_burst_mode,
+																							0,
+																							FM_TONE_BURST_MAX,
+																							FM_TONE_BURST_OFF,
+																							1 );
+							switch(ts.fm_tone_burst_mode)
+							{
+								case FM_TONE_BURST_1750_MODE:           // if it was 1750 Hz mode, load parameters
+															ads.fm_tone_burst_active = 0;                               // make sure it is turned off
+															txt_ptr = "1750 Hz";
+															ads.fm_tone_burst_word = FM_TONE_BURST_1750;
+															break;
 
-        if(ts.dmod_mode != DEMOD_FM)    // make orange if we are NOT in FM
-        {
-            clr = Orange;
-        }
-        break;
+								case FM_TONE_BURST_2135_MODE:       // if it was 2135 Hz mode, load information
+															ads.fm_tone_burst_active = 0;                               // make sure it is turned off
+															txt_ptr = "2135 Hz";
+															ads.fm_tone_burst_word = FM_TONE_BURST_2135;
+															break;
+
+								default:                                                    // anything else, turn it off
+															txt_ptr = "    OFF";
+															ads.fm_tone_burst_word = FM_TONE_BURST_OFF;
+															ads.fm_tone_burst_active = 0;
+							}
+
+							if(ts.dmod_mode != DEMOD_FM)    // make orange if we are NOT in FM
+							{
+								clr = Orange;
+							}
+							break;
 
     /*  case MENU_FM_RX_BANDWIDTH:
             fchange = UiDriverMenuItemChangeUInt8(var, mode, &ts.fm_rx_bandwidth,
@@ -976,7 +1082,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
             }
             //
             if(fchange) {           // was the bandwidth changed?
-                AudioFilter_InitRxHilbertFIR();
+                AudioFilter_Init_Rx_Hilbert_FIR();
     //          AudioFilter_CalcRxPhaseAdj();           // yes - update the filters!
                 UiDriverChangeFilterDisplay();  // update display of filter bandwidth (numerical) on screen only
             }
@@ -986,96 +1092,70 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
             break;
 */  //
     case MENU_FM_DEV_MODE:  // Select +/- 2.5 or 5 kHz deviation on RX and TX
-        if(ts.iq_freq_mode)
-        {
-            temp_var_u8 = RadioManagement_FmDevIs5khz();
-            var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp_var_u8,0,options,&clr);
-            if(var_change)
-            {
-                RadioManagement_FmDevSet5khz(temp_var_u8 != 0); // band up/down swap is to be enabled
-            }
+							if(ts.iq_freq_mode)
+							{
+								temp_var_u8 = RadioManagement_FmDevIs5khz();
+								var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp_var_u8,0,options,&clr);
+								if(var_change)
+								{
+									RadioManagement_FmDevSet5khz(temp_var_u8 != 0); // band up/down swap is to be enabled
+								}
 
-            if(RadioManagement_FmDevIs5khz())               // Check state of bit indication 2.5/5 kHz
-            {
-                txt_ptr = "+-5k (Wide)";        // Bit is set - 5 kHz
-            }
-            else
-            {
-                txt_ptr = "+-2k5 (Nar)";        // Not set - 2.5 kHz
-            }
-        }
-        else        // translate mode is off - NO FM!!!
-        {
-            txt_ptr = "  OFF";      // Say that it is OFF!
-            clr = Red;
-        }
-        break;
+								if(RadioManagement_FmDevIs5khz())               // Check state of bit indication 2.5/5 kHz
+								{
+									txt_ptr = "+-5k (Wide)";        // Bit is set - 5 kHz
+								}
+								else
+								{
+									txt_ptr = "+-2k5 (Nar)";        // Not set - 2.5 kHz
+								}
+							}
+							else        // translate mode is off - NO FM!!!
+							{
+								txt_ptr = "  OFF";      // Say that it is OFF!
+								clr = Red;
+							}
+							break;
+
 #if 0
     case MENU_AGC_MODE: // AGC mode
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_mode,
-                                              0,
-                                              AGC_MAX_MODE,
-                                              AGC_DEFAULT,
-                                              1
-                                             );
-        switch(ts.agc_mode) {
-        case AGC_SLOW:
-            txt_ptr = " SLOW";
-            break;
-        case AGC_MED:
-            txt_ptr = "  MED";
-            break;
-        case AGC_FAST:
-            txt_ptr = "  FAST";
-            break;
-        case AGC_OFF:
-            txt_ptr = "MANUAL";
-            clr = Red;
-            break;
-        case AGC_CUSTOM:
-            txt_ptr = "CUSTOM";
-            break;
-        }
+						var_change = UiDriverMenuItemChangeUInt8 (var, mode, &ts.agc_mode,
+															     0,
+															     AGC_MAX_MODE,
+															     AGC_DEFAULT,
+															     1 );
+						switch(ts.agc_mode)
+						{
+							case AGC_SLOW  :	txt_ptr = " SLOW";				break;
+							case AGC_MED   :	txt_ptr = "  MED";				break;
+							case AGC_FAS  T:	txt_ptr = "  FAST";				break;
+							case AGC_OFF   :	txt_ptr = "MANUAL";	clr = Red;	break;
+							case AGC_CUSTOM:    txt_ptr = "CUSTOM";				break;
+						}
 
-        if(var_change)
-        {
-            // now set the AGC
-            AudioManagement_CalcAGCDecay(); // initialize AGC decay ("hang time") values
-        }
-        if(ts.txrx_mode == TRX_MODE_TX) // Orange if in TX mode
-        {
-            clr = Orange;
-        }
-        break;
+						if(var_change)
+						{
+							// now set the AGC
+							AudioManagement_CalcAGCDecay(); // initialize AGC decay ("hang time") values
+						}
+						if(ts.txrx_mode == TRX_MODE_TX) // Orange if in TX mode
+						{
+							clr = Orange;
+						}
+						break;
 
     case MENU_RF_GAIN_ADJ:      // RF gain control adjust
         var_change = UiDriverMenuItemChangeInt(var, mode, &ts.rf_gain,
-                                            0,
-                                            MAX_RF_GAIN,
-                                            DEFAULT_RF_GAIN,
-                                            1
-                                           );
+                                                0, MAX_RF_GAIN, DEFAULT_RF_GAIN, 1 );
         if(var_change)
         {
             AudioManagement_CalcRFGain();
         }
 
-        if(ts.rf_gain < 20)
-        {
-            clr = Red;
-        }
-        else if(ts.rf_gain < 30)
-        {
-            clr = Orange;
-        }
-        else if(ts.rf_gain < 40)
-        {
-            clr = Yellow;
-        }
-        else
-        {
-            clr = White;
-        }
+        if      (ts.rf_gain < 20)   {  clr = Red;     }
+        else if (ts.rf_gain < 30)   {  clr = Orange;  }
+        else if (ts.rf_gain < 40)   {  clr = Yellow;  }
+        else        				{  clr = White;   }
 
         if(var_change)      // did RFGain get changed?
         {
@@ -1084,149 +1164,153 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         snprintf(options, 32, "  %d", ts.rf_gain);
         break;
 #endif
-    case MENU_AGC_WDSP_MODE: // AGC mode
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_mode,
-                                              0, //
-                                              5,
-                                              2,
-                                              1
-                                             );
-        switch(ts.agc_wdsp_mode) {
-        case 0:
-            txt_ptr = "very LONG";
-            break;
-        case 1:
-            txt_ptr = "     LONG";
-            break;
-        case 2:
-            txt_ptr = "     SLOW";
-            break;
-        case 3:
-            txt_ptr = "      MED";
-            break;
-        case 4:
-            txt_ptr = "      FAST";
-            break;
-        case 5:
-            txt_ptr = "     OFF ";
-            clr = Red;
-            break;
-        }
 
-        if(var_change)
-        {
-            // now set the AGC parameters
-            ts.agc_wdsp_switch_mode = 1; // set flag to 1 for parameter change
-            AudioDriver_SetupAgcWdsp();
-            UiMenu_RenderMenu(MENU_RENDER_ONLY);
-        }
-        if(ts.txrx_mode == TRX_MODE_TX) // Orange if in TX mode
-        {
-            clr = Orange;
-        }
-        break;
+/*
+    case MENU_AGC_WDSP_MODE: // AGC mode
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_mode,
+																	  0,  4,  2, 1 );
+
+								ts.agc_wdsp_mode = 2;  // forcer le mode
+
+								switch(ts.agc_wdsp_mode)
+								{
+									case 0:   txt_ptr = "very LONG";                break;
+									case 1:   txt_ptr = "     LONG";                break;
+									case 2:   txt_ptr = "     SLOW";                break;
+									case 3:   txt_ptr = "      MED";                break;
+									case 4:   txt_ptr = "     FAST";                break;
+									case 5:   txt_ptr = "     OFF ";    clr = Red;  break;
+								}
+
+								if(var_change)
+								{
+									// now set the AGC parameters
+									ts.agc_wdsp_switch_mode = 1; // set flag to 1 for parameter change
+									AudioDriver_SetupAgcWdsp();
+									UiMenu_RenderMenu(MENU_RENDER_ONLY);
+								}
+								if(ts.txrx_mode == TRX_MODE_TX) // Orange if in TX mode
+								{
+									clr = Orange;
+								}
+								break;
+
+	*/
+
+    case MENU_AGC_OFF_GAIN:
+    						var_change = UiDriverMenuItemChangeUInt8( var, mode, &ts.agc_wdsp_hang_enable,
+    																				    00, 123,  00, 1 );
+    						ts.float_Fix_audio_Gain       = 0.4 + 0.2 * ts.agc_wdsp_hang_enable;
+							snprintf ( options, 32, "  %.1f", ts.float_Fix_audio_Gain );
+
+							break;
+
 
     case MENU_AGC_WDSP_SLOPE:      //
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_slope,
-                                            0,
-                                            200,
-                                            40,
-                                            10
-                                           );
-        if(var_change)
-        {
-            AudioDriver_SetupAgcWdsp();
-        }
-        snprintf(options, 32, "  %ddB", ts.agc_wdsp_slope / 10);
-        break;
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_slope,
+																	                   00, 250,  80, 10 );
 
-    case MENU_AGC_WDSP_THRESH:      //
-        var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_thresh,
-                                            -20,
-                                            120,
-                                            40,
-                                            1
-                                           );
-        if(var_change)
-        {
-            AudioDriver_SetupAgcWdsp();
-        }
-        snprintf(options, 32, "  %ddB", ts.agc_wdsp_thresh);
-        break;
+								if (ts.agc_wdsp_slope)
+								{
+									if(var_change)
+									{
+										AudioDriver_SetupAgcWdsp();
+									}
 
+									snprintf(options, 32, "  %+d dB", (-ts.agc_wdsp_slope + 10 )/ 10);
+									ts.agc_wdsp_action = 1; // pour affichage AGC pad
+								}
+								else {  snprintf(options, 32, " FIX"); ts.agc_wdsp_action = 0; }
+
+								break;
+
+/*    case MENU_AGC_WDSP_THRESH:      //
+								var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_thresh, 1, 120, 32, 1 );
+
+								if(var_change) { AudioDriver_SetupAgcWdsp(); }
+								snprintf(options, 32, "  %d dB", ts.agc_wdsp_thresh);
+								break;
+*/
+
+
+    case MENU_AGC_WDSP_ATTACK: var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_Attackk,  10, 90, 20, 1 );
+
+    							if(var_change) { AudioDriver_SetupAgcWdsp(); }
+    							snprintf(options, 32, "0.%03d", ts.agc_wdsp_Attackk);
+    	                        break;
+     /*
     case MENU_AGC_WDSP_HANG_THRESH:      //
-        var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_hang_thresh,
-                                            -20,
-                                            120,
-                                            40,
-                                            1
-                                           );
-        if(var_change)
-        {
-            AudioDriver_SetupAgcWdsp();
-        }
-        snprintf(options, 32, "  %ddB", ts.agc_wdsp_hang_thresh);
-        break;
+								var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_hang_thresh, 1, 120, 40, 1 );
+								if(var_change)	{ AudioDriver_SetupAgcWdsp();}
+								snprintf(options, 32, "  %3d dB", ts.agc_wdsp_hang_thresh);
+								break;
+								*/
 
     case MENU_AGC_WDSP_TAU_DECAY:      //
-       var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_tau_decay[ts.agc_wdsp_mode],
-                                           100,
-                                           5000,
-                                           1000,
-                                           100
-                                          );
-       if(var_change)
-       {
-           AudioDriver_SetupAgcWdsp();
-       }
-       snprintf(options, 32, "  %ums", ts.agc_wdsp_tau_decay[ts.agc_wdsp_mode]);
-       break;
+								   var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_tau_decay[ts.agc_wdsp_mode],
+																	       350, 5000, 750, 10 );
 
+
+								   if (var_change)
+								   {
+									   for ( int ll = 0; ll<5 ; ll++ )
+									   {
+										   ts.agc_wdsp_tau_decay[ ll ] = ts.agc_wdsp_tau_decay[ts.agc_wdsp_mode];
+									   }
+									   AudioDriver_SetupAgcWdsp();
+								   }
+								   snprintf(options, 32, "  %.2f Sec", ts.agc_wdsp_tau_decay[ts.agc_wdsp_mode]/1000.0);
+								   break;
+
+    case    MENU_AGC_WDSP_DYN_CLARITY:
+
+    								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_pop_thres,  0, 255, 95, 1 );
+
+    								ts.float_agc_wdsp_pop_thres = 4.00 + 0.01 * ts.agc_wdsp_pop_thres;
+    								snprintf(options, 32, "%.2f", ts.float_agc_wdsp_pop_thres);
+
+
+    								break;
+
+
+/*
     case MENU_AGC_WDSP_TAU_HANG_DECAY:      //
-       var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_tau_hang_decay,
-                                           100,
-                                           5000,
-                                           1000,
-                                           100
-                                          );
-       if(var_change)
-       {
-           AudioDriver_SetupAgcWdsp();
-       }
-       snprintf(options, 32, "  %ums", ts.agc_wdsp_tau_hang_decay);
-       break;
+								   var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_tau_hang_decay,
+																		   60,  5000,  500,  20 );
+								   if(var_change)
+								   {
+									   AudioDriver_SetupAgcWdsp();
+								   }
+								   snprintf(options, 32, "  %u ms", ts.agc_wdsp_tau_hang_decay);
+								   break;
+	*/
+
 
      case MENU_DBM_CALIBRATE:      //
-        var_change = UiDriverMenuItemChangeInt(var, mode, &ts.dbm_constant,
-                                            -100,
-                                            100,
-                                            0,
-                                            1
-                                           );
-        snprintf(options, 32, "  %ddB", ts.dbm_constant);
-        break;
+								var_change = UiDriverMenuItemChangeInt( var, mode, &ts.dbm_constant,  -100,  100,  0,  1 );
+								snprintf( options, 32, "  %+d dB", ts.dbm_constant );
+								break;
 
      case MENU_UI_INVERSE_SCROLLING:      //
-         var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr,FLAGS2_UI_INVERSE_SCROLLING);
-         if(var_change)
-         {
-             UiMenu_RenderMenu(MENU_RENDER_ONLY);
-         }
-         break;
+								 var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr,FLAGS2_UI_INVERSE_SCROLLING);
+								 if( var_change )
+								 {
+									 UiMenu_RenderMenu(MENU_RENDER_ONLY);
+								 }
+								 break;
 
-    case MENU_AGC_WDSP_HANG_TIME:      //
-        var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_hang_time,
-                                            10,
-                                            5000,
-                                            250,
-                                            10
-                                           );
-        if(var_change)
-        {
-            AudioDriver_SetupAgcWdsp();
-        }
-        snprintf(options, 32, "  %dms", ts.agc_wdsp_hang_time);
-        break;
+ /*   case MENU_AGC_WDSP_HANG_TIME:      //
+								var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_hang_time,
+																		10, 5000, 250, 10 );
+								if(var_change)
+								{
+									AudioDriver_SetupAgcWdsp();
+								}
+								snprintf(options, 32, "  %d ms", ts.agc_wdsp_hang_time);
+								break;
+*/
+
+
 #if 0
         case MENU_AGC_WDSP_SWITCH:     // Enable/Disable wdsp AGC
             var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp,
@@ -1245,84 +1329,80 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
             }
             break;
 #endif
-            case MENU_AGC_WDSP_HANG_ENABLE:     //
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_hang_enable,
-                                                  0,
-                                                  1,
-                                                  0,
-                                                  1
-                                                 );
-            switch(ts.agc_wdsp_hang_enable)
-            {
-            case 1:       //
-                txt_ptr = "  ON";        //
-                break;
-            case 0:
-            txt_ptr = " OFF";        //
-            }
-            break;
+       /*     case MENU_AGC_WDSP_HANG_ENABLE:     //
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_hang_enable,
+																													  0,
+																													  1,
+																													  0,
+																													  1
+																													 );
+										switch(ts.agc_wdsp_hang_enable)
+										{
+											case 1:    txt_ptr = "  ON";      break;
+											case 0:    txt_ptr = " OFF";        //
+										}
+										break;
+
+										*/
+
 
             case MENU_SAM_PLL_LOCKING_RANGE:      //
-                var_change = UiDriverMenuItemChangeInt(var, mode, &ads.pll_fmax_int,
-                                                    50,
-                                                    8000,
-                                                    500,
-                                                    10
-                                                   );
-                if(var_change)
-                {
-                    AudioDriver_SetSamPllParameters();
-                }
-                snprintf(options, 32, "  %d", ads.pll_fmax_int);
-                break;
+										var_change = UiDriverMenuItemChangeInt(var, mode, &ads.pll_fmax_int,
+																			50,
+																			8000,
+																			500,
+																			10
+																		   );
+										if(var_change)
+										{
+											AudioDriver_SetSamPllParameters();
+										}
+										snprintf(options, 32, "  %d", ads.pll_fmax_int);
+										break;
 
             case MENU_SAM_PLL_STEP_RESPONSE:      //
-                var_change = UiDriverMenuItemChangeInt(var, mode, &ads.zeta_int,
-                                                    1,
-                                                    100,
-                                                    65,
-                                                    1
-                                                   );
-                if(var_change)
-                {
-                    AudioDriver_SetSamPllParameters();
+										var_change = UiDriverMenuItemChangeInt(var, mode, &ads.zeta_int,
+																			1,
+																			100,
+																			65,
+																			1
+																		   );
+										if(var_change)
+										{
+											AudioDriver_SetSamPllParameters();
 
 
-                }
-                snprintf(options, 32, "  %d", ads.zeta_int);
-                break;
+										}
+										snprintf(options, 32, "  %d", ads.zeta_int);
+										break;
 
             case MENU_SAM_PLL_BANDWIDTH:      //
-                var_change = UiDriverMenuItemChangeInt(var, mode, &ads.omegaN_int,
-                                                    25,
-                                                    1000,
-                                                    250,
-                                                    5
-                                                   );
-                if(var_change)
-                {
-                    AudioDriver_SetSamPllParameters();
+										var_change = UiDriverMenuItemChangeInt(var, mode, &ads.omegaN_int,
+																											25,
+																											1000,
+																											250,
+																											5 );
+										if(var_change)
+										{
+											AudioDriver_SetSamPllParameters();
 
-                }
-                snprintf(options, 32, "  %d", ads.omegaN_int);
-                break;
+										}
+										snprintf(options, 32, "  %d", ads.omegaN_int);
+										break;
 
             case MENU_SAM_FADE_LEVELER:     // Enable/Disable fade leveler for SAM
-                var_change = UiDriverMenuItemChangeUInt8(var, mode, &ads.fade_leveler,
-                                                      0,
-                                                      1,
-                                                      0,
-                                                      1
-                                                     );
-                switch(ads.fade_leveler)
-                {
-                case 1:       //
-                    txt_ptr = "     ON";        //
-                    break;
-                default:
-                txt_ptr = "    OFF";        //
-                }
-                break;
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ads.fade_leveler,
+																											  0,
+																											  1,
+																											  0,
+																											  1
+																											 );
+										switch ( ads.fade_leveler )
+										{
+											case 1:    txt_ptr = "     ON";     break;
+											default:   txt_ptr = "    OFF";
+										}
+										break;
 
             /*    case MENU_SAM_SIDEBAND:  //
         var_change = UiDriverMenuItemChangeUInt8(var, mode, &ads.sam_sideband,
@@ -1421,461 +1501,478 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         snprintf(options,32, "  %d", ts.agc_custom_decay);
         break;
 #endif
+
+
+
         // A/D Codec Gain/Mode setting/adjust
     case MENU_CODEC_GAIN_MODE:
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.rf_codec_gain,
-                                    0,
-                                    MAX_RF_CODEC_GAIN_VAL,
-                                    DEFAULT_RF_CODEC_GAIN_VAL,
-                                    1
-                                   );
+									UiDriverMenuItemChangeUInt8(var, mode, &ts.rf_codec_gain,
+																								0,
+																								MAX_RF_CODEC_GAIN_VAL,
+																								DEFAULT_RF_CODEC_GAIN_VAL,
+																								1  );
 
-        if(ts.rf_codec_gain == 9)
-            strcpy(options, " AUTO");
-        else        // if anything other than "Auto" give a warning in RED
-        {
-            snprintf(options,32,"> %u <", ts.rf_codec_gain);
-            clr = Red;
-        }
-        break;
+									if(ts.rf_codec_gain == 9)
+										strcpy(options, " AUTO");
+									else        // if anything other than "Auto" give a warning in RED
+									{
+										snprintf(options,32,"> %u <", ts.rf_codec_gain);
+										clr = Red;
+									}
+									break;
+
+    case MENU_ANT_ATT_6DB    : var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.antenna_attenuator_enable, 0, 1, 0, 1 );
+
+      							if(var_change)
+      							{
+#ifdef ATTENUATOR_6DB
+      								if ( ts.display->use_spi == true  )
+      								{
+      									if (ts.antenna_attenuator_enable) { GPIO_ResetBits( ATTENUATION_6DB_PIO, ATTENUATION_6DB );} // activer Attenuateur -6dB
+      									else                              { GPIO_SetBits  ( ATTENUATION_6DB_PIO, ATTENUATION_6DB );} // inhiber Attenuateur -6dB
+       								}
+      								else
+#endif
+      								{
+      									ts.antenna_attenuator_enable = 0;  // forcer le variable a False si display parallêle
+      								}
+
+      								ts.old_rfg_calc = 100; // pour forcer l'affichage de nouveau du gain codec
+      							}
+
+
+  								switch ( ts.antenna_attenuator_enable )    // Affichage
+  								{
+  									case 1:    txt_ptr = "-6dB";   break;
+  									case 0:    txt_ptr = " OFF";   break;
+  								}
+  								break;
+
+
+
+
+
     case MENU_NOISE_BLANKER_SETTING:
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.nb_setting,
-                                              0,
-                                              MAX_NB_SETTING,
-                                              10,
-                                              1
-                                             );
+									var_change = UiDriverMenuItemChangeUInt8(var, mode,   &ts.nb_setting,
+																						  0,
+																						  MAX_NB_SETTING,
+																						  0,
+																						  1 );
 
-        if(ts.nb_setting >= NB_WARNING3_SETTING)
-        {
-            clr = Red;      // above this value, make it red
-        }
-        else if(ts.nb_setting >= NB_WARNING2_SETTING)
-        {
-            clr = Orange;       // above this value, make it orange
-        }
-        else if(ts.nb_setting >= NB_WARNING1_SETTING)
-        {
-            clr = Yellow;       // above this value, make it yellow
-        }
-        snprintf(options,32,"   %u", ts.nb_setting);
+									if       ( ts.nb_setting >= NB_WARNING3_SETTING)   { clr = Red;     }    // above this value, make it red
+									else if  ( ts.nb_setting >= NB_WARNING2_SETTING)   { clr = Orange;  }    // above this value, make it orange
+									else if  ( ts.nb_setting >= NB_WARNING1_SETTING)   { clr = Yellow;  }    // above this value, make it yellow
+									snprintf ( options,32,"   %u", ts.nb_setting);
+								 // ts.nb_setting_float     = ( 15 - ts.nb_setting) * 0.5  + 3 ;
+									ts.nb_setting_int_coeff =   15 - ts.nb_setting         + 6 ;
+									break;
 
-        break;
+
+    case MENU_RX_HP_FILTER:
+    									var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.rx_hp_filter,
+    																									  1,
+    																									  6,
+    																									  2,
+    																									  1 );
+    									// ts.rx_hp_filter = 2;  // forcer HPF @ 75Hz
+
+    									switch ( ts.rx_hp_filter )
+    									{
+    										case 0 :  txt_ptr = "  OFF";  break;
+    										case 1 :  txt_ptr = " 50Hz";  break;
+    										case 2 :  txt_ptr = " 65Hz";  break;
+    										case 3 :  txt_ptr = " 75Hz";  break;
+    										case 4 :  txt_ptr = "100Hz";  break;
+    										case 5 :  txt_ptr = "150Hz";  break;
+    										case 6 :  txt_ptr = "200Hz";  break;
+    									}
+    									if ( var_change ) 	{	AudioDriver_Rx_HP_Filter_Init();	}
+    									break;
+
+
+
+
     case MENU_RX_FREQ_CONV:     // Enable/Disable receive frequency conversion
-  		;
-  		uchar firstmode = FREQ_IQ_CONV_MODE_OFF;
-		if(ts.dmod_mode == DEMOD_AM || ts.dmod_mode == DEMOD_SAM || ts.dmod_mode == DEMOD_FM)
-		{
-		  firstmode = FREQ_IQ_CONV_P6KHZ;
-		}
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.iq_freq_mode,
-                                              firstmode,
-                                              FREQ_IQ_CONV_MODE_MAX,
-                                              FREQ_IQ_CONV_MODE_DEFAULT,
-                                              1
-                                             );
-        switch(ts.iq_freq_mode)
-        {
-        case FREQ_IQ_CONV_MODE_OFF:
-            txt_ptr = ">> OFF! <<";
-            clr = Red3;
-            break;
-        case FREQ_IQ_CONV_P6KHZ:
-            txt_ptr ="RX  +6kHz";
-            break;
-        case FREQ_IQ_CONV_M6KHZ:
-            txt_ptr = "RX  -6kHz";
-            break;
-        case FREQ_IQ_CONV_P12KHZ:
-            txt_ptr = "RX +12kHz";
-            break;
-        case FREQ_IQ_CONV_M12KHZ:
-            txt_ptr = "RX -12kHz";
-            break;
-        }
-        if(var_change)      // update parameters if changed
-        {
-            UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display without checking encoder, unconditionally updating synthesizer
-        }
-        break;
+    						;
+							uchar firstmode = FREQ_IQ_CONV_MODE_OFF;
+							if(ts.dmod_mode == DEMOD_AM || ts.dmod_mode == DEMOD_SAM || ts.dmod_mode == DEMOD_FM)
+							{
+							  firstmode = FREQ_IQ_CONV_P6KHZ;
+							}
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.iq_freq_mode,
+																								  firstmode,
+																								  FREQ_IQ_CONV_MODE_MAX,
+																								  FREQ_IQ_CONV_MODE_DEFAULT,
+																								  1 );
+							switch(ts.iq_freq_mode)
+							{
+								case FREQ_IQ_CONV_MODE_OFF:   txt_ptr = ">> OFF! <<";	clr = Red3;  	break;
+								case FREQ_IQ_CONV_P6KHZ   :	  txt_ptr = "RX  +6kHz";					break;
+								case FREQ_IQ_CONV_M6KHZ   :   txt_ptr = "RX  -6kHz";					break;
+								case FREQ_IQ_CONV_P12KHZ  :   txt_ptr = "RX +12kHz"; 					break;
+								case FREQ_IQ_CONV_M12KHZ  :	  txt_ptr = "RX -12kHz"; 					break;
+							}
+							if(var_change)      // update parameters if changed
+							{
+								UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display without checking encoder, unconditionally updating synthesizer
+							}
+							break;
+
     case MENU_MIC_LINE_MODE:    // Mic/Line mode
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_audio_source,
-                                              0,
-                                              TX_AUDIO_MAX_ITEMS,
-                                              TX_AUDIO_MIC,
-                                              1
-                                             );
-        switch(ts.tx_audio_source)
-        {
-        case TX_AUDIO_MIC:
-            txt_ptr = "    MIC";
-            break;
-        case TX_AUDIO_LINEIN_L:
-            txt_ptr = " LINE-L";
-            break;
-        case TX_AUDIO_LINEIN_R:
-            txt_ptr = " LINE-R";
-            break;
-        case TX_AUDIO_DIG:
-            txt_ptr = " DIGITAL";
-            break;
-        case TX_AUDIO_DIGIQ:
-            txt_ptr = " DIG I/Q";
-            break;
-        }
-        if(var_change)          // if there was a change, do update of on-screen information
-        {
-            if(ts.dmod_mode != DEMOD_CW)
-            {
-                UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-            }
-        }
-        break;
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_audio_source,  0,
+																									  TX_AUDIO_MAX_ITEMS,
+																									  TX_AUDIO_MIC,
+																									  1 );
+							switch(ts.tx_audio_source)
+							{
+								case TX_AUDIO_MIC     : 	txt_ptr = "    MIC";		break;
+								case TX_AUDIO_LINEIN_L:		txt_ptr = " LINE-L";		break;
+								case TX_AUDIO_LINEIN_R:		txt_ptr = " LINE-R";		break;
+								case TX_AUDIO_DIG_EX  :		txt_ptr = " DIGITAL";		break;
+								case TX_AUDIO_DIG_IQ  :		txt_ptr = " DIG I/Q";		break;
+							}
+							if(var_change)          // if there was a change, do update of on-screen information
+							{
+								if(ts.dmod_mode != DEMOD_CW)
+								{
+									UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+								}
+							}
+							break;
+
+
+
+	case MENU_DIG_EX_INPUT_GAIN: // Mic Gain setting
+
+							//if(ts.tx_audio_source == TX_DIG_EX)      // Allow adjustment only if in MIC mode
+							{
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_DIG_EX_gain, 5, 25,10, 1 );
+							}
+							//else { clr = Orange; }
+
+
+
+							snprintf(options,32, "%u.%u", ts.tx_DIG_EX_gain/10u, ts.tx_DIG_EX_gain%10u );
+							break;
+
+
+
     case MENU_MIC_GAIN: // Mic Gain setting
 
-        if(ts.tx_audio_source == TX_AUDIO_MIC)      // Allow adjustment only if in MIC mode
-        {
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_gain[TX_AUDIO_MIC],
-                                                  MIC_GAIN_MIN,
-                                                  MIC_GAIN_MAX,
-                                                  MIC_GAIN_DEFAULT,
-                                                  1
-                                                 );
-        }
-        if(var_change)
-        {
-            Codec_SwitchMicTxRxMode(ts.txrx_mode);
+							if(ts.tx_audio_source == TX_AUDIO_MIC)      // Allow adjustment only if in MIC mode
+							{
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_gain[TX_AUDIO_MIC],  MIC_GAIN_MIN,
+																											    MIC_GAIN_MAX,
+																											    MIC_GAIN_DEFAULT,
+																											    1 );
+							}
+							if(var_change)
+							{
+								Codec_SwitchMicTxRxMode(ts.txrx_mode);
 
-            if(ts.dmod_mode != DEMOD_CW)
-            {
-                UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-            }
-        }
+								if(ts.dmod_mode != DEMOD_CW)
+								{
+									UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+								}
+							}
 
-        if(ts.tx_audio_source != TX_AUDIO_MIC)      // Orange if not in MIC-IN mode
-        {
-            clr = Orange;
-        }
+							if(ts.tx_audio_source != TX_AUDIO_MIC)      // Orange if not in MIC-IN mode
+							{
+								clr = Orange;
+							}
+							snprintf(options,32, "   %u", ts.tx_gain[TX_AUDIO_MIC]);
+							break;
 
-        snprintf(options,32, "   %u", ts.tx_gain[TX_AUDIO_MIC]);
-        break;
+    case MENU_MIC_CODEC_GAIN : var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.codec_mic_boost_enable, 0,  1, 0,  1	 );
+
+    							if(var_change)
+    							{
+    								if(ts.dmod_mode != DEMOD_CW)
+    								{
+    									UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+    								}
+    							}
+
+								switch ( ts.codec_mic_boost_enable )
+								{
+									case 1:    txt_ptr = " ON";      break;
+									case 0:    txt_ptr = "OFF";
+								}
+								break;
+
+
     case MENU_LINE_GAIN:    // Line Gain setting
 
-        // TODO: Revise, since it now changes the currently selected tx source setting
-        if(ts.tx_audio_source != TX_AUDIO_MIC)      // Allow adjustment only if in line-in mode
-        {
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_gain[ts.tx_audio_source],
-                                                  LINE_GAIN_MIN,
-                                                  LINE_GAIN_MAX,
-                                                  LINE_GAIN_DEFAULT,
-                                                  1
-                                                 );
+							// TODO: Revise, since it now changes the currently selected tx source setting
+							if(ts.tx_audio_source != TX_AUDIO_MIC)      // Allow adjustment only if in line-in mode
+							{
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_gain[ts.tx_audio_source],
+																					  LINE_GAIN_MIN,
+																					  LINE_GAIN_MAX,
+																					  LINE_GAIN_DEFAULT,
+																					  1	 );
 
-        }
+							}
 
-        if(var_change)          // update on-screen info and codec if there was a change
-        {
-            if(ts.dmod_mode != DEMOD_CW)
-            {
-                UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-                if(ts.txrx_mode == TRX_MODE_TX)     // in transmit mode?
-                {
-                    // TODO: Think about this, this is a hack
-                    Codec_LineInGainAdj(ts.tx_gain[TX_AUDIO_LINEIN_L]);     // change codec gain
-                }
-            }
-        }
+							if(var_change)          // update on-screen info and codec if there was a change
+							{
+								if(ts.dmod_mode != DEMOD_CW)
+								{
+									UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+									if(ts.txrx_mode == TRX_MODE_TX)     // in transmit mode?
+									{
+										// TODO: Think about this, this is a hack
+										Codec_Line_In_Gain_Adj(ts.tx_gain[TX_AUDIO_LINEIN_L]);     // change codec gain
+									}
+								}
+							}
 
-        if(ts.tx_audio_source == TX_AUDIO_MIC)  // Orange if in MIC mode
-        {
-            clr = Orange;
-            snprintf(options,32, "  %u", ts.tx_gain[TX_AUDIO_LINEIN_L]);
-        }
-        else
-        {
-            snprintf(options,32, "  %u", ts.tx_gain[ts.tx_audio_source]);
-        }
-        break;
-    case MENU_ALC_RELEASE:      // ALC Release adjust
+							if(ts.tx_audio_source == TX_AUDIO_MIC)  // Orange if in MIC mode
+							{
+								clr = Orange;
+								snprintf(options,32, "  %u", ts.tx_gain[TX_AUDIO_LINEIN_L]);
+							}
+							else
+							{
+								snprintf(options,32, "  %u", ts.tx_gain[ts.tx_audio_source]);
+							}
+							break;
 
-        if(ts.tx_comp_level == TX_AUDIO_COMPRESSION_MAX)
-        {
-            var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.alc_decay_var,
-                                                   0,
-                                                   ALC_DECAY_MAX,
-                                                   ALC_DECAY_DEFAULT,
-                                                   1
-                                                  );
-            if(var_change)          // value changed?  Recalculate
-            {
-                AudioManagement_CalcALCDecay();
-            }
-        }
-        else            // indicate RED if "Compression Level" below was nonzero
-        {
-            clr = Red;
-            ts.alc_decay_var = 10;
-        }
 
-        if(ts.tx_comp_level == TX_AUDIO_COMPRESSION_SV) // in "selectable value" mode?
-        {
-            ts.alc_decay = ts.alc_decay_var;    // yes, save new value
-        }
-        snprintf(options,32, "  %d", (int)ts.alc_decay_var);
-        break;
+    case MENU_ALC_RELEASE:      // ALC CUSTOM  Release  adjust
+								var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.alc_decay_var, 0, ALC_DECAY_MAX,  0, 1);
+
+								ts.alc_decay_var = 0;
+
+								if(var_change)          // value changed?  Recalculate
+								{
+									AudioManagement_CalcALCDecay();
+								}
+								ts.alc_tx_custom_comp_decay = ts.alc_decay_var;
+								snprintf(options,32, "  %d", (int)ts.alc_decay_var);
+								break;
+
+
     case MENU_ALC_POSTFILT_GAIN:        // ALC TX Post-filter gain (Compressor level)
-        if(ts.tx_comp_level == TX_AUDIO_COMPRESSION_MAX)
-        {
-            var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.alc_tx_postfilt_gain_var,
-                                                   ALC_POSTFILT_GAIN_MIN,
-                                                   ALC_POSTFILT_GAIN_MAX,
-                                                   ALC_POSTFILT_GAIN_DEFAULT,
-                                                   1
-                                                  );
 
-            if(var_change)
-            {
-                if(ts.dmod_mode != DEMOD_CW)    // In voice mode?
-                {
-                    UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-                }
-            }
-        }
-        else            // indicate RED if "Compression Level" below was nonzero
-        {
-            clr = Red;
-        }
+								var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.alc_tx_postfilt_gain_var, ALC_POSTFILT_GAIN_MIN,
+																												   ALC_POSTFILT_GAIN_MAX,
+																												   ALC_POSTFILT_GAIN_DEFAULT,
+																												   1
+																												  );
+								if(var_change)
+								{
+									if(ts.dmod_mode != DEMOD_CW)    // In voice mode?
+									{
+										UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+									}
+								}
+								ts.alc_tx_custom_comp_gain        =         ts.alc_tx_postfilt_gain_var;  // yes, save new value
+								snprintf(options,32, "%4.1f", ( (float32_t) ts.alc_tx_postfilt_gain_var ) / 10.0 + 0.9 );
+								ts.alc_tx_postfilt_gain_float = ( 0.1 * ts.alc_tx_postfilt_gain_var) + 0.9 ;
 
-        if(ts.tx_comp_level == TX_AUDIO_COMPRESSION_SV) // in "selectable value" mode?
-        {
-            ts.alc_tx_postfilt_gain = ts.alc_tx_postfilt_gain_var;  // yes, save new value
-        }
+								break;
 
-        snprintf(options,32, "  %d", (int)ts.alc_tx_postfilt_gain_var);
-        break;
+    case MENU_ALC_CMP_OUTPUT_GAIN :
+							var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.tx_comp_out_gain,  10,  40,  25,  1	 );
+							ts.tx_comp_out_gain_float     = ((float32_t) ts.tx_comp_out_gain) / 10;
+							snprintf(options,32,"%3.1f",   ts.tx_comp_out_gain_float);
+							break;
+
     case MENU_TX_COMPRESSION_LEVEL:     // ALC TX Post-filter gain (Compressor level)
-        var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.tx_comp_level,
-                                              -1,
-                                              TX_AUDIO_COMPRESSION_MAX,
-                                              TX_AUDIO_COMPRESSION_DEFAULT,
-                                              1
-                                             );
+							var_change = UiDriverMenuItemChangeInt16 (var, mode, &ts.tx_comp_level, 0, 1, 1, 1);  // (var, mode, &ts.tx_comp_level, -1,  13, TX_AUDIO_COMPRESSION_DEFAULT, 1);
 
-        if(var_change)
-        {
-            AudioManagement_CalcTxCompLevel();          // calculate parameters for selected amount of compression
+							if(var_change)
+							{
+								AudioManagement_CalcTxCompLevel();          // calculate parameters for selected amount of compression
+								if(ts.dmod_mode != DEMOD_CW)                // In voice mode?
+								{
+									UiDriver_RefreshEncoderDisplay();       // maybe shown on encoder boxes
+								}
+							}
 
-            if(ts.dmod_mode != DEMOD_CW)    // In voice mode?
-            {
-                UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-            }
-        }
+							if  (ts.tx_comp_level  == 0)  {	txt_ptr = " OFF"; }   //  display numbers for all but the highest value
+							else  	                      {	txt_ptr = "  ON"; }
+							break;
 
-        if(ts.tx_comp_level < TX_AUDIO_COMPRESSION_SV && 0 <= ts.tx_comp_level)  //  display numbers for all but the highest value
-        {
-            snprintf(options,32,"    %d",ts.tx_comp_level);
-        }
-        else                    // show "CUSTOM" (Stored Value) for highest value
-        {
-            if (ts.tx_comp_level == TX_AUDIO_COMPRESSION_MIN)
-            {
-                txt_ptr = "OFF";
-            }
-            else
-            {
-                txt_ptr = "CUS";
-            }
-        }
-        break;
+
     case MENU_KEYER_MODE:   // Keyer mode
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_keyer_mode,
-                                              0,
-                                              CW_KEYER_MODE_ULTIMATE,
-                                              CW_KEYER_MODE_IAM_B,
-                                              1
-                                             );
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_keyer_mode,
+																								  0,
+																								  CW_KEYER_MODE_ULTIMATE,
+																								  CW_KEYER_MODE_IAM_B,
+																								  1 );
 
-        switch(ts.cw_keyer_mode)
-        {
-        case CW_KEYER_MODE_IAM_B:
-            txt_ptr = "IAM_B";
-            break;
-        case CW_KEYER_MODE_IAM_A:
-            txt_ptr = "IAM_A";
-            break;
-        case CW_KEYER_MODE_STRAIGHT:
-            txt_ptr = "STR_K";
-            break;
-        case CW_KEYER_MODE_ULTIMATE:
-            txt_ptr = "ULTIM";
-            break;
-        }
-        break;
+							switch(ts.cw_keyer_mode)
+							{
+								case CW_KEYER_MODE_IAM_B   :  txt_ptr = "IAM_B";	break;
+								case CW_KEYER_MODE_IAM_A   :  txt_ptr = "IAM_A";	break;
+								case CW_KEYER_MODE_STRAIGHT:  txt_ptr = "STR_K";	break;
+								case CW_KEYER_MODE_ULTIMATE:  txt_ptr = "ULTIM";	break;
+							}
+							break;
 
     case MENU_KEYER_SPEED:  // keyer speed
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_keyer_speed,
-                                              CW_KEYER_SPEED_MIN,
-                                              CW_KEYER_SPEED_MAX,
-                                              CW_KEYER_SPEED_DEFAULT,
-                                              1
-                                             );
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_keyer_speed,
+																								  CW_KEYER_SPEED_MIN,
+																								  CW_KEYER_SPEED_MAX,
+																								  CW_KEYER_SPEED_DEFAULT,
+																								  1
+																								 );
 
-        if(var_change && ts.dmod_mode == DEMOD_CW)         // did it change?
-        {
-            CwGen_SetSpeed(); // make sure keyerspeed is being used
-            UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-        }
-        snprintf(options,32, "  %u", ts.cw_keyer_speed);
-        break;
+							if(var_change && ts.dmod_mode == DEMOD_CW)         // did it change?
+							{
+								CwGen_SetSpeed(); // make sure keyerspeed is being used
+								UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+							}
+							snprintf(options,32, "  %u", ts.cw_keyer_speed);
+							break;
 
     case MENU_KEYER_WEIGHT:  // keyer weight
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_keyer_weight,
-                                              CW_KEYER_WEIGHT_MIN,
-                                              CW_KEYER_WEIGHT_MAX,
-                                              CW_KEYER_WEIGHT_DEFAULT,
-                                              1
-                                             );
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_keyer_weight,
+																											  CW_KEYER_WEIGHT_MIN,
+																											  CW_KEYER_WEIGHT_MAX,
+																											  CW_KEYER_WEIGHT_DEFAULT,
+																											  1	 );
 
-        if(var_change && ts.dmod_mode == DEMOD_CW)         // did it change?
-        {
-            CwGen_SetSpeed(); // make sure keyerspeed is being used
-            UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-        }
-        snprintf(options,32, "  %u.%02u", ts.cw_keyer_weight/100,ts.cw_keyer_weight%100);
-        break;
+									if(var_change && ts.dmod_mode == DEMOD_CW)         // did it change?
+									{
+										CwGen_SetSpeed(); // make sure keyerspeed is being used
+										UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+									}
+									snprintf(options,32, "  %u.%02u", ts.cw_keyer_weight/100,ts.cw_keyer_weight%100);
+									break;
 
     case MENU_SIDETONE_GAIN:    // sidetone gain
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_sidetone_gain,
-                                              0,
-                                              SIDETONE_MAX_GAIN,
-                                              DEFAULT_SIDETONE_GAIN,
-                                              1
-                                             );
-        if(var_change && ts.dmod_mode == DEMOD_CW)          // did it change?
-        {
-            UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-        }
-        snprintf(options,32, "  %u", ts.cw_sidetone_gain);
-        break;
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_sidetone_gain,
+																										  0,
+																										  SIDETONE_MAX_GAIN,
+																										  DEFAULT_SIDETONE_GAIN,
+																										  1 );
+								if(var_change && ts.dmod_mode == DEMOD_CW)          // did it change?
+								{
+									UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+								}
+								snprintf(options,32, "  %u", ts.cw_sidetone_gain);
+								break;
+
     case MENU_SIDETONE_FREQUENCY:   // sidetone frequency
-        var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.cw_sidetone_freq,
-                                               CW_SIDETONE_FREQ_MIN,
-                                               CW_SIDETONE_FREQ_MAX*10,
-                                               CW_SIDETONE_FREQ_DEFAULT,
-                                               10
-                                              );
+    							if ( is_vfo_b() )  { ts.last_CW_side_tone_freq_B = ts.cw_sidetone_freq; } // save Cw-side_tone before changing
+    							else               { ts.last_CW_side_tone_freq_A = ts.cw_sidetone_freq; }
 
-        if(var_change && ts.dmod_mode == DEMOD_CW)         // did it change?
-        {
-            float freq[2] = { ts.cw_sidetone_freq, 0.0 };
+								var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.cw_sidetone_freq,
+																					   CW_SIDETONE_FREQ_MIN,
+																					   CW_SIDETONE_FREQ_MAX*10,
+																					   CW_SIDETONE_FREQ_DEFAULT,
+																					   10 );
 
-            softdds_configRunIQ(freq,ts.samp_rate,0);
-            UiDriver_FrequencyUpdateLOandDisplay(false);
-            CwDecode_FilterInit();
-        }
-        snprintf(options,32, "  %uHz", (uint)ts.cw_sidetone_freq);
-        break;
+								if(var_change && ts.dmod_mode == DEMOD_CW)         // did it change?
+								{
+									float32_t freq[2] = { ts.cw_sidetone_freq, 0.0 };
+
+									softdds_configRunIQ(freq,ts.samp_rate_48k,0);
+									UiDriver_FrequencyUpdateLOandDisplay(false);
+									CwDecode_FilterInit();
+
+									if ((ts.dmod_mode == DEMOD_CW) && (ts.switch_pause < 2580))
+									{
+										if ( is_vfo_b() )  { df.tune_new  -=  ts.last_CW_side_tone_freq_B; }   // df.tune_new c'est la fréquence SSB
+										else		       { df.tune_new  -=  ts.last_CW_side_tone_freq_A; }  // df.tune_new c'est la fréquence SSB
+
+										df.tune_new  +=  ts.cw_sidetone_freq;
+									}
+
+								}
+								snprintf(options,32, "  %uHz", (uint)ts.cw_sidetone_freq);
+								break;
 
     case MENU_PADDLE_REVERSE:   // CW Paddle reverse
-        var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &ts.cw_paddle_reverse,0,options,&clr);
-        break;
+								var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &ts.cw_paddle_reverse,0,options,&clr);
+								break;
+
     case MENU_CW_TX_RX_DELAY:   // CW TX->RX delay
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_rx_delay,
-                                              0,
-                                              CW_RX_DELAY_MAX,
-                                              CW_TX2RX_DELAY_DEFAULT,
-                                              1
-                                             );
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_rx_delay,
+																									  5,
+																									  CW_RX_DELAY_MAX,
+																									  CW_TX2RX_DELAY_DEFAULT,
+																									  1 );
 
-        snprintf(options,32, "%3ums", ts.cw_rx_delay*10);
-        break;
+								snprintf(options,32, "%3ums", ts.cw_rx_delay*10);
+								break;
 
+/*
     case MENU_CW_AUTO_MODE_SELECT:     // Enable/Disable auto LSB/USB select
-    {
-        const cw_mode_map_entry_t* curr_mode = RadioManagement_CWConfigValueToModeEntry(ts.cw_offset_mode);
-        temp_var_u8 = curr_mode->sideband_mode;
+								{
+									const cw_mode_map_entry_t* curr_mode = RadioManagement_CWConfigValueToModeEntry(ts.cw_offset_mode);
+									temp_var_u8 = curr_mode->sideband_mode;
 
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
-                0,
-                2,
-                2,
-                1
-        );
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
+																										0,
+																										2,
+																										2,
+																										1 );
+									if(var_change)      // update parameters if changed
+									{
+										cw_mode_map_entry_t     new_mode;
+										new_mode.dial_mode      = curr_mode->dial_mode;
+										new_mode.sideband_mode  = temp_var_u8;
+										ts.cw_offset_mode       = RadioManagement_CWModeEntryToConfigValue(&new_mode);
+										ts.cw_lsb               = true; // RadioManagement_CalculateCWSidebandMode();
+										UiDriver_DisplayDemodMode();
+										UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display and local oscillator
+									}
 
-        if(var_change)      // update parameters if changed
-        {
-            cw_mode_map_entry_t new_mode;
-            new_mode.dial_mode = curr_mode->dial_mode;
-            new_mode.sideband_mode = temp_var_u8;
-            ts.cw_offset_mode = RadioManagement_CWModeEntryToConfigValue(&new_mode);
-
-            ts.cw_lsb = RadioManagement_CalculateCWSidebandMode();
-            UiDriver_DisplayDemodMode();
-            UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display and local oscillator
-        }
-
-        switch(temp_var_u8)
-        {
-        case CW_SB_LSB:
-            txt_ptr = " LSB";
-            break;
-        case CW_SB_USB:
-            txt_ptr = " USB";
-            break;
-        case CW_SB_AUTO:
-            txt_ptr = "AUTO";
-            break;
-        }
-        break;
-    }
+									switch(temp_var_u8)
+									{
+										case CW_SB_LSB  :  txt_ptr = " LSB";	break;
+										case CW_SB_USB  :  txt_ptr = " USB";	break;
+										case CW_SB_AUTO :  txt_ptr = "AUTO";	break;
+									}
+									break;
+								}
+								*/
+	/*
     case MENU_CW_OFFSET_MODE:   // CW offset mode (e.g. USB, LSB, etc.)
-    {
-        const cw_mode_map_entry_t* curr_mode = RadioManagement_CWConfigValueToModeEntry(ts.cw_offset_mode);
-        temp_var_u8 = curr_mode->dial_mode;
+								{
+									const cw_mode_map_entry_t* curr_mode = RadioManagement_CWConfigValueToModeEntry(ts.cw_offset_mode);
+									temp_var_u8 = curr_mode->dial_mode;
 
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
-                0,
-                2,
-                2,
-                1
-        );
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
+																										0,
+																										2,
+																										2,
+																										1 );
 
-        if(var_change)      // update parameters if changed
-        {
-            cw_mode_map_entry_t new_mode;
-            new_mode.sideband_mode = curr_mode->sideband_mode;
-            new_mode.dial_mode = temp_var_u8;
-            ts.cw_offset_mode = RadioManagement_CWModeEntryToConfigValue(&new_mode);
+									if(var_change)      // update parameters if changed
+									{
+										cw_mode_map_entry_t    new_mode;
+										new_mode.sideband_mode = curr_mode->sideband_mode;
+										new_mode.dial_mode     = temp_var_u8;
+										ts.cw_offset_mode      = RadioManagement_CWModeEntryToConfigValue(&new_mode);
 
-            ts.cw_lsb = RadioManagement_CalculateCWSidebandMode();
-            UiDriver_DisplayDemodMode();
-            UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display and local oscillator
-        }
+										ts.cw_lsb              = true; // RadioManagement_CalculateCWSidebandMode();
+										UiDriver_DisplayDemodMode();
+										UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display and local oscillator
+									}
 
-        switch(temp_var_u8)
-        {
-        case CW_OFFSET_RX:
-            txt_ptr = "   RX";
-            break;
-        case CW_OFFSET_TX:
-            txt_ptr = "   TX";
-            break;
-        case CW_OFFSET_SHIFT:
-            txt_ptr = "SHIFT";
-            break;
-        }
-        break;
-    }
+									switch(temp_var_u8)
+									{
+										case CW_OFFSET_RX   :  txt_ptr = "   RX";       break;
+										case CW_OFFSET_TX   :  txt_ptr = "   TX";       break;
+										case CW_OFFSET_SHIFT:  txt_ptr = "SHIFT";       break;
+									}
+									break;
+								}   */
 
     case MENU_CW_DECODER_THRESH:   //
-        var_change = UiDriverMenuItemChangeUInt32(var, mode, &cw_decoder_config.thresh,
-                                               CW_DECODER_THRESH_MIN,
-                                               CW_DECODER_THRESH_MAX,
-                                               CW_DECODER_THRESH_DEFAULT,
-                                               500
-                                              );
-        snprintf(options,32, "  %u", (unsigned int)cw_decoder_config.thresh);
-        break;
+								var_change = UiDriverMenuItemChangeUInt32 ( var, mode, &cw_decoder_config.thresh,
+																											   CW_DECODER_THRESH_MIN,
+																											   CW_DECODER_THRESH_MAX,
+																											   CW_DECODER_THRESH_DEFAULT,
+																											   500
+																											  );
+								snprintf(options,32, "  %u", (unsigned int)cw_decoder_config.thresh);
+								break;
 
 
 //ts.cw_decode_average - wieviele Goertzel-Sch�tzwerte werden in einem
@@ -1899,15 +1996,14 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         break;
 #endif
     case MENU_CW_DECODER_BLOCKSIZE:  // processing block size for cw decoder
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.blocksize,
-                                              CW_DECODER_BLOCKSIZE_MIN,
-											  CW_DECODER_BLOCKSIZE_MAX,
-											  CW_DECODER_BLOCKSIZE_DEFAULT,
-                                              8
-                                             );
-            snprintf(options,32, "  %u", cw_decoder_config.blocksize);
-            CwDecode_FilterInit();
-        break;
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.blocksize,
+																												  CW_DECODER_BLOCKSIZE_MIN,
+																												  CW_DECODER_BLOCKSIZE_MAX,
+																												  CW_DECODER_BLOCKSIZE_DEFAULT,
+																												  8 );
+									snprintf(options,32, "  %u", cw_decoder_config.blocksize);
+									CwDecode_FilterInit();
+								break;
 
 #if 0
         case MENU_CW_DECODER_AGC:    // On/Off
@@ -1929,416 +2025,401 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
             break;
 #endif
             case MENU_CW_DECODER_NOISECANCEL:    // On/Off
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.noisecancel_enable,
-                                                  0,
-                                                  1,
-                                                  1,
-                                                  1
-                                                 );
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.noisecancel_enable,
+																			  0,
+																			  1,
+																			  1,
+																			  1
+																			 );
 
-            switch(cw_decoder_config.noisecancel_enable) {
-            case 0:
-                txt_ptr = " OFF";
-                break;
-            case 1:
-                txt_ptr = "  ON";
-                break;
-            }
-            break;
+										switch(cw_decoder_config.noisecancel_enable)
+										{
+											case 0:  	txt_ptr = " OFF";	break;
+											case 1:		txt_ptr = "  ON";	break;
+										}
+										break;
+
         case MENU_CW_DECODER_SPIKECANCEL:    // On/Off
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.spikecancel,
-                                                  0,
-                                                  2,
-                                                  0,
-                                                  1
-                                                 );
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &cw_decoder_config.spikecancel,
+																		  0,
+																		  2,
+																		  0,
+																		  1
+																		 );
 
-            switch(cw_decoder_config.spikecancel)
-            {
-            case 0:
-                txt_ptr = "  OFF";
-                break;
-            case 1:
-                txt_ptr = "SPIKE";
-                break;
-            case 2:
-                txt_ptr = "SHORT";
-                break;
-            }
-            break;
+									switch(cw_decoder_config.spikecancel)
+									{
+										case 0: 	txt_ptr = "  OFF";		break;
+										case 1:		txt_ptr = "SPIKE";		break;
+										case 2:		txt_ptr = "SHORT";		break;
+									}
+									break;
+
     case MENU_TCXO_MODE:    // TCXO On/Off
-        temp_var_u8 = RadioManagement_TcxoGetMode();     // get current setting without upper nibble
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
-                0,
-                TCXO_TEMP_STATE_MAX,
-                                              TCXO_OFF,
-                                              1
-                                             );
+									temp_var_u8 = RadioManagement_TcxoGetMode();     // get current setting without upper nibble
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
+																										0,
+																										TCXO_TEMP_STATE_MAX,
+																										TCXO_OFF,
+																										1 );
 
-        if(lo.sensor_present == false)            // no sensor present
-        {
-            temp_var_u8 = TCXO_OFF; // force TCXO disabled
-        }
+									if(lo.sensor_present == false)            // no sensor present
+									{
+										temp_var_u8 = TCXO_OFF; // force TCXO disabled
+									}
 
-        RadioManagement_TcxoSetMode(temp_var_u8);   // overlay new temperature setting with old status of upper nibble
-        if(var_change)
-        {
-            UiDriver_CreateTemperatureDisplay();
-        }
+									RadioManagement_TcxoSetMode(temp_var_u8);   // overlay new temperature setting with old status of upper nibble
+									if(var_change)
+									{
+										UiDriver_CreateTemperatureDisplay();
+									}
 
-        switch(temp_var_u8)
-        {
-        case TCXO_OFF:
-            txt_ptr = " OFF";
-            break;
-        case TCXO_ON:
-            txt_ptr = "  ON";
-            break;
-        case TCXO_STOP:
-            txt_ptr = "STOP";
-            break;
-        }
-        break;
+									switch(temp_var_u8)
+									{
+										case TCXO_OFF : 	txt_ptr = " OFF";	break;
+										case TCXO_ON  :	    txt_ptr = "  ON";	break;
+										case TCXO_STOP:	    txt_ptr = "STOP";	break;
+									}
+									break;
 
         case CONFIG_IQ_AUTO_CORRECTION:    // On/Off
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.iq_auto_correction,
-                                                  0,
-                                                  1,
-                                                  0,
-                                                  1
-                                                 );
+											var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.iq_auto_correction,
+																														  0,
+																														  1,
+																														  0,
+																														  1 );
 
-            switch(ts.iq_auto_correction)
-            {
-            case 0:
-                txt_ptr = " OFF";
-                ts.display_rx_iq = true;
-                break;
-            case 1:
-                txt_ptr = "  ON";
-                ts.display_rx_iq = false;
-                break;
-            }
-//            if(var_change) temporarily disabled because function does not provide dynamical hiding recently
-//            {
-//          	  UiMenu_RenderMenu(MENU_RENDER_ONLY);
-//			}
+											switch(ts.iq_auto_correction)
+											{
+												case 0:	  txt_ptr = " OFF";	   ts.display_rx_iq = true;		break;
+												case 1:	  txt_ptr = "  ON";	   ts.display_rx_iq = false;	break;
+											}
+								//            if(var_change) temporarily disabled because function does not provide dynamical hiding recently
+								//            {
+								//          	  UiMenu_RenderMenu(MENU_RENDER_ONLY);
+								//			}
 
-            break;
+											break;
 
     case MENU_TCXO_C_F: // TCXO display C/F mode
-        temp_var_u8 = (RadioManagement_TcxoIsFahrenheit() == true) ? 1 : 0;  // Yes - Is Fahrenheit mode enabled?
+							temp_var_u8 = (RadioManagement_TcxoIsFahrenheit() == true) ? 1 : 0;  // Yes - Is Fahrenheit mode enabled?
 
-        if(RadioManagement_TcxoIsEnabled())       // is temperature display enabled at all?
-        {
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
-                    0,
-                    1,
-                    0,
-                    1
-            );
-            RadioManagement_TcxoSetUnit(temp_var_u8 != 0? TCXO_UNIT_F: TCXO_UNIT_C);
-        }
-        else
-        {
-            clr = Orange;
-        }
-        if(var_change)      // update screen if a change was made
-        {
-            UiDriver_CreateTemperatureDisplay();
-        }
+							if(RadioManagement_TcxoIsEnabled())       // is temperature display enabled at all?
+							{
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
+																									0,
+																									1,
+																									0,
+																									1 );
+								RadioManagement_TcxoSetUnit(temp_var_u8 != 0? TCXO_UNIT_F: TCXO_UNIT_C);
+							}
+							else
+							{
+								clr = Orange;
+							}
+							if(var_change)      // update screen if a change was made
+							{
+								UiDriver_CreateTemperatureDisplay();
+							}
 
-        txt_ptr =temp_var_u8?"F":"C";
-        break;
+							txt_ptr =temp_var_u8?"F":"C";
+							break;
+
     case MENU_SCOPE_SPEED:  // spectrum scope speed
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_speed,
-                                              SPECTRUM_SCOPE_SPEED_MIN,
-                                              SPECTRUM_SCOPE_SPEED_MAX,
-                                              SPECTRUM_SCOPE_SPEED_DEFAULT,
-                                              1
-                                             );
-        if(ts.scope_speed)
-        {
-            snprintf(options,32, "  %u", ts.scope_speed);
-        }
-        else
-        {
-            txt_ptr = "OFF";
-        }
-        break;
-    case MENU_SPECTRUM_FILTER_STRENGTH: // spectrum filter strength
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_filter,
-                                              SPECTRUM_FILTER_MIN,
-                                              SPECTRUM_FILTER_MAX,
-                                              SPECTRUM_FILTER_DEFAULT,
-                                              1
-                                             );
-        snprintf(options,32, "  %u", ts.spectrum_filter);
-        break;
-    case MENU_SCOPE_TRACE_COLOUR:   // spectrum scope trace colour
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_trace_colour,
-                                              0,
-                                              SPEC_MAX_COLOUR,
-                                              SPEC_COLOUR_TRACE_DEFAULT,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.scope_trace_colour,options,&clr);
-        break;
-    case MENU_SCOPE_TRACE_HL_COLOUR: //spectrum highlighted bandwidth colour
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_trace_BW_colour,
-                                              0,
-                                              SPEC_MAX_COLOUR,
-											  SPEC_COLOUR_TRACEBW_DEFAULT,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.scope_trace_BW_colour,options,&clr);
-        break;
-    case MENU_SCOPE_BACKGROUND_HL_COLOUR:  // set step size of of waterfall display?
-         UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_backgr_BW_colour,
-                                     0,
-                                     100,
-									 SPEC_COLOUR_BACKGRBW_DEFAULT,
-                                     10
-                                    );
-         snprintf(options,32, "  %u%%", ts.scope_backgr_BW_colour);
-         break;
-    case MENU_SCOPE_GRID_COLOUR:    // spectrum scope grid colour
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_grid_colour,
-                                              0,
-                                              SPEC_MAX_COLOUR,
-                                              SPEC_COLOUR_GRID_DEFAULT,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.scope_grid_colour,options,&clr);
-        break;
-    case MENU_SPECTRUM_FREQSCALE_COLOUR:    // spectrum scope/waterfall  scale colour
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_freqscale_colour,
-                                              0,
-                                              SPEC_MAX_COLOUR,
-                                              SPEC_COLOUR_SCALE_DEFAULT,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.spectrum_freqscale_colour,options,&clr);
-        break;
-    case MENU_SPECTRUM_MAGNIFY: // WF/Spectrum magnifying
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &sd.magnify,
-                                              MAGNIFY_MIN,
-                                              MAGNIFY_MAX,
-                                              MAGNIFY_DEFAULT,
-                                              1
-                                             );
-        switch(sd.magnify)
-        {
-        case 1:
-            txt_ptr = " x2";
-            break;
-        case 2:
-            txt_ptr = " x4";
-            break;
-        case 3:
-            txt_ptr = " x8";
-            break;
-        case 4:
-            txt_ptr = "x16";
-            break;
-        case 5:
-            txt_ptr = "x32";
-            break;
-        case 0:
-        default:
-            txt_ptr = " x1";
-            break;
-        }
-        UiDriver_SpectrumChangeLayoutParameters();
-        break;
-    case MENU_SCOPE_AGC_ADJUST: // Spectrum scope AGC adjust
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_agc_rate,
-                                              SPECTRUM_SCOPE_AGC_MIN,
-                                              SPECTRUM_SCOPE_AGC_MAX,
-                                              SPECTRUM_SCOPE_AGC_DEFAULT,
-                                              1
-                                             );
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_speed,  SPECTRUM_SCOPE_SPEED_MIN,
+																									  SPECTRUM_SCOPE_SPEED_MAX,
+																									  SPECTRUM_SCOPE_SPEED_DEFAULT,
+																									   -1 );
+								if(ts.scope_speed)	{ snprintf ( options, 32, "  %u", SPECTRUM_SCOPE_SPEED_MAX - ts.scope_speed );}
+								else				{ txt_ptr = "OFF";}
+								break;
 
-        if(var_change)          // update system variable if rate changed
-        {
-            sd.agc_rate = (float)ts.spectrum_agc_rate; // calculate agc rate
-            sd.agc_rate = sd.agc_rate/SPECTRUM_AGC_SCALING;
-        }
-        snprintf(options,32, "  %u", ts.spectrum_agc_rate);
-        break;
+    case MENU_SPECTRUM_FILTER_STRENGTH: // spectrum filter strength
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_filter,  SPECTRUM_FILTER_MIN,
+																											  SPECTRUM_FILTER_MAX,
+																											  SPECTRUM_FILTER_DEFAULT,
+																											  1 );
+									snprintf ( options, 32, "  %u",  ts.spectrum_filter);
+									break;
+    case MENU_SCOPE_TRACE_COLOUR:   // spectrum scope trace colour
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_trace_colour,
+																											  0,
+																											  SPEC_MAX_COLOUR,
+																											  SPEC_COLOUR_TRACE_DEFAULT,
+																											  1
+																											 );
+									UiMenu_MapColors(ts.scope_trace_colour,options,&clr);
+									break;
+
+
+    case MENU_SCOPE_BACKGROUND_COLOUR:   // spectrum scope background colour
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_back_ground_color,
+																							  0,
+																							  3,
+																							  0,
+																							  1
+																								);
+
+										UiMenu_Set_Spectrum_BackGround_color (options, &clr);
+
+										break;
+
+	case MENU_SCOPE_BACKGROUND_TRANSP   :
+										UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_backgr_transparence,
+																				 0,
+																				 100,
+																				 45,
+																				 5
+																				   );
+										snprintf(options,32, "  %u%%", ts.scope_backgr_transparence);
+
+										UiMenu_Set_Spectrum_BackGround_color (NULL, NULL);
+
+										break;
+
+    case MENU_SCOPE_TRACE_HL_COLOUR: //spectrum highlighted bandwidth colour
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_trace_BW_colour,
+																										  0,
+																										  SPEC_MAX_COLOUR,
+																										  SPEC_COLOUR_TRACEBW_DEFAULT,
+																										  1
+																										 );
+									UiMenu_MapColors(ts.scope_trace_BW_colour,options,&clr);
+									break;
+
+    case MENU_SCOPE_BACKGROUND_HL_COLOUR: //spectrum highlighted bandwidth colour
+   									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_backgr_BW_colour,
+   																										  0,
+   																										  SPEC_MAX_COLOUR,
+   																										  2,  // bleu
+   																										  1
+   																										 );
+   									UiMenu_MapColors(ts.scope_backgr_BW_colour,options,&clr);
+   									break;
+
+    case MENU_SCOPE_BACKGROUND_HL_TRANSP:  // set step size of of waterfall display?
+											 UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_backgr_BW_transparence,
+																		 0,
+																		 100,
+																		 SPEC_COLOUR_BACKGRBW_DEFAULT,
+																		 5
+																		);
+											 snprintf(options,32, "  %u%%", ts.scope_backgr_BW_transparence);
+											 break;
+
+    case MENU_SCOPE_GRID_COLOUR:    // spectrum scope grid colour
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.scope_grid_colour,
+																											  0,
+																											  SPEC_MAX_COLOUR,
+																											  SPEC_COLOUR_GRID_DEFAULT,
+																											  1 );
+										UiMenu_MapColors(ts.scope_grid_colour,options,&clr);
+										break;
+
+    case MENU_SPECTRUM_FREQSCALE_COLOUR:    // spectrum scope/waterfall  scale colour
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_freqscale_colour,
+																											  0,
+																											  SPEC_MAX_COLOUR,
+																											  SPEC_COLOUR_SCALE_DEFAULT,
+																											  1 );
+										UiMenu_MapColors(ts.spectrum_freqscale_colour,options,&clr);
+										break;
+
+    case MENU_SPECTRUM_MAGNIFY: // WF/Spectrum magnifying
+    							sd.magnify &= 0x2;
+
+								var_change = UiDriverMenuItemChangeUInt8( var, mode, &sd.magnify,
+																					  MAGNIFY_MIN,
+																					  2          , //MAGNIFY_MAX,
+																					  MAGNIFY_DEFAULT,
+																					  2 );
+
+								switch( sd.magnify )
+								{
+								    case 0: txt_ptr = " 1x";	break;
+								//	case 1:	txt_ptr = " x2";	break;
+									case 2:	txt_ptr = " 8x";   	break;
+								//	case 3:	txt_ptr = " x8";	break;
+								//	case 4:	txt_ptr = "x16";	break;
+								//	case 5:	txt_ptr = "x32";	break;
+								//	default:txt_ptr = " x1";	break;
+								}
+
+								UiDriver_SpectrumChangeLayoutParameters();
+
+								UiDriver_Display_spectrum_ZOOM(); /// NIZZZ pour changer l'affichage de la zoom aussi sur le spectre m�me
+								break;
+
+	case MENU_POWER_METER_SCALE :
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.twenty_watt_meter,
+																									  0,
+																									  1,
+																									  0,
+																									  1
+																									 );
+
+								switch ( ts.twenty_watt_meter )
+								{
+									case 0: txt_ptr = "10 Watt"; ts.flags2 &= ~FLAGS2_TWENTY_WATT_POWER;	break;
+									case 1:	txt_ptr = "20 Watt"; ts.flags2 |=  FLAGS2_TWENTY_WATT_POWER;	break;
+								}
+								break;
+
+
+    case MENU_SCOPE_AGC_ADJUST: // Spectrum scope AGC adjust
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_agc_rate, SPECTRUM_SCOPE_AGC_MIN,
+																										   SPECTRUM_SCOPE_AGC_MAX,
+																										   SPECTRUM_SCOPE_AGC_DEFAULT,
+																										   1 );
+								if(var_change)          // update system variable if rate changed
+								{
+									sd.agc_rate = (float)ts.spectrum_agc_rate; // calculate agc rate
+									sd.agc_rate = sd.agc_rate/SPECTRUM_AGC_SCALING;
+								}
+								snprintf(options,32, "  %u", ts.spectrum_agc_rate);
+								break;
+
     case MENU_SCOPE_DB_DIVISION:    // Adjustment of dB/division of spectrum scope
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_db_scale,
-                                              DB_DIV_ADJUST_MIN,
-                                              DB_DIV_ADJUST_MAX,
-                                              DB_DIV_ADJUST_DEFAULT,
-                                              1
-                                             );
-        switch(ts.spectrum_db_scale)        // convert variable to setting
-        {
-        case DB_DIV_5:
-            txt_ptr = "    5dB";
-            break;
-        case DB_DIV_7:
-            txt_ptr = "  7.5dB";
-            break;
-        case DB_DIV_15:
-            txt_ptr = "   15dB";
-            break;
-        case DB_DIV_20:
-            txt_ptr = "   20dB";
-            break;
-        case S_1_DIV:
-            txt_ptr = "1S-Unit";
-            break;
-        case S_2_DIV:
-            txt_ptr = "2S-Unit";
-            break;
-        case S_3_DIV:
-            txt_ptr = "3S-Unit";
-            break;
-        case DB_DIV_10:
-        default:
-            txt_ptr = "   10dB";
-            break;
-        }
-        break;
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_db_scale,
+																										  DB_DIV_ADJUST_MIN,
+																										  DB_DIV_ADJUST_MAX,
+																										  DB_DIV_ADJUST_DEFAULT,
+																										  1 );
+								switch(ts.spectrum_db_scale)        // convert variable to setting
+								{
+									case DB_DIV_5 :  txt_ptr = "    5dB";      break;
+									case DB_DIV_7 :  txt_ptr = "  7.5dB";      break;
+									case DB_DIV_15:  txt_ptr = "   15dB";      break;
+									case DB_DIV_20:  txt_ptr = "   20dB";      break;
+									case S_1_DIV  :  txt_ptr = "1S-Unit";      break;
+									case S_2_DIV  :  txt_ptr = "2S-Unit";      break;
+									case S_3_DIV  :  txt_ptr = "3S-Unit";      break;
+									case DB_DIV_10:
+										 default  :  txt_ptr = "   10dB";      break;
+								}
+								break;
 
     case MENU_SPECTRUM_CENTER_LINE_COLOUR:  // spectrum scope grid center line colour
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_centre_line_colour,
-                                              0,
-                                              SPEC_GREY2,
-                                              SPEC_COLOUR_GRID_DEFAULT,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.spectrum_centre_line_colour,options,&clr);
-        break;
-    case MENU_SCOPE_LIGHT_ENABLE:   // Spectrum light: no grid, larger, only points, no bars
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr,FLAGS1_SCOPE_LIGHT_ENABLE);
-        break;
-    case MENU_SPECTRUM_MODE:
-        temp_var_u8 = UiDriver_GetSpectrumMode();
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_centre_line_colour,
+																			  0,
+																			  SPEC_GREY2,
+																			  SPEC_WHITE,     //  SPEC_COLOUR_GRID_DEFAULT,
+																			  1
+																			 );
+										UiMenu_MapColors(ts.spectrum_centre_line_colour,options,&clr);
+										break;
 
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
-                                    SPECTRUM_WATERFALL,
-                                    SPECTRUM_DUAL,
-                                    SPECTRUM_DUAL,
-                                    1
-                                   );
-        switch(temp_var_u8)
-        {
-        case SPECTRUM_DUAL:
-            txt_ptr = " DUAL";
-            break;
-        case SPECTRUM_SCOPE:
-            txt_ptr = "SCOPE";
-            break;
-        case SPECTRUM_WATERFALL:
-            txt_ptr = "WFALL";
-            break;
-        case SPECTRUM_BLANK:
-            txt_ptr = "  OFF";
-            break;
-        }
-        UiDriver_SetSpectrumMode(temp_var_u8);
-        UiSpectrum_ResetSpectrum();
-        break;
+    case MENU_SCOPE_LIGHT_ENABLE:   // Spectrum light: no grid, larger, only points, no bars
+								var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr,FLAGS1_SCOPE_LIGHT_ENABLE);
+								break;
+
+    case MENU_SPECTRUM_MODE:
+									temp_var_u8 = UiDriver_GetSpectrumMode();
+
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,   SPECTRUM_WATERFALL,
+																										SPECTRUM_DUAL,
+																										SPECTRUM_DUAL,
+																										1 );
+									switch(temp_var_u8)
+									{
+										case SPECTRUM_DUAL     :  txt_ptr = " DUAL";	 break;
+										case SPECTRUM_SCOPE    :  txt_ptr = "SCOPE";	 break;
+										case SPECTRUM_WATERFALL:  txt_ptr = "WFALL";     break;
+										case SPECTRUM_BLANK    :  txt_ptr = "  OFF";	 break;
+									}
+									UiDriver_SetSpectrumMode(temp_var_u8);
+									UiSpectrum_ResetSpectrum();
+									break;
+
     case MENU_WFALL_COLOR_SCHEME:   // Adjustment of dB/division of spectrum scope
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.waterfall.color_scheme,
-                                    WATERFALL_COLOR_MIN,
-                                    WATERFALL_COLOR_MAX,
-                                    WATERFALL_COLOR_DEFAULT,
-                                    1
-                                   );
-        switch(ts.waterfall.color_scheme)       // convert variable to setting
-        {
-        case WFALL_HOT_COLD:
-            txt_ptr = "HotCold";
-            break;
-        case WFALL_RAINBOW:
-            txt_ptr = "Rainbow";
-            break;
-        case WFALL_BLUE:
-            txt_ptr = "   Blue";
-            break;
-        case WFALL_GRAY_INVERSE:
-            txt_ptr = "INVGrey";
-            break;
-        case WFALL_GRAY:
-        default:
-            txt_ptr = "   Grey" ;
-            break;
-        }
-        break;
+									UiDriverMenuItemChangeUInt8(var, mode, &ts.waterfall.color_scheme, 	WATERFALL_COLOR_MIN,
+																										WATERFALL_COLOR_MAX,
+																										WATERFALL_COLOR_DEFAULT,
+																										1 );
+									switch(ts.waterfall.color_scheme)       // convert variable to setting
+									{
+										case WFALL_HOT_COLD    :	txt_ptr = "HotCold";   break;
+										case WFALL_RAINBOW     :	txt_ptr = "Rainbow";   break;
+										case WFALL_BLUE        :	txt_ptr = "   Blue";   break;
+										case WFALL_GRAY_INVERSE:	txt_ptr = "INVGrey";   break;
+										case WFALL_GRAY        :
+											 default           :	txt_ptr = "   Grey" ;  break;
+									}
+									break;
 
     case    MENU_DBM_DISPLAY:
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.display_dbm,
-                                              0,
-                                              2,
-                                              0,
-                                              1
-                                             );
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.display_dbm,
+																									  0,
+																									  0,
+																									  0,
+																									  1 );
 
-       switch(ts.display_dbm)
-        {
-        case 1:     //
-            txt_ptr = "     dBm";       // dbm display
-            break;
-        case 2: //
-            txt_ptr = "  dBm/Hz";       // dbm/Hz display
-            break;
-        default:
-        txt_ptr =  "     OFF";      // dbm display off
-            break;
-        }
-        break;
+								ts.display_dbm  = 0;
+
+								switch( ts.display_dbm )
+								{
+									case 1 :    txt_ptr = "     dBm";   break;    // dbm display
+									case 2 :    txt_ptr = "  dBm/Hz";   break;    // dbm/Hz display
+									default:    txt_ptr = "     OFF";   break;    // dbm display off
+								}
+								break;
+
 #ifdef USE_8bit_FONT
-    case MENU_FREQ_FONT:
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.FreqDisplayFont,
-                                              0,
-                                              1,
-                                              0,
-                                              1
-                                             );
-        switch(ts.FreqDisplayFont)
-        {
-        case 0:
-            txt_ptr = "     old";       //old font
-            break;
-        case 1:
-            txt_ptr = "  modern";       //old font
-            break;
-        }
 
-        UiDriver_FrequencyUpdateLOandDisplay(true);
-        break;
+
+/*
+    case   MENU_FREQ_FONT:
+						var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.FreqDisplayFont,
+																								  0,
+																								  1,
+																								  1,
+																								  1 );
+
+						ts.FreqDisplayFont = 1;  // forcer l'affichage de frequence à une fonte en gras
+
+						switch(ts.FreqDisplayFont)
+						{
+							case 0:   txt_ptr = "     old";   break;    //old font
+							case 1:	  txt_ptr = "  modern";   break;    //old font
+						}
+
+						UiDriver_FrequencyUpdateLOandDisplay(true);
+						break;         */
+
+
+
 #endif
+
     case MENU_METER_COLOUR_UP:              // upper meter colour
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.meter_colour_up,
-                                              0,
-                                              SPEC_MAX_COLOUR,
-                                              SPEC_BLUE,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.meter_colour_up,options,&clr);
-        break;
-    case MENU_METER_COLOUR_DOWN:            // lower meter colour
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.meter_colour_down,
-                                              0,
-                                              SPEC_MAX_COLOUR,
-                                              SPEC_CYAN,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.meter_colour_down,options,&clr);
-        break;
-    case MENU_WFALL_STEP_SIZE:  // set step size of of waterfall display?
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.waterfall.vert_step_size,
-                                    WATERFALL_STEP_SIZE_MIN,
-                                    WATERFALL_STEP_SIZE_MAX,
-                                    WATERFALL_STEP_SIZE_DEFAULT,
-                                    1
-                                   );
-        snprintf(options,32, "  %u", ts.waterfall.vert_step_size);
-        break;
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.meter_colour_up,
+																	  0,
+																	  SPEC_MAX_COLOUR,
+																	  SPEC_GREEN,
+																	  1
+																	 );
+								UiMenu_MapColors(  ts.meter_colour_up, options, &clr );
+								break;
+
+    case   MENU_METER_COLOUR_DOWN:            // lower meter colour
+								var_change = UiDriverMenuItemChangeUInt8( var, mode, &ts.meter_colour_down,
+																	      0,
+																	      SPEC_MAX_COLOUR,
+																	      SPEC_YELLOW,
+																	      1
+																	      );
+								UiMenu_MapColors( ts.meter_colour_down, options, &clr );
+								break;
+
+    case   MENU_WFALL_STEP_SIZE:  // set step size of of waterfall display?
+								UiDriverMenuItemChangeUInt8(var, mode, &ts.waterfall.vert_step_size,
+															WATERFALL_STEP_SIZE_MIN,
+															WATERFALL_STEP_SIZE_MAX,
+															WATERFALL_STEP_SIZE_DEFAULT,
+															1
+														   );
+								snprintf(options,32, "  %u", ts.waterfall.vert_step_size);
+								break;
+
 #if 0
     case MENU_WFALL_OFFSET: // set step size of of waterfall display?
         UiDriverMenuItemChangeInt32(var, mode, &ts.waterfall.offset,
@@ -2351,40 +2432,25 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         break;
 #endif
     case MENU_WFALL_CONTRAST:   // set step size of of waterfall display?
-        UiDriverMenuItemChangeUInt32(var, mode, &ts.waterfall.contrast,
-                                     WATERFALL_CONTRAST_MIN,
-                                     WATERFALL_CONTRAST_MAX,
-                                     WATERFALL_CONTRAST_DEFAULT,
-                                     2
-                                    );
-        snprintf(options,32, "  %u", (unsigned int)ts.waterfall.contrast);
-        break;
+							UiDriverMenuItemChangeUInt32 ( var, mode, &ts.waterfall.contrast,	 WATERFALL_CONTRAST_MIN,
+														 	 	 	 	 	 	 	 	 	 	 WATERFALL_CONTRAST_MAX,
+																								 WATERFALL_CONTRAST_DEFAULT,
+																								 2 );
+							snprintf ( options, 32,  "  %u", (unsigned int) ts.waterfall.contrast );
+							break;
+
     case MENU_WFALL_SPEED:  // set step size of of waterfall display?
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.waterfall.speed,
-                WATERFALL_SPEED_MIN,
-                WATERFALL_SPEED_MAX,
-                WATERFALL_SPEED_DEFAULT,
-                1
-        );
+							UiDriverMenuItemChangeUInt8 ( var, mode, &ts.waterfall.speed,                   1,     //  WATERFALL_SPEED_MIN,
+																						  WATERFALL_SPEED_MAX,
+																						  WATERFALL_SPEED_DEFAULT,
+																						   -1 );
 
-        if(ts.waterfall.speed <= WATERFALL_SPEED_WARN)
-        {
-            clr = Red;
-        }
-        else if(ts.waterfall.speed <= WATERFALL_SPEED_WARN1)
-        {
-            clr = Yellow;
-        }
+							if      ( ts.waterfall.speed <= WATERFALL_SPEED_WARN )	{ clr = Red;	}
+							else if ( ts.waterfall.speed <= WATERFALL_SPEED_WARN1)  { clr = Yellow; }
 
-        if (ts.waterfall.speed > 0)
-        {
-            snprintf(options,32, "  %u", ts.waterfall.speed);
-        }
-        else
-        {
-            txt_ptr = "OFF";
-        }
-        break;
+							if (ts.waterfall.speed > 0)  { 	snprintf ( options, 32, "  %u", WATERFALL_SPEED_MAX - ts.waterfall.speed ); }
+							else   						 {	txt_ptr    =  "OFF";   							                            }
+							break;
 #if 0
     case MENU_SCOPE_NOSIG_ADJUST:   // set step size of of waterfall display?
         UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_scope_nosig_adjust,
@@ -2406,238 +2472,298 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         break;
 #endif
     case MENU_SPECTRUM_SIZE:    // set view size of of spectrum display (big disables title bar)?
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_size,
-                                    0,
-                                    SPECTRUM_BIG,
-                                    SPECTRUM_SIZE_DEFAULT,
-                                    1
-                                   );
-        //
-        switch(ts.spectrum_size)
-        {
-        case SPECTRUM_BIG:
-            txt_ptr = "   Big";
-            break;
-        case SPECTRUM_NORMAL:
-        default:
-            txt_ptr = "Normal";
-            break;
-        }
-        break;
+							UiDriverMenuItemChangeUInt8(var, mode, &ts.spectrum_size,
+																						0,
+																						SPECTRUM_BIG,
+																						SPECTRUM_SIZE_DEFAULT,
+																						1 );
+							ts.spectrum_size = SPECTRUM_BIG;
+							//
+							switch(ts.spectrum_size)
+							{
+								case SPECTRUM_BIG   :	txt_ptr = "   Big";	break;
+								case SPECTRUM_NORMAL:
+									default:		    txt_ptr = "Normal"; break;
+							}
+							break;
 #ifdef USE_CONFIGSTORAGE_FLASH
     case MENU_BACKUP_CONFIG:
-      	txt_ptr = "n/a";
-        if(ts.configstore_in_use == CONFIGSTORE_IN_USE_I2C)
-        {
-		  uint8_t test = 0;
-      	  clr = White;
-      	  UiDriverMenuItemChangeUInt8(var, mode, &test,
-                                              0,
-                                              0,
-                                              10,
-                                              1
-                                             );
-      	  switch(test)
-      	  {
-      		case 0:
-          	  txt_ptr = "press DEFLT";
-          	  break;
-      		case 10:
-          	  UiMenu_DisplayValue("    Working",Red,pos);
-              ConfigStorage_CopySerial2Flash();
-    		  clr = Green;
-          	  txt_ptr = "    Done...";
-          	  break;
-      	  }
-		}
-        break;
+							txt_ptr = "n/a";
+							if(ts.configstore_in_use == CONFIGSTORE_IN_USE_I2C)
+							{
+							  uint8_t test = 0;
+							  clr = White;
+							  UiDriverMenuItemChangeUInt8(var, mode, &test,
+																  0,
+																  0,
+																  10,
+																  1
+																 );
+							  switch(test)
+							  {
+								case 0:
+								  txt_ptr = "press DEFLT";
+								  break;
+								case 10:
+								  UiMenu_DisplayValue("    Working",Red,pos);
+								  ConfigStorage_CopySerial2Flash();
+								  clr = Green;
+								  txt_ptr = "    Done...";
+								  break;
+							  }
+							}
+							break;
     case MENU_RESTORE_CONFIG:
-        txt_ptr = "n/a";
-        if(ts.configstore_in_use == CONFIGSTORE_IN_USE_I2C)
-        {
-		  uint8_t test = 0;
-      	  clr = White;
-      	  UiDriverMenuItemChangeUInt8(var, mode, &test,
-                                              0,
-                                              0,
-                                              10,
-                                              1
-                                             );
-      	  switch(test)
-      	  {
-      		case 0:
-          	  txt_ptr = "press DEFLT";
-          	  break;
-      		case 10:
-          	  UiMenu_DisplayValue("    Working",Red,pos);
-              ConfigStorage_CopyFlash2Serial();
-              Board_Reboot();
-          	  break;
-      	  }
-		}
-        break;
+							txt_ptr = "n/a";
+							if(ts.configstore_in_use == CONFIGSTORE_IN_USE_I2C)
+							{
+							  uint8_t test = 0;
+							  clr = White;
+							  UiDriverMenuItemChangeUInt8(var, mode, &test,
+																  0,
+																  0,
+																  10,
+																  1
+																 );
+							  switch(test)
+							  {
+								case 0:
+								  txt_ptr = "press DEFLT";
+								  break;
+								case 10:
+								  UiMenu_DisplayValue("    Working",Red,pos);
+								  ConfigStorage_CopyFlash2Serial();
+								  Board_Reboot();
+								  break;
+							  }
+							}
+							break;
 #endif
     case MENU_RESTART_CODEC:
-        txt_ptr = " Do it!";
-        clr = White;
-        if(var>=1)
-        {
+							txt_ptr = " Do it!";
+							clr     = White;
+							if( var >= 1 )
+							{
+								UiMenu_DisplayValue( "Restart", Red, pos );
+								Codec_RestartI2S();
+								var = 0;
+							}
+							break;
 
-            UiMenu_DisplayValue("Restart",Red,pos);
-            Codec_RestartI2S();
-            var = 0;
-        }
-        break;
     case CONFIG_FREQ_STEP_MARKER_LINE:  // Frequency step marker line on/off
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.freq_step_config,0,options,&clr, FREQ_STEP_SHOW_MARKER);
-        if(var_change)          // something changed?
-        {
-            UiDriver_DisplayFreqStepSize();  // update screen
-        }
-        break;
+							var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.freq_step_config,0,options,&clr, FREQ_STEP_SHOW_MARKER);
+							if(var_change)          // something changed?
+							{
+								UiDriver_DisplayFreqStepSize();  // update screen
+							}
+							break;
+
     case CONFIG_STEP_SIZE_BUTTON_SWAP:  // Step size button swap on/off
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.freq_step_config,0,options,&clr, FREQ_STEP_SWAP_BTN);
-        break;
+							var_change = UiDriverMenuItemChangeEnableOnOffFlag ( var, mode, &ts.freq_step_config,0,options,&clr, FREQ_STEP_SWAP_BTN);
+							break;
+
+    case CONFIG_STEP_AUTOMATIC_SIZE:
+    						{
+								  uint8_t automatic_step_freq =  ((ts.reverberation_enable & 0x2) >> 1) ;
+								  var_change = UiDriverMenuItemChangeUInt8( var , mode, &automatic_step_freq, 0, 1, 1,  1);  // TX_FILTER_SOPRANO   NIZZZ
+
+								  switch( automatic_step_freq )
+								  {
+									  case 0:   txt_ptr = " ON";  ts.reverberation_enable &= 0xFD;  break;
+									  case 1:   txt_ptr = "OFF";  ts.reverberation_enable |= 0x02;  break;
+								  }
+    						}
+    						  break;
+
+    case CONFIG_LINUX_USB_DESCRIPT:
+        						{
+    								  uint8_t Android_usb =  ((ts.reverberation_enable & 0x4) >> 2) ;
+    								  var_change = UiDriverMenuItemChangeUInt8( var , mode, &Android_usb, 0, 1, 1,  1);  // TX_FILTER_SOPRANO   NIZZZ
+
+    								  switch( Android_usb )
+    								  {
+    									  case 0:   txt_ptr = "WIN+LINUX";  ts.reverberation_enable &= 0xFB;  break;
+    									  case 1:   txt_ptr = "  ANDROID";  ts.reverberation_enable |= 0x04;  break;
+    								  }
+        						}
+        						  break;
+
+
+
+    case CONFIG_FREQ_ROTARY_BUTTON_SWAP :
+    						var_change = UiDriverMenuItemChangeEnableOnOffFlag ( var, mode, &ts.freq_step_config,0,options,&clr, FREQ_FREQ_ROTARY_SWAP_BTN);
+    						break;
+
     case MENU_DYNAMICTUNE:  // Dynamic Tune on/off
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_DYN_TUNE_ENABLE);
-        if(var_change)
-        {
-            UiDriver_DisplayFreqStepSize();
-        }
-        break;
+							var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_DYN_TUNE_ENABLE);
+							if(var_change)
+							{
+								UiDriver_DisplayFreqStepSize();
+							}
+							break;
+
     case CONFIG_BAND_BUTTON_SWAP:   // Swap position of Band+ and Band- buttons
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_SWAP_BAND_BTN);
-        break;
+							var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_SWAP_BAND_BTN);
+							break;
+
     case CONFIG_TX_DISABLE: // Step size button swap on/off
-    {
-        uint16_t flag = ts.tx_disable;
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &flag,0,options,&clr, TX_DISABLE_ALWAYS);
-        ts.tx_disable = flag;
-        if(var_change)
-        {
-            // FIXME: Call "abstract" function to update status of tune,
-            // do not redraw menu button here directly
-            UiDriver_DrawFButtonLabel(5,"TUNE",ts.tx_disable?Grey1:White);
-        }
-    }
-        break;
+							{
+								uint16_t flag = ts.tx_disable;
+								var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &flag,0,options,&clr, TX_DISABLE_ALWAYS);
+								ts.tx_disable = flag;
+								if(var_change)
+								{
+									// FIXME: Call "abstract" function to update status of tune,
+									// do not redraw menu button here directly
+									UiDriver_DrawFButtonLabel(5,"TUNE",ts.tx_disable?Grey1:White);
+								}
+							}
+								break;
+
     case CONFIG_TX_OUT_ENABLE:      // Enable transmitting outside HAM bands
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_TX_OUTSIDE_BANDS);
-        break;
+						var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_TX_OUTSIDE_BANDS);
+						break;
+
     case CONFIG_AUDIO_MAIN_SCREEN_MENU_SWITCH:  // AFG/(STG/CMP) and RIT/(WPM/MIC/LIN) are to change automatically with TX/RX
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_TX_AUTOSWITCH_UI_DISABLE);
-        break;
+						var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_TX_AUTOSWITCH_UI_DISABLE);
+						break;
+
     case CONFIG_MUTE_LINE_OUT_TX:   // Enable/disable MUTE of TX audio on LINE OUT
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_MUTE_LINEOUT_TX);
-        if(ts.iq_freq_mode) // Mark RED if translate mode is active
-        {
-            clr = Red;
-        }
-        break;
+						var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_MUTE_LINEOUT_TX);
+						if(ts.iq_freq_mode) // Mark RED if translate mode is active
+						{
+							clr = Red;
+						}
+						break;
+
+/*
+    case CONFIG_TX_TUNE_SIDE_FREQ:  var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.tx_Tune_side_freq_offset, 0, 1, 0, 1 );
+
+          							if(var_change)
+          							{
+
+          							}
+
+
+      								switch ( ts.tx_Tune_side_freq_offset )    // Affichage
+      								{
+      									case 1:    txt_ptr = "1 Khz";   break;
+      									case 0:    txt_ptr = " Dial";   break;
+      								}
+      								break;
+
+*/
+
+
     case CONFIG_TXRX_SWITCH_AUDIO_MUTE: // maximum RX gain setting
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.txrx_switch_audio_muting_timing,
-                                    0,
-                                    TXRX_SWITCH_AUDIO_MUTE_DELAY_MAX,
-                                    0,
-                                    1
-                                   );
-        snprintf(options,32, "%3ums", ts.txrx_switch_audio_muting_timing*10);
-        break;
+									UiDriverMenuItemChangeUInt8(var, mode, &ts.txrx_switch_audio_muting_timing,
+																			0,
+																			TXRX_SWITCH_AUDIO_MUTE_DELAY_MAX,
+																			1,
+																			1
+																		   );
+									snprintf( options, 32, "%3ums", ts.txrx_switch_audio_muting_timing * 10 );
+									break;
+
+
     case CONFIG_LCD_AUTO_OFF_MODE:  // LCD auto-off mode control
-        temp_var_u8 = ts.lcd_backlight_blanking;        // get control variable
-        temp_var_u8 &= LCD_BLANKING_TIMEMASK;                           // mask off upper nybble
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
-                                              0,
-                                              LCD_BLANKING_TIMEMASK,
-                                              BACKLIGHT_BLANK_TIMING_DEFAULT,
-                                              1
-                                             );
-        if(var_change)                              // timing has been changed manually
-        {
-            if(temp_var_u8)                 // is the time non-zero?
-            {
-                ts.lcd_backlight_blanking = temp_var_u8;    // yes, copy current value into variable
-                ts.lcd_backlight_blanking |= LCD_BLANKING_ENABLE;       // set MSB to enable auto-blanking
-            }
-            else
-            {
-                ts.lcd_backlight_blanking = 0;          // zero out variable
-            }
-            UiDriver_LcdBlankingStartTimer();       // update the LCD timing parameters
-        }
-        //
-        if(ts.lcd_backlight_blanking & LCD_BLANKING_ENABLE)         // timed auto-blanking enabled?
-            snprintf(options,32,"%02d sec",ts.lcd_backlight_blanking & LCD_BLANKING_TIMEMASK);  // yes - Update screen indicator with number of seconds
-        else
-            snprintf(options,32,"   OFF");                      // Or if turned off
-        break;
+								temp_var_u8 = ts.lcd_backlight_blanking;        // get control variable
+								temp_var_u8 &= LCD_BLANKING_TIMEMASK;                           // mask off upper nybble
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
+																	  0,
+																	  LCD_BLANKING_TIMEMASK,
+																	  BACKLIGHT_BLANK_TIMING_DEFAULT,
+																	  1
+																	 );
+								if(var_change)                              // timing has been changed manually
+								{
+									if(temp_var_u8)                 // is the time non-zero?
+									{
+										ts.lcd_backlight_blanking = temp_var_u8;    // yes, copy current value into variable
+										ts.lcd_backlight_blanking |= LCD_BLANKING_ENABLE;       // set MSB to enable auto-blanking
+									}
+									else
+									{
+										ts.lcd_backlight_blanking = 0;          // zero out variable
+									}
+									UiDriver_LcdBlankingStartTimer();       // update the LCD timing parameters
+								}
+								//
+								if(ts.lcd_backlight_blanking & LCD_BLANKING_ENABLE)         // timed auto-blanking enabled?
+									snprintf(options,32,"%02d sec",ts.lcd_backlight_blanking & LCD_BLANKING_TIMEMASK);  // yes - Update screen indicator with number of seconds
+								else
+									snprintf(options,32,"   OFF");                      // Or if turned off
+								break;
+
+
     case CONFIG_VOLTMETER_CALIBRATION:      // Voltmeter calibration
-        var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.voltmeter_calibrate,
-                                               POWER_VOLTMETER_CALIBRATE_MIN,
-                                               POWER_VOLTMETER_CALIBRATE_MAX,
-                                               POWER_VOLTMETER_CALIBRATE_DEFAULT,
-                                               1
-                                              );
-        snprintf(options,32, "  %u", (unsigned int)ts.voltmeter_calibrate);
-        break;
+										var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.voltmeter_calibrate,
+																			   POWER_VOLTMETER_CALIBRATE_MIN,
+																			   POWER_VOLTMETER_CALIBRATE_MAX,
+																			   POWER_VOLTMETER_CALIBRATE_DEFAULT,
+																			   1
+																			  );
+										snprintf(options,32, "  %u", (unsigned int)ts.voltmeter_calibrate);
+										break;
+
     case MENU_LOW_POWER_SHUTDOWN:   // Auto shutdown when below low voltage threshold
-        temp_var_u8 = (ts.low_power_config & LOW_POWER_ENABLE_MASK) == LOW_POWER_ENABLE? 1 : 0 ;        // get control variable
-        var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp_var_u8, 0,options,&clr);
-        if (var_change)
-        {
-            CLR_OR_SET_BITMASK(temp_var_u8, ts.low_power_config, LOW_POWER_ENABLE);
-        }
-        break;
+									temp_var_u8 = (ts.low_power_config & LOW_POWER_ENABLE_MASK) == LOW_POWER_ENABLE? 1 : 0 ;        // get control variable
+									var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp_var_u8, 0,options,&clr);
+									if (var_change)
+									{
+										CLR_OR_SET_BITMASK(temp_var_u8, ts.low_power_config, LOW_POWER_ENABLE);
+									}
+									break;
 
     case CONFIG_LOW_POWER_THRESHOLD:  // Configure low voltage threshold
 
-        temp_var_u8 = ts.low_power_config & LOW_POWER_THRESHOLD_MASK;        // get control variable
+									temp_var_u8 = ts.low_power_config & LOW_POWER_THRESHOLD_MASK;        // get control variable
 
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
-                                              LOW_POWER_THRESHOLD_MIN,
-                                              LOW_POWER_THRESHOLD_MAX,
-                                              LOW_POWER_THRESHOLD_DEFAULT,
-                                              1
-                                             );
-        if(var_change)
-        {
-            ts.low_power_config = (ts.low_power_config & ~LOW_POWER_THRESHOLD_MASK) | (temp_var_u8 & LOW_POWER_THRESHOLD_MASK);
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,
+																		  LOW_POWER_THRESHOLD_MIN,
+																		  LOW_POWER_THRESHOLD_MAX,
+																		  LOW_POWER_THRESHOLD_DEFAULT,
+																		  1
+																		 );
+									if(var_change)
+									{
+										ts.low_power_config = (ts.low_power_config & ~LOW_POWER_THRESHOLD_MASK) | (temp_var_u8 & LOW_POWER_THRESHOLD_MASK);
 
-        }
+									}
 
-        snprintf(options,32,"%2d.%dV",(temp_var_u8 + LOW_POWER_THRESHOLD_OFFSET) / 10, (temp_var_u8 + LOW_POWER_THRESHOLD_OFFSET) % 10);
+									snprintf(options,32,"%2d.%dV",(temp_var_u8 + LOW_POWER_THRESHOLD_OFFSET) / 10, (temp_var_u8 + LOW_POWER_THRESHOLD_OFFSET) % 10);
 
-        break;
+									break;
 
     case CONFIG_DISP_FILTER_BANDWIDTH: // Display filter bandwidth
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.filter_disp_colour,
-                                              0,
-                                              SPEC_BLACK,
-                                              SPEC_COLOUR_GRID_DEFAULT,
-                                              1
-                                             );
-        UiMenu_MapColors(ts.filter_disp_colour,options,&clr);
-        break;
-    //
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.filter_disp_colour,
+																		  0,
+																		  SPEC_BLACK,
+																		  SPEC_COLOUR_GRID_DEFAULT,
+																		  1
+																		 );
+									UiMenu_MapColors(ts.filter_disp_colour,options,&clr);
+									break;
+								//
+/*
     case CONFIG_MAX_VOLUME: // maximum audio volume
-        UiDriverMenuItemChangeUInt8(var, mode, &ts.rx_gain[RX_AUDIO_SPKR].max,
-                                    MAX_VOLUME_MIN,
-                                    MAX_VOLUME_MAX,
-                                    MAX_VOLUME_DEFAULT,
-                                    1
-                                   );
-        if(ts.rx_gain[RX_AUDIO_SPKR].value > ts.rx_gain[RX_AUDIO_SPKR].max)             // is the volume currently higher than the new setting?
-        {
-            ts.rx_gain[RX_AUDIO_SPKR].value = ts.rx_gain[RX_AUDIO_SPKR].max;        // yes - force the volume to the new value
-            UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
-        }
-        snprintf(options,32, "    %u", ts.rx_gain[RX_AUDIO_SPKR].max);
-        //
-        if(ts.rx_gain[RX_AUDIO_SPKR].max <= MAX_VOLUME_RED_THRESH)         // Indicate that gain has been reduced by changing color
-            clr = Red;
-        else if(ts.rx_gain[RX_AUDIO_SPKR].max <= MAX_VOLUME_YELLOW_THRESH)
-            clr = Orange;
-        break;
+							UiDriverMenuItemChangeUInt8(var, mode, &ts.rx_gain[RX_AUDIO_SPKR].max,		MAX_VOLUME_MIN,
+																										MAX_VOLUME_MAX,
+																										MAX_VOLUME_DEFAULT,
+																										1);
+							if(ts.rx_gain[RX_AUDIO_SPKR].value > ts.rx_gain[RX_AUDIO_SPKR].max)             // is the volume currently higher than the new setting?
+							{
+								ts.rx_gain[RX_AUDIO_SPKR].value = ts.rx_gain[RX_AUDIO_SPKR].max;        // yes - force the volume to the new value
+								UiDriver_RefreshEncoderDisplay(); // maybe shown on encoder boxes
+							}
+							snprintf(options,32, "    %u", ts.rx_gain[RX_AUDIO_SPKR].max);
+							//
+							     if ( ts.rx_gain[RX_AUDIO_SPKR].max <= MAX_VOLUME_RED_THRESH   )  clr = Red;     // Indicate that gain has been reduced by changing color
+							else if ( ts.rx_gain[RX_AUDIO_SPKR].max <= MAX_VOLUME_YELLOW_THRESH)  clr = Orange;
+							break;
+
+							*/
+
 #if 0
     case CONFIG_MAX_RX_GAIN:    // maximum RX gain setting
         var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.max_rf_gain,
@@ -2654,700 +2780,805 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         break;
 #endif
     case CONFIG_LINEOUT_GAIN:
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.lineout_gain,
-                                              LINEOUT_GAIN_MIN,
-                                              LINEOUT_GAIN_MAX,
-                                              LINEOUT_GAIN_DEFAULT,
-                                              1
-                                             );
-        if(var_change)
-        {
-            Codec_VolumeLineOut(ts.txrx_mode);
-        }
-        snprintf(options,32, "%3u", ts.lineout_gain);
-        break;
-    case CONFIG_BEEP_FREQ:      // Beep frequency
-        if(ts.flags2 & FLAGS2_KEY_BEEP_ENABLE)      // is beep enabled?
-        {
-            var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.beep_frequency,
-                                                   MIN_BEEP_FREQUENCY,
-                                                   MAX_BEEP_FREQUENCY,
-                                                   DEFAULT_BEEP_FREQUENCY,
-                                                   25);
-            if(var_change)
-            {
-                AudioManagement_LoadBeepFreq();
-                AudioManagement_KeyBeep();      // make beep to demonstrate frequency
-            }
-        }
-        else    // beep not enabled - display frequency in red
-            clr = Orange;
-        snprintf(options,32, "   %uHz", (uint)ts.beep_frequency);   // casted to int because display errors if uint32_t
-        break;
-    //
-    case CONFIG_BEEP_VOLUME:    // beep loudness
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.beep_loudness,
-                                              0,
-                                              MAX_BEEP_LOUDNESS,
-                                              DEFAULT_BEEP_LOUDNESS,
-                                              1);
-        if(var_change)
-        {
-      		if(ts.beep_loudness)
-      		{
-      		  ts.flags2 |= FLAGS2_KEY_BEEP_ENABLE;
-          	  AudioManagement_LoadBeepFreq(); // calculate new beep loudness values
-          	  AudioManagement_KeyBeep();      // make beep to demonstrate loudness
-          	}
-          	else
-          	{
-      		  ts.flags2 &= ~FLAGS2_KEY_BEEP_ENABLE;
-          	}
-        }
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.lineout_gain, LINEOUT_GAIN_MIN,
+																								  LINEOUT_GAIN_MAX,
+																								  LINEOUT_GAIN_DEFAULT,
+																								  1 );
+							if(var_change)
+							{
+								Codec_Volume_Line_Out(ts.txrx_mode);
+							}
+							snprintf(options,32, "%3u", ts.lineout_gain);
+							break;
 
-      	if(ts.beep_loudness)
-      	{
-    	  snprintf(options,32, "    %u", ts.beep_loudness);
-    	}
-    	else
-    	{
-    	  snprintf(options,32, "%s", "OFF");
-    	}
-        break;
+    case CONFIG_BEEP_FREQ:      // Beep frequency
+							if(ts.flags2 & FLAGS2_KEY_BEEP_ENABLE)      // is beep enabled?
+							{
+								var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.beep_frequency,
+																					   MIN_BEEP_FREQUENCY,
+																					   MAX_BEEP_FREQUENCY,
+																					   DEFAULT_BEEP_FREQUENCY,
+																					   25);
+								if(var_change)
+								{
+									AudioManagement_LoadBeepFreq();
+									AudioManagement_KeyBeep();      // make beep to demonstrate frequency
+								}
+							}
+							else  clr = Orange;  // beep not enabled - display frequency in orange color
+
+							snprintf(options,32, "   %uHz", (uint)ts.beep_frequency);   // casted to int because display errors if uint32_t
+							break;
+    //
+
+    case CONFIG_BEEP_VOLUME:    // beep loudness
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.beep_loudness,
+																									  0,
+																									  MAX_BEEP_LOUDNESS,
+																									  DEFAULT_BEEP_LOUDNESS,
+																									  1);
+							if(var_change)
+							{
+								if(ts.beep_loudness)
+								{
+								  ts.flags2 |= FLAGS2_KEY_BEEP_ENABLE;
+								  AudioManagement_LoadBeepFreq(); // calculate new beep loudness values
+								  AudioManagement_KeyBeep();      // make beep to demonstrate loudness
+								}
+								else
+								{
+								  ts.flags2 &= ~FLAGS2_KEY_BEEP_ENABLE;
+								}
+							}
+
+							if(ts.beep_loudness)
+							{
+							  snprintf(options,32, "    %u", ts.beep_loudness);
+							}
+							else
+							{
+							  snprintf(options,32, "%s", "OFF");
+							}
+							break;
+
     case CONFIG_FREQUENCY_CALIBRATE:        // Frequency Calibration
-        if(var >= 1)        // setting increase?
-        {
-            ts.menu_var_changed = 1;    // indicate that a change has occurred
-            ts.freq_cal += 1; // df.tuning_step;
-            var_change = 1;
-        }
-        else if(var <= -1)      // setting decrease?
-        {
-            ts.menu_var_changed = 1;    // indicate that a change has occurred
-            ts.freq_cal -= 1 ; // df.tuning_step;
-            var_change = 1;
-        }
-        if(ts.freq_cal < MIN_FREQ_CAL)
-        {
-            ts.freq_cal = MIN_FREQ_CAL;
-        }
-        else if(ts.freq_cal > MAX_FREQ_CAL)
-        {
-            ts.freq_cal = MAX_FREQ_CAL;
-        }
-        //
-        if(mode == MENU_PROCESS_VALUE_SETDEFAULT)
-        {
-            ts.menu_var_changed = 1;    // indicate that a change has occurred
-            ts.freq_cal = 0;
-            var_change = 1;
-        }
-        if(var_change)
-        {
-            osc->setPPM(((float32_t)ts.freq_cal)/10.0);
-            // Update LO PPM (will automatically adjust frequency)
-            // this is a little trick
-            // FIXME: Use a better approach to trigger retuning
-            df.temp_factor_changed = true;
-        }
-        {
-            char numstr[16];
-            float2fixedstr(numstr, 16, ((float32_t)ts.freq_cal)/10.0, 4, 1);
-            snprintf(options,32, "%sppm", numstr );
-        }
-        break;
+									if(var >= 1)        // setting increase?
+									{
+										ts.menu_var_changed = 1;    // indicate that a change has occurred
+										ts.freq_cal        += 1; // df.tuning_step;
+										var_change          = 1;
+									}
+									else if(var <= -1)      // setting decrease?
+									{
+										ts.menu_var_changed = 1;    // indicate that a change has occurred
+										ts.freq_cal        -= 1 ; // df.tuning_step;
+										var_change          = 1;
+									}
+									if      ( ts.freq_cal < MIN_FREQ_CAL)	{ ts.freq_cal = MIN_FREQ_CAL; }
+									else if ( ts.freq_cal > MAX_FREQ_CAL)	{ ts.freq_cal = MAX_FREQ_CAL; }
+									//
+									if(mode == MENU_PROCESS_VALUE_SETDEFAULT)
+									{
+										ts.menu_var_changed = 1;    // indicate that a change has occurred
+										ts.freq_cal         = 0;
+										var_change          = 1;
+									}
+									if(var_change)
+									{
+										osc->setPPM(((float32_t)ts.freq_cal)/10.0);
+										// Update LO PPM (will automatically adjust frequency)
+										// this is a little trick
+										// FIXME: Use a better approach to trigger retuning
+										df.temp_factor_changed = true;
+									}
+									{
+										char numstr[16];
+										float2fixedstr(numstr, 16, ((float32_t)ts.freq_cal)/10.0, 4, 1);
+										snprintf(options,32, "%sppm", numstr );
+									}
+									break;
     //
     case CONFIG_FREQ_LIMIT_RELAX:   // Enable/disable Frequency tuning limits
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_FREQ_LIMIT_RELAX);
+								var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_FREQ_LIMIT_RELAX);
 
-        if(ts.flags1 & FLAGS1_FREQ_LIMIT_RELAX)             // tuning limit is disabled
-        {
-            clr = Orange;                   // warn user!
-        }
-        break;
+								if(ts.flags1 & FLAGS1_FREQ_LIMIT_RELAX)             // tuning limit is disabled
+								{
+									clr = Orange;                   // warn user!
+								}
+								break;
+
+	/*
     case CONFIG_FREQ_MEM_LIMIT_RELAX:   // Enable/disable Frequency memory limits
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_FREQ_MEM_LIMIT_RELAX);
+									var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_FREQ_MEM_LIMIT_RELAX);
 
-        if(ts.flags2 & FLAGS2_FREQ_MEM_LIMIT_RELAX)             // frequency/memory limit is disabled
-        {
-            clr = Orange;                   // warn user!
-        }
-        break;
-    case CONFIG_80M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
-        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_80M], TRX_MODE_RX, IQ_TRANS_ON);
-        break;
-    case CONFIG_80M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
-        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_80M], TRX_MODE_RX, IQ_TRANS_ON);
-        break;
+
+								//  ts.flags2                   = FLAGS2_CONFIG_DEFAULT;
+									ts.flags2    & = ~FLAGS2_FREQ_MEM_LIMIT_RELAX;
+									if(ts.flags2 & FLAGS2_FREQ_MEM_LIMIT_RELAX)             // frequency/memory limit is disabled
+									{
+										clr = Orange;                   // warn user!
+									}
+									break;
+      */
+
+     case CONFIG_160M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+						   UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_160M], TRX_MODE_RX, IQ_TRANS_ON);
+						   break;
+
+     case CONFIG_160M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+						   UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_160M], TRX_MODE_RX, IQ_TRANS_ON);
+						   break;
+
+     case CONFIG_80M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+							UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_80M], TRX_MODE_RX, IQ_TRANS_ON);
+							break;
+
+     case CONFIG_80M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+							UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_80M], TRX_MODE_RX, IQ_TRANS_ON);
+							break;
+
+     case CONFIG_60M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+						   UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_60M], TRX_MODE_RX, IQ_TRANS_ON);
+						   break;
+
+     case CONFIG_60M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+						   UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_60M], TRX_MODE_RX, IQ_TRANS_ON);
+						   break;
+
+     case CONFIG_40M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+						  UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_40M], TRX_MODE_RX, IQ_TRANS_ON);
+						  break;
+
+     case CONFIG_40M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+						  UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_40M], TRX_MODE_RX, IQ_TRANS_ON);
+						  break;
+
+     case CONFIG_30M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+						UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_30M], TRX_MODE_RX, IQ_TRANS_ON);
+						break;
+
+     case CONFIG_30M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+						UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_30M], TRX_MODE_RX, IQ_TRANS_ON);
+						break;
+
+    case CONFIG_20M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+						UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_20M], TRX_MODE_RX, IQ_TRANS_ON);
+						break;
+
+    case CONFIG_20M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+						UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_20M], TRX_MODE_RX, IQ_TRANS_ON);
+						break;
+
+    case CONFIG_17M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+					  UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_17M], TRX_MODE_RX, IQ_TRANS_ON);
+					  break;
+
+    case CONFIG_17M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+					  UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_17M], TRX_MODE_RX, IQ_TRANS_ON);
+					  break;
+
+    case CONFIG_15M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+					UiMenu_HandleIQAdjustGain (var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_15M], TRX_MODE_RX, IQ_TRANS_ON);
+					break;
+
+    case CONFIG_15M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+                UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_15M], TRX_MODE_RX, IQ_TRANS_ON);
+                break;
+
+    case CONFIG_12M_RX_IQ_GAIN_BAL:     // LSB RX IQ Gain balance
+                 UiMenu_HandleIQAdjustGain (var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_12M], TRX_MODE_RX, IQ_TRANS_ON);
+                 break;
+
+    case CONFIG_12M_RX_IQ_PHASE_BAL:        // LSB RX IQ Phase balance
+                 UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_12M], TRX_MODE_RX, IQ_TRANS_ON);
+                 break;
+
     case CONFIG_10M_RX_IQ_GAIN_BAL:     // USB/CW RX IQ Gain balance
-        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_10M], TRX_MODE_RX, IQ_TRANS_ON);
-        break;
+				UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.rx_iq_gain_balance[IQ_10M], TRX_MODE_RX, IQ_TRANS_ON);
+				break;
+
     case CONFIG_10M_RX_IQ_PHASE_BAL:        // USB RX IQ Phase balance
-        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_10M], TRX_MODE_RX, IQ_TRANS_ON);
-        break;
+				UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.rx_iq_phase_balance[IQ_10M], TRX_MODE_RX, IQ_TRANS_ON);
+				break;
+
+
+
+    case CONFIG_160M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+				UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_160M], TRX_MODE_TX, IQ_TRANS_ON);
+				break;
+    case CONFIG_160M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+				UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_160M], TRX_MODE_TX, IQ_TRANS_ON);
+				break;
+
     case CONFIG_80M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
-        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_80M], TRX_MODE_TX, IQ_TRANS_ON);
-        break;
+				UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_80M], TRX_MODE_TX, IQ_TRANS_ON);
+				break;
+
     case CONFIG_80M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
-        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_80M], TRX_MODE_TX, IQ_TRANS_ON);
-        break;
+				UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_80M], TRX_MODE_TX, IQ_TRANS_ON);
+				break;
+
+
+    case CONFIG_60M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+            UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_60M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+   case CONFIG_60M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+            UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_60M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+
+    case CONFIG_40M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+           UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_40M], TRX_MODE_TX, IQ_TRANS_ON);
+           break;
+
+    case CONFIG_40M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+           UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_40M], TRX_MODE_TX, IQ_TRANS_ON);
+           break;
+
+    case CONFIG_30M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+            UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_30M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_30M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+            UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_30M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_20M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+            UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_20M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_20M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+            UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_20M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_17M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+            UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_17M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_17M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+            UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_17M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_15M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+            UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_15M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_15M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+            UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_15M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_12M_TX_IQ_GAIN_BAL:     // LSB TX IQ Gain balance
+            UiMenu_HandleIQAdjustGain (var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_12M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
+    case CONFIG_12M_TX_IQ_PHASE_BAL:        // LSB TX IQ Phase balance
+            UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_12M], TRX_MODE_TX, IQ_TRANS_ON);
+            break;
+
     case CONFIG_10M_TX_IQ_GAIN_BAL:     // USB/CW TX IQ Gain balance
         UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_10M], TRX_MODE_TX, IQ_TRANS_ON);
         break;
+
     case CONFIG_10M_TX_IQ_PHASE_BAL:        // USB TX IQ Phase balance
         UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_10M], TRX_MODE_TX, IQ_TRANS_ON);
         break;
+
+    case    CONFIG_160M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+         UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_160M], TRX_MODE_TX, IQ_TRANS_OFF);
+         break;
+
+   case    CONFIG_160M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+         UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_160M], TRX_MODE_TX, IQ_TRANS_OFF);
+         break;
+
+
     case    CONFIG_80M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
         UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_80M], TRX_MODE_TX, IQ_TRANS_OFF);
         break;
+
     case    CONFIG_80M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
         UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_80M], TRX_MODE_TX, IQ_TRANS_OFF);
         break;
+
+    case    CONFIG_60M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+           UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_60M], TRX_MODE_TX, IQ_TRANS_OFF);
+           break;
+
+    case    CONFIG_60M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+           UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_60M], TRX_MODE_TX, IQ_TRANS_OFF);
+           break;
+
+
+
+    case    CONFIG_40M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_40M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+    case    CONFIG_40M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_40M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+
+    case    CONFIG_30M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+           UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_30M], TRX_MODE_TX, IQ_TRANS_OFF);
+           break;
+
+    case    CONFIG_30M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+           UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_30M], TRX_MODE_TX, IQ_TRANS_OFF);
+           break;
+
+
+    case    CONFIG_20M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_20M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+    case    CONFIG_20M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_20M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+
+
+    case    CONFIG_17M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_17M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+    case    CONFIG_17M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_17M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+
+
+    case    CONFIG_15M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_15M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+    case    CONFIG_15M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_15M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+
+
+    case    CONFIG_12M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
+        UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_12M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+    case    CONFIG_12M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
+        UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_12M], TRX_MODE_TX, IQ_TRANS_OFF);
+        break;
+
+
     case    CONFIG_10M_TX_IQ_GAIN_BAL_TRANS_OFF:     // AM TX IQ Phase balance
         UiMenu_HandleIQAdjustGain(var, mode, options, &clr, &ts.tx_iq_gain_balance[IQ_10M], TRX_MODE_TX, IQ_TRANS_OFF);
         break;
+
     case    CONFIG_10M_TX_IQ_PHASE_BAL_TRANS_OFF:        // FM TX IQ Phase balance
         UiMenu_HandleIQAdjustPhase(var, mode, options, &clr, &ts.tx_iq_phase_balance[IQ_10M], TRX_MODE_TX, IQ_TRANS_OFF);
         break;
 
     case CONFIG_CW_PA_BIAS:     // CW PA Bias adjust
-        if((ts.tune) || (ts.txrx_mode == TRX_MODE_TX))      // enable only in TUNE mode
-        {
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.pa_cw_bias,
-                                                  0,
-                                                  PA_BIAS_MAX,
-                                                  0,
-                                                  1);
+						if((ts.tune) || (ts.txrx_mode == TRX_MODE_TX))      // enable only in TUNE mode
+						{
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.pa_cw_bias,
+																  0,
+																  PA_BIAS_MAX,
+																  0,
+																  1);
 
-            if(var_change)
-            {
-                RadioManagement_SetPaBias();
-            }
-            if(ts.pa_cw_bias < PA_BIAS_LOW_LIMIT)
-            {
-                clr = Yellow;
-            }
-        }
-        else        // Orange if not in TUNE or TX mode
-        {
-            clr = Orange;
-        }
-        snprintf(options,32, "  %u", ts.pa_cw_bias);
-        break;
+							if(var_change)
+							{
+								RadioManagement_SetPaBias();
+							}
+							if(ts.pa_cw_bias < PA_BIAS_LOW_LIMIT)
+							{
+								clr = Yellow;
+							}
+						}
+						else        // Orange if not in TUNE or TX mode
+						{
+							clr = Orange;
+						}
+						snprintf(options,32, "  %u", ts.pa_cw_bias);
+						break;
+
     case CONFIG_PA_BIAS:        // PA Bias adjust (Including CW if CW bias == 0)
-        if((ts.tune) || (ts.txrx_mode == TRX_MODE_TX))      // enable only in TUNE mode
-        {
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.pa_bias,
-                                                  0,
-                                                  PA_BIAS_MAX,
-                                                  0,
-                                                  1);
+						if((ts.tune) || (ts.txrx_mode == TRX_MODE_TX))      // enable only in TUNE mode
+						{
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.pa_bias,
+																  0,
+																  PA_BIAS_MAX,
+																  0,
+																  1);
 
-            if(var_change)
-            {
-                RadioManagement_SetPaBias();
-            }
-            if(ts.pa_bias < PA_BIAS_LOW_LIMIT)
-            {
-                clr = Yellow;
-            }
-        }
-        else        // Orange if not in TUNE or TX mode
-        {
-            clr = Orange;
-        }
-        snprintf(options,32, "  %u", ts.pa_bias);
-        break;
+							if(var_change)
+							{
+								RadioManagement_SetPaBias();
+							}
+							if(ts.pa_bias < PA_BIAS_LOW_LIMIT)
+							{
+								clr = Yellow;
+							}
+						}
+						else        // Orange if not in TUNE or TX mode
+						{
+							clr = Orange;
+						}
+						snprintf(options,32, "  %u", ts.pa_bias);
+						break;
+
+
     case CONFIG_FWD_REV_PWR_DISP:   // Enable/disable display of FWD/REV A/D inputs on power sensor
-        var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &swrm.pwr_meter_disp,0,options,&clr);
-        break;
+								var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &swrm.pwr_meter_disp,0,options,&clr);
+
+								if ( swrm.pwr_meter_was_disp == 0)	 // effacer l'ancien affichage des power reverse et forward
+								{
+									UiLcdHy28_PrintText ( ts.Layout->PWR_NUM_IND.x, ts.Layout->PWR_NUM_IND.y, "           ", Grey, Black, 0);
+								}
+								break;
+
     case CONFIG_RF_FWD_PWR_NULL:        // RF power FWD power meter calibrate
-        if(swrm.pwr_meter_disp)
-        {
-            var_change = UiDriverMenuItemChangeUInt8(var, mode, &swrm.sensor_null,
-                                                  SWR_CAL_MIN,
-                                                  SWR_CAL_MAX,
-                                                  SWR_CAL_DEFAULT,
-                                                  1);
-            if(ts.txrx_mode != TRX_MODE_TX) // Orange if not in TX mode
-            {
-                clr = Orange;
-            }
-        }
-        else    // numerical display NOT active
-        {
-            clr = Orange;       // make it red to indicate that adjustment is NOT available
-        }
-        snprintf(options,32, "  %u", swrm.sensor_null);
-        break;
+							if(swrm.pwr_meter_disp)
+							{
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &swrm.sensor_null,
+																	  SWR_CAL_MIN,
+																	  SWR_CAL_MAX,
+																	  SWR_CAL_DEFAULT,
+																	  1);
+								if(ts.txrx_mode != TRX_MODE_TX) // Orange if not in TX mode
+								{
+									clr = Orange;
+								}
+							}
+							else    // numerical display NOT active
+							{
+								clr = Orange;       // make it red to indicate that adjustment is NOT available
+							}
+							snprintf(options,32, "  %u", swrm.sensor_null);
+							break;
+
     case CONFIG_FWD_REV_COUPLING_2200M_ADJ:     // RF power sensor coupling adjust (2200m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_2200M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_630M_ADJ:      // RF power sensor coupling adjust (630m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_630M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_160M_ADJ:      // RF power sensor coupling adjust (160m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_160M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_80M_ADJ:       // RF power sensor coupling adjust (80m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_80M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_40M_ADJ:       // RF power sensor coupling adjust (40m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_40M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_20M_ADJ:       // RF power sensor coupling adjust (20m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_20M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_15M_ADJ:       // RF power sensor coupling adjust (15m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_15M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_6M_ADJ:        // RF power sensor coupling adjust (6m)
-        UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_6M, options, &clr);
+        UiDriverMenuBandRevCouplingAdjust ( var, mode, COUPLING_6M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_2M_ADJ:        // RF power sensor coupling adjust (2m)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_2M, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_70CM_ADJ:      // RF power sensor coupling adjust (70cm)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_70CM, options, &clr);
         break;
+
     case CONFIG_FWD_REV_COUPLING_23CM_ADJ:      // RF power sensor coupling adjust (23cm)
         UiDriverMenuBandRevCouplingAdjust(var, mode, COUPLING_23CM, options, &clr);
         break;
+
     case CONFIG_FWD_REV_SENSE_SWAP: // Enable/disable swap of FWD/REV A/D inputs on power sensor
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_SWAP_FWDREV_SENSE);
+							var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_SWAP_FWDREV_SENSE);
 
-        if(ts.flags1 & FLAGS1_SWAP_FWDREV_SENSE)                // Display status FWD/REV swapping
-        {
-            clr = Orange;                   // warn user swapping is on!
-        }
-        break;
+							if(ts.flags1 & FLAGS1_SWAP_FWDREV_SENSE)                // Display status FWD/REV swapping
+							{
+								clr = Orange;                   // warn user swapping is on!
+							}
+							break;
+
     case CONFIG_XVTR_OFFSET_MULT:   // Transverter Frequency Display Offset/Multiplier Mode On/Off
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.xverter_mode,
-                                              0,
-                                              XVERTER_MULT_MAX,
-                                              0,
-                                              1);
-        if(var_change)          // change?
-        {
-            UiDriver_FrequencyUpdateLOandDisplay(true);
-        }
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.xverter_mode,
+																									  0,
+																									  XVERTER_MULT_MAX,
+																									  0,
+																									  1);
+								if(var_change)          // change?
+								{
+									UiDriver_FrequencyUpdateLOandDisplay(true);
+								}
 
-        if(ts.xverter_mode)
-        {
-            snprintf(options,32, " ON x%u", ts.xverter_mode);   // Display on/multiplication factor
-            clr = Red;
-        }
-        else
-        {
-            txt_ptr = "    OFF";
-        }
-        break;
+								if(ts.xverter_mode)
+								{
+									snprintf(options,32, " ON x%u", ts.xverter_mode);   // Display on/multiplication factor
+									clr = Red;
+								}
+								else
+								{
+									txt_ptr = "    OFF";
+								}
+								break;
+
     case CONFIG_XVTR_FREQUENCY_OFFSET:      // Adjust transverter Frequency offset
-        if(var >= 1)        // setting increase?
-        {
-            ts.menu_var_changed = 1;    // indicate that a change has occurred
-            ts.xverter_offset += df.tuning_step;
-            var_change = 1;
-        }
-        else if(var <= -1)      // setting decrease?
-        {
-            ts.menu_var_changed = 1;    // indicate that a change has occurred
-            if(ts.xverter_offset >= df.tuning_step) // subtract only if we have room to do so
-            {
-                ts.xverter_offset -= df.tuning_step;
-            }
-            else
-            {
-                ts.xverter_offset = 0;              // else set to zero
-            }
+							if(var >= 1)        // setting increase?
+							{
+								ts.menu_var_changed = 1;    // indicate that a change has occurred
+								ts.xverter_offset += df.tuning_step;
+								var_change = 1;
+							}
+							else if(var <= -1)      // setting decrease?
+							{
+								ts.menu_var_changed = 1;    // indicate that a change has occurred
+								if(ts.xverter_offset >= df.tuning_step) // subtract only if we have room to do so
+								{
+									ts.xverter_offset -= df.tuning_step;
+								}
+								else
+								{
+									ts.xverter_offset = 0;              // else set to zero
+								}
 
-            var_change = 1;
-        }
-        if(ts.xverter_offset > XVERTER_OFFSET_MAX)
-        {
-            ts.xverter_offset  = XVERTER_OFFSET_MAX;
-        }
-        if(mode == MENU_PROCESS_VALUE_SETDEFAULT)
-        {
-            ts.menu_var_changed = 1;    // indicate that a change has occurred
-            ts.xverter_offset = 0;      // default for this option is to zero it out
-            var_change = 1;
-        }
-        if(var_change)          // change?
-        {
-            UiDriver_FrequencyUpdateLOandDisplay(true);
-        }
+								var_change = 1;
+							}
+							if(ts.xverter_offset > XVERTER_OFFSET_MAX)
+							{
+								ts.xverter_offset  = XVERTER_OFFSET_MAX;
+							}
+							if(mode == MENU_PROCESS_VALUE_SETDEFAULT)
+							{
+								ts.menu_var_changed = 1;    // indicate that a change has occurred
+								ts.xverter_offset   = 0;      // default for this option is to zero it out
+								var_change          = 1;
+							}
+							if(var_change)          // change?
+							{
+								UiDriver_FrequencyUpdateLOandDisplay(true);
+							}
 
-        if(ts.xverter_mode) // transvert mode active?
-        {
-            clr = Red;      // make number red to alert user of this!
-        }
+							if(ts.xverter_mode) // transvert mode active?
+							{
+								clr = Red;      // make number red to alert user of this!
+							}
 
-        snprintf(options,32, " %9uHz", (uint)ts.xverter_offset);    // print with nine digits
-        break;
+							snprintf(options,32, " %9uHz", (uint)ts.xverter_offset);    // print with nine digits
+							break;
 
 
     case CONFIG_2200M_5W_ADJUST:        // 2200m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2200, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2200, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_630M_5W_ADJUST:     // 630m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_630, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_630, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_160M_5W_ADJUST:     // 160m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_160, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_160, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_80M_5W_ADJUST:      // 80m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_80, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_80, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_60M_5W_ADJUST:      // 60m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_60, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_60, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_40M_5W_ADJUST:      // 40m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_40, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_40, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_30M_5W_ADJUST:      // 30m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_30, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_30, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_20M_5W_ADJUST:      // 20m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_20, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_20, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_17M_5W_ADJUST:      // 17m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_17, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_17, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_15M_5W_ADJUST:      // 15m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_15, PA_LEVEL_5W, options, &clr);
-        break;
+								UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_15, PA_LEVEL_5W, options, &clr);
+								break;
+
     case CONFIG_12M_5W_ADJUST:      // 12m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_12, PA_LEVEL_5W, options, &clr);
-        break;
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_12, PA_LEVEL_5W, options, &clr);
+        			break;
     case CONFIG_10M_5W_ADJUST:      // 10m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_10, PA_LEVEL_5W, options, &clr);
-        break;
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_10, PA_LEVEL_5W, options, &clr);
+        			break;
     case CONFIG_6M_5W_ADJUST:       // 6m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_6, PA_LEVEL_5W, options, &clr);
-        break;
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_6, PA_LEVEL_5W, options, &clr);
+        			break;
     case CONFIG_4M_5W_ADJUST:       // 4m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_4, PA_LEVEL_5W, options, &clr);
-        break;
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_4, PA_LEVEL_5W, options, &clr);
+        			break;
     case CONFIG_2M_5W_ADJUST:       // 2m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2, PA_LEVEL_5W, options, &clr);
-        break;
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2, PA_LEVEL_5W, options, &clr);
+        			break;
     case CONFIG_70CM_5W_ADJUST:     // 70cm 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_70, PA_LEVEL_5W, options, &clr);
-        break;
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_70, PA_LEVEL_5W, options, &clr);
+        			break;
     case CONFIG_23CM_5W_ADJUST:     // 23cm 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_23, PA_LEVEL_5W, options, &clr);
-        break;
-    case CONFIG_2200M_FULL_POWER_ADJUST:        // 2200m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2200, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_630M_FULL_POWER_ADJUST:     // 630m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_630, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_160M_FULL_POWER_ADJUST:     // 160m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_160, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_80M_FULL_POWER_ADJUST:      // 80m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_80, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_60M_FULL_POWER_ADJUST:      // 60m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_60, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_40M_FULL_POWER_ADJUST:      // 40m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_40, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_30M_FULL_POWER_ADJUST:      // 30m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_30, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_20M_FULL_POWER_ADJUST:      // 20m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_20, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_17M_FULL_POWER_ADJUST:      // 17m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_17, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_15M_FULL_POWER_ADJUST:      // 15m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_15, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_12M_FULL_POWER_ADJUST:      // 12m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_12, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_10M_FULL_POWER_ADJUST:      // 10m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_10, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_6M_FULL_POWER_ADJUST:       // 6m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_6, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_4M_FULL_POWER_ADJUST:       // 4m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_4, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_2M_FULL_POWER_ADJUST:       // 2m 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_70CM_FULL_POWER_ADJUST:     // 70cm 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_70, PA_LEVEL_FULL, options, &clr);
-        break;
-    case CONFIG_23CM_FULL_POWER_ADJUST:     // 23cm 5 watt adjust
-        UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_23, PA_LEVEL_FULL, options, &clr);
-        break;
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_23, PA_LEVEL_5W, options, &clr);
+        			break;
+    case CONFIG_2200M_FULL_POWER_ADJUST:        // 2200m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2200, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_630M_FULL_POWER_ADJUST:     // 630m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_630, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_160M_FULL_POWER_ADJUST:     // 160m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_160, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_80M_FULL_POWER_ADJUST:      // 80m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_80, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_60M_FULL_POWER_ADJUST:      // 60m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_60, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_40M_FULL_POWER_ADJUST:      // 40m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_40, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_30M_FULL_POWER_ADJUST:      // 30m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_30, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_20M_FULL_POWER_ADJUST:      // 20m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_20, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_17M_FULL_POWER_ADJUST:      // 17m  10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_17, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_15M_FULL_POWER_ADJUST:      // 15m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_15, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_12M_FULL_POWER_ADJUST:      // 12m 10 watt adjust
+    				UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_12, PA_LEVEL_FULL, options, &clr);
+    				break;
+    case CONFIG_10M_FULL_POWER_ADJUST:      // 10m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_10, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_6M_FULL_POWER_ADJUST:       // 6m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_6, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_4M_FULL_POWER_ADJUST:       // 4m 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_4, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_2M_FULL_POWER_ADJUST:       // 2m  10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_2, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_70CM_FULL_POWER_ADJUST:     // 70cm  10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_70, PA_LEVEL_FULL, options, &clr);
+        			break;
+    case CONFIG_23CM_FULL_POWER_ADJUST:     // 23cm 10 watt adjust
+        			UiDriverMenuBandPowerAdjust(var, mode, BAND_MODE_23, PA_LEVEL_FULL, options, &clr);
+        			break;
+
+  /*
     case CONFIG_REDUCE_POWER_ON_LOW_BANDS:
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_LOW_BAND_BIAS_REDUCE);
-        break;
+        			var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_LOW_BAND_BIAS_REDUCE);
+
+        			break;
+  */
+
+
+ /*
     case CONFIG_REDUCE_POWER_ON_HIGH_BANDS:
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_HIGH_BAND_BIAS_REDUCE);
-        break;
-#ifdef OBSOLETE_NR
-    case CONFIG_DSP_NR_DECORRELATOR_BUFFER_LENGTH:      // Adjustment of DSP noise reduction de-correlation delay buffer length
-        ts.dsp_nr_delaybuf_len &= 0xfff0;   // mask bottom nybble to enforce 16-count boundary
-        var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.dsp_nr_delaybuf_len,
-                                               DSP_NR_BUFLEN_MIN,
-                                               DSP_NR_BUFLEN_MAX,
-                                               DSP_NR_BUFLEN_DEFAULT,
-                                               16);
+        			var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags2,0,options,&clr, FLAGS2_HIGH_BAND_BIAS_REDUCE);
+        			break;
+  */
 
-        if(ts.dsp_nr_delaybuf_len <= ts.dsp_nr_numtaps) // is buffer smaller/equal to number of taps?
-            ts.dsp_nr_delaybuf_len = ts.dsp_nr_numtaps + 16;    // yes - it must always be larger than number of taps!
-
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NR_ENABLE)   // only update if DSP NR active
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-        }
-        if(!(ts.dsp_active & DSP_NR_ENABLE))    // mark orange if DSP NR not active
-            clr = Orange;
-        if(ts.dsp_nr_numtaps >= ts.dsp_nr_delaybuf_len) // Warn if number of taps greater than/equal buffer length!
-            clr = Red;
-        snprintf(options,32, "  %u", (uint)ts.dsp_nr_delaybuf_len);
-        break;
-    case CONFIG_DSP_NR_FFT_NUMTAPS:     // Adjustment of DSP noise reduction de-correlation delay buffer length
-        ts.dsp_nr_numtaps &= 0xf0;  // mask bottom nybble to enforce 16-count boundary
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_nr_numtaps,
-                                              DSP_NR_NUMTAPS_MIN,
-                                              DSP_NR_NUMTAPS_MAX,
-                                              DSP_NR_NUMTAPS_DEFAULT,
-                                              16);
-        if(ts.dsp_nr_numtaps >= ts.dsp_nr_delaybuf_len) // is number of taps equal or greater than buffer length?
-        {
-            ts.dsp_nr_delaybuf_len = ts.dsp_nr_numtaps + 16;    // yes - make buffer larger
-        }
-
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NR_ENABLE)   // only update if DSP NR active
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-        }
-
-        if(!(ts.dsp_active & DSP_NR_ENABLE))    // mark orange if DSP NR not active
-        {
-            clr = Orange;
-        }
-        if(ts.dsp_nr_numtaps >= ts.dsp_nr_delaybuf_len) // Warn if number of taps greater than/equal buffer length!
-        {
-            clr = Red;
-        }
-        snprintf(options,32, "  %u", ts.dsp_nr_numtaps);
-        break;
-    case CONFIG_DSP_NR_POST_AGC_SELECT:     // selection of location of DSP noise reduction - pre audio filter/AGC or post AGC/filter
-        temp_var_u8 = ts.dsp_active & DSP_NR_POSTAGC_ENABLE;
-        var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp_var_u8,0,options,&clr);
-        if(var_change)      // did something change?
-        {
-            CLR_OR_SET_BITMASK(temp_var_u8, ts.dsp_active, DSP_NR_POSTAGC_ENABLE);
-
-            if(ts.dsp_active & DSP_NR_ENABLE)   // only update if DSP NR active
-            {
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-            }
-        }
-
-        if(!(ts.dsp_active & DSP_NR_ENABLE))    // mark orange if DSP NR not active
-        {
-            clr = Orange;
-        }
-
-        break;
-
-    case CONFIG_DSP_NOTCH_CONVERGE_RATE:        // Adjustment of DSP noise reduction de-correlation delay buffer length
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_mu,
-                                              0,
-                                              DSP_NOTCH_MU_MAX,
-                                              DSP_NOTCH_MU_DEFAULT,
-                                              1);
-
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if Notch DSP is active
-            {
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-            }
-        }
-        if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if Notch DSP not active
-        {
-            clr = Orange;
-        }
-        snprintf(options,32, "  %u", ts.dsp_notch_mu);
-        break;
-    case CONFIG_DSP_NOTCH_DECORRELATOR_BUFFER_LENGTH:       // Adjustment of DSP noise reduction de-correlation delay buffer length
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_delaybuf_len,
-                                              DSP_NOTCH_BUFLEN_MIN,
-                                              DSP_NOTCH_BUFLEN_MAX,
-                                              DSP_NOTCH_DELAYBUF_DEFAULT,
-                                              8);
-
-
-        if(ts.dsp_notch_delaybuf_len <= ts.dsp_notch_numtaps)       // did we try to decrease it smaller than FFT size?
-        {
-            ts.dsp_notch_delaybuf_len = ts.dsp_notch_numtaps + 8;                       // yes - limit it to previous size
-        }
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if DSP Notch active
-            {
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-            }
-        }
-        if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if DSP Notch not active
-        {
-            clr = Orange;
-        }
-        if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)
-        {
-            clr = Red;
-        }
-        snprintf(options,32, "  %u", (uint)ts.dsp_notch_delaybuf_len);
-        break;
-    case CONFIG_DSP_NOTCH_FFT_NUMTAPS:      // Adjustment of DSP noise reduction de-correlation delay buffer length
-        ts.dsp_notch_numtaps &= 0xf0;   // mask bottom nybble to enforce 16-count boundary
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_numtaps,
-                                              0,
-                                              DSP_NOTCH_NUMTAPS_MAX,
-                                              DSP_NOTCH_NUMTAPS_DEFAULT,
-                                              16);
-        if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)   // force buffer size to always be larger than number of taps
-            ts.dsp_notch_delaybuf_len = ts.dsp_notch_numtaps + 8;
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if DSP NR active
-            {
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-            }
-        }
-        if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if DSP NR not active
-        {
-            clr = Orange;
-        }
-        if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)   // Warn if number of taps greater than/equal buffer length!
-        {
-            clr = Red;
-        }
-        snprintf(options,32, "  %u", ts.dsp_notch_numtaps);
-        break;
-/*
-    case CONFIG_AGC_TIME_CONSTANT:      // Adjustment of Noise Blanker AGC Time Constant
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.nb_agc_time_const,
-                                              0,
-                                              NB_MAX_AGC_SETTING,
-                                              NB_AGC_DEFAULT,
-                                              1);
-        if(var_change)                  // parameter changed?
-        {
-            AudioManagement_CalcNB_AGC();   // yes - recalculate new values for Noise Blanker AGC
-        }
-
-        snprintf(options,32, "  %u", ts.nb_agc_time_const);
-        break;
-*/
-#endif
 
 #ifdef USE_LMS_AUTONOTCH
     case CONFIG_DSP_NOTCH_CONVERGE_RATE:        // Adjustment of DSP autonotch convergence rate
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_mu,
-                                              0,
-                                              DSP_NOTCH_MU_MAX,
-                                              DSP_NOTCH_MU_DEFAULT,
-                                              1);
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_mu,
+																											  0,
+																											  DSP_NOTCH_MU_MAX,
+																											  DSP_NOTCH_MU_DEFAULT,
+																											  1);
 
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if Notch DSP is active
-            {
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-            }
-        }
-        if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if Notch DSP not active
-        {
-            clr = Orange;
-        }
-        snprintf(options,32, "  %u", ts.dsp_notch_mu);
-        break;
+										if(var_change)      // did something change?
+										{
+											if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if Notch DSP is active
+											{
+												AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
+											}
+										}
+										if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if Notch DSP not active
+										{
+											clr = Orange;
+										}
+										snprintf(options,32, "  %u", ts.dsp_notch_mu);
+										break;
+
     case CONFIG_DSP_NOTCH_DECORRELATOR_BUFFER_LENGTH:       // Adjustment of DSP noise reduction de-correlation delay buffer length
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_delaybuf_len,
-                                              DSP_NOTCH_BUFLEN_MIN,
-                                              DSP_NOTCH_BUFLEN_MAX,
-                                              DSP_NOTCH_DELAYBUF_DEFAULT,
-                                              8);
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_delaybuf_len,
+																											  DSP_NOTCH_BUFLEN_MIN,
+																											  DSP_NOTCH_BUFLEN_MAX,
+																											  DSP_NOTCH_DELAYBUF_DEFAULT,
+																											  8);
 
 
-        if(ts.dsp_notch_delaybuf_len <= ts.dsp_notch_numtaps)       // did we try to decrease it smaller than FFT size?
-        {
-            ts.dsp_notch_delaybuf_len = ts.dsp_notch_numtaps + 8;                       // yes - limit it to previous size
-        }
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if DSP Notch active
-            {
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-            }
-        }
-        if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if DSP Notch not active
-        {
-            clr = Orange;
-        }
-        if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)
-        {
-            clr = Red;
-        }
-        snprintf(options,32, "  %u", (uint)ts.dsp_notch_delaybuf_len);
-        break;
+										if(ts.dsp_notch_delaybuf_len <= ts.dsp_notch_numtaps)       // did we try to decrease it smaller than FFT size?
+										{
+											ts.dsp_notch_delaybuf_len = ts.dsp_notch_numtaps + 8;                       // yes - limit it to previous size
+										}
+										if(var_change)      // did something change?
+										{
+											if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if DSP Notch active
+											{
+												AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
+											}
+										}
+										if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if DSP Notch not active
+										{
+											clr = Orange;
+										}
+										if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)
+										{
+											clr = Red;
+										}
+										snprintf(options,32, "  %u", (uint)ts.dsp_notch_delaybuf_len);
+										break;
+
     case CONFIG_DSP_NOTCH_FFT_NUMTAPS:      // Adjustment of DSP noise reduction de-correlation delay buffer length
-        ts.dsp_notch_numtaps &= 0xf0;   // mask bottom nybble to enforce 16-count boundary
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_numtaps,
-                                              16,
-                                              DSP_NOTCH_NUMTAPS_MAX,
-                                              DSP_NOTCH_NUMTAPS_DEFAULT,
-                                              16);
-//        if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)   // force buffer size to always be larger than number of taps
-//            ts.dsp_notch_delaybuf_len = ts.dsp_notch_numtaps + 8;
-        if(var_change)      // did something change?
-        {
-            if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if DSP NR active
-            {
-                AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
-            }
-        }
-        if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if DSP NR not active
-        {
-            clr = Orange;
-        }
-        if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)   // Warn if number of taps greater than/equal buffer length!
-        {
-            clr = Red;
-        }
-        snprintf(options,32, "  %u", ts.dsp_notch_numtaps);
-        break;
+									ts.dsp_notch_numtaps &= 0xf0;   // mask bottom nybble to enforce 16-count boundary
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.dsp_notch_numtaps,
+																											  16,
+																											  DSP_NOTCH_NUMTAPS_MAX,
+																											  DSP_NOTCH_NUMTAPS_DEFAULT,
+																											  16);
+							//        if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)   // force buffer size to always be larger than number of taps
+							//            ts.dsp_notch_delaybuf_len = ts.dsp_notch_numtaps + 8;
+									if(var_change)      // did something change?
+									{
+										if(ts.dsp_active & DSP_NOTCH_ENABLE)    // only update if DSP NR active
+										{
+											AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
+										}
+									}
+									if(!(ts.dsp_active & DSP_NOTCH_ENABLE)) // mark orange if DSP NR not active
+									{
+										clr = Orange;
+									}
+									if(ts.dsp_notch_numtaps >= ts.dsp_notch_delaybuf_len)   // Warn if number of taps greater than/equal buffer length!
+									{
+										clr = Red;
+									}
+									snprintf(options,32, "  %u", ts.dsp_notch_numtaps);
+									break;
 #endif
 
     case CONFIG_AM_TX_FILTER_DISABLE:   // Enable/disable AM TX audio filter
-        temp_var_u8 = !(ts.flags1 & FLAGS1_AM_TX_FILTER_DISABLE);
-        var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp_var_u8,0,options,&clr);
-        if(var_change)          // did the status change and is translate mode NOT active?
-        {
-            CLR_OR_SET_BITMASK(!temp_var_u8,  ts.flags1, FLAGS1_AM_TX_FILTER_DISABLE);
-        }
-        if(ts.flags1 & FLAGS1_AM_TX_FILTER_DISABLE)             // Display status of TX audio filter
-        {
-            clr = Orange;                   // warn user that filter is off!
-        }
-        break;
+									temp_var_u8 = !(ts.flags1 & FLAGS1_AM_TX_FILTER_DISABLE);
+									var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &temp_var_u8,0,options,&clr);
+									if(var_change)          // did the status change and is translate mode NOT active?
+									{
+										CLR_OR_SET_BITMASK(!temp_var_u8,  ts.flags1, FLAGS1_AM_TX_FILTER_DISABLE);
+									}
+
+
+									if(ts.flags1 & FLAGS1_AM_TX_FILTER_DISABLE)             // Display status of TX audio filter
+									{
+										clr = Orange;                   // warn user that filter is off!
+									}
+									break;
+
 /*    case CONFIG_SSB_TX_FILTER_DISABLE:    // Enable/disable SSB TX audio filter
         temp_var = ts.flags1 & FLAGS1_SSB_TX_FILTER_DISABLE;
         tchange = UiDriverMenuItemChangeDisableOnOff(var, mode, &temp_var,0,options,&clr);
@@ -3368,87 +3599,367 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         }
         break;
 */
-    case CONFIG_SSB_TX_FILTER:  // Type of SSB TX audio filter
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_filter,
-//                0,
-                1,
-                                              TX_FILTER_BASS,
-                                              TX_FILTER_SOPRANO,
-                                              1
-                                             );
-        switch(ts.tx_filter) {
-        case TX_FILTER_SOPRANO:
-            txt_ptr = " SOPRANO";
-            break;
-        case TX_FILTER_BASS:
-            txt_ptr = "    BASS";
-            break;
-        case TX_FILTER_TENOR:
-            txt_ptr = "   TENOR";
-            break;
-        }
-        if(var_change)
-        {
-            // switch FIR Hilberts
-            AudioFilter_InitTxHilbertFIR();
-            // switch IIR Filters
-            AudioDriver_TxFilterInit(ts.dmod_mode);
-        }
-        break;
+
+    case CONFIG_SSB_RX_BASS_EQUAL_GAIN : /// NIZZZ :
+    	 										    temp_var_u8 = ( ts.bass_gain + 20 );
+    												var_change  = UiDriverMenuItemChangeUInt8 ( var, mode, &temp_var_u8,	0, 40, 23, 1 );  // TX_FILTER_SOPRANO   NIZZZ
+    												if ( var_change )
+    												{
+    													ts.bass_gain = (int32_t) temp_var_u8 - 20;
+    													AudioDriver_Set_Rx_Audio_Equalizer();
+    												}
+    												snprintf ( options,  32, "%+3d dB", (int16_t) ts.bass_gain );
+
+    												break;
+
+		case CONFIG_SSB_RX_BASS_EQUAL_FREQ : /// NIZZZ 	// Type of SSB RX audio filter
+											var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.rx_bass_filter_freq, 0, 254, 250, 1);  // TX_FILTER_SOPRANO   NIZZZ
+
+											if ( var_change )
+											{
+												 AudioDriver_Set_Rx_Audio_Equalizer();
+											}
+											snprintf ( options, 32, "%3d Hz", (int) ts.rx_bass_filter_freq + 150 );
+
+											break;
+
+		case CONFIG_SSB_RX_BASS_EQUAL_BWIDTH : /// NIZZZ   // Type of SSB RX audio filter
+
+													var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.rx_bass_filter_bwidth, 65, 99, 98,  -1);  // TX_FILTER_SOPRANO   NIZZZ
+													if ( var_change )
+													{
+														AudioDriver_Set_Rx_Audio_Equalizer();
+													}
+													snprintf ( options, 32, "%2u %%", 100 -  ts.rx_bass_filter_bwidth );
+													break;
+
+
+	    case CONFIG_SSB_RX_TREBL_EQUAL_GAIN : /// NIZZZ :
+												temp_var_u8 = ( ts.treble_gain + 20 );
+												var_change  = UiDriverMenuItemChangeUInt8 ( var, mode, &temp_var_u8,	0, 40, 23, 1 );  // TX_FILTER_SOPRANO   NIZZZ
+												if ( var_change )
+												{
+													ts.treble_gain = (int32_t) temp_var_u8 - 20;
+													AudioDriver_Set_Rx_Audio_Equalizer();
+												}
+												snprintf ( options,  32, "%+3d dB", (int16_t) ts.treble_gain );
+
+												break;
+
+		case CONFIG_SSB_RX_TREBL_EQUAL_FREQ : /// NIZZZ 	// Type of SSB RX audio filter
+												var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.rx_trebl_filter_freq, 0, 254, 235, 1);  // TX_FILTER_SOPRANO   NIZZZ
+
+												if ( var_change )
+												{
+													 AudioDriver_Set_Rx_Audio_Equalizer();
+												}
+												snprintf ( options, 32, "%4d Hz", (int16_t) ts.rx_trebl_filter_freq*10 + 400 );
+
+												break;
+
+		case CONFIG_SSB_RX_TREBL_EQUAL_BWIDTH : /// NIZZZ   // Type of SSB TX audio filter
+
+											var_change = UiDriverMenuItemChangeUInt8 ( var, mode, &ts.rx_trebl_filter_bwidth, 1, 99, 95,  -1);  // TX_FILTER_SOPRANO   NIZZZ
+											if ( var_change )
+											{
+												AudioDriver_Set_Rx_Audio_Equalizer();
+											}
+											snprintf ( options, 32, "0.%02d",  100 - ts.rx_trebl_filter_bwidth );
+										 // snprintf ( options, 32, "%2u %%",  100 - ts.rx_trebl_filter_bwidth );
+											break;
+
+
+		case  CONFIG_SSB_TX_HPF_FILTER : // Type of SSB TX Voice HPF filter
+										var_change = UiDriverMenuItemChangeUInt8 (  var,  mode,  &ts.tx_hpf_filter,
+																		            0, 7, 0 , 1);  // TX_FILTER_HPF   NIZZZ
+										switch(ts.tx_hpf_filter)
+										{
+											case 0:   txt_ptr = " 65 Hz";     break;
+											case 1:   txt_ptr = " 75 Hz";     break;
+											case 2:   txt_ptr = " 80 Hz";     break;
+											case 3:   txt_ptr = " 90 Hz";     break;
+											case 4:   txt_ptr = "100 Hz";     break;
+											case 5:   txt_ptr = "120 Hz";     break;
+											case 6:   txt_ptr = "140 Hz";     break;
+											case 7:   txt_ptr = "160 Hz";     break;
+										}
+										if(var_change)
+										{
+											AudioDriver_Voice_Tx_Filter_Init( ts.dmod_mode );  // switch IIR Filters
+										}
+										break;
+
+
+		case CONFIG_SSB_TX_FILTER:  // Type of SSB TX audio filter
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_filter,
+																	       1, TX_FILTER_WIDE, TX_FILTER_BASS, 1);  // TX_FILTER_SOPRANO   NIZZZ
+										switch(ts.tx_filter)
+										{
+											case TX_FILTER_SOPRANO:   txt_ptr = " SOPRANO";     break;
+											case TX_FILTER_TENOR  :   txt_ptr = "   TENOR";     break;
+											case TX_FILTER_BASS   :   txt_ptr = "    BASS";     break;
+											case TX_FILTER_WIDE   :   txt_ptr = "    WIDE";     break;
+										}
+										if(var_change)
+										{
+											// AudioFilter_Init_Tx_Hilbert_FIR();                // switch FIR Hilberts
+											AudioDriver_Voice_Tx_Filter_Init( ts.dmod_mode );  // switch IIR Filters
+										}
+										break;
+
+		case CONFIG_SSB_TX_EQUALIZER:  // Type of SSB TX audio filter
+												var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_equalizer,
+																				                   0, 14, 4, 1);  // TX_FILTER_SOPRANO   NIZZZ
+
+												ts.EQ_custom_display = false;
+												switch(ts.tx_equalizer)
+												{
+													case 0  :   txt_ptr = "CUSTOM";  ts.EQ_custom_display = true;   break;
+													case 1  :   txt_ptr = "Trebl7";     break;
+													case 2  :   txt_ptr = "Trebl6";     break;
+													case 3  :   txt_ptr = "Trebl5";     break;
+													case 4  :   txt_ptr = "Trebl4";     break;
+													case 5  :   txt_ptr = "Trebl3";     break;
+													case 6  :   txt_ptr = "Trebl2";     break;
+													case 7  :   txt_ptr = "trebl1";     break;
+													case 8  :   txt_ptr = "Mdium3";     break;
+													case 9  :   txt_ptr = "Mdium2";     break;
+													case 10 :   txt_ptr = "Mdium1";     break;
+													case 11 :   txt_ptr = " Flat4";     break;
+													case 12 :   txt_ptr = " Flat3";     break;
+													case 13 :   txt_ptr = " Flat2";     break;
+													case 14 :   txt_ptr = " Flat1";     break;
+												}
+
+
+												ts.reverberation_enable = (ts.reverberation_enable & 0xF) + ts.tx_equalizer * 16;
+
+												if(var_change)
+												{
+													// AudioFilter_Init_Tx_Hilbert_FIR();              // switch FIR Hilberts
+													// AudioDriver_Voice_Tx_Filter_Init( ts.dmod_mode );  // switch IIR Filters
+
+													ads.tx_filter_adjusting++;
+													AudioDriver_Set_Tx_Audio_Equalizer();
+													if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+}
+												break;
+
+		case CONFIG_SSB_TX_BASS_FILTER_GAIN : /// NIZZZ :
+ 										    temp_var_u8 = (ts.tx_bass_gain + 20);
+											var_change  = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,	0, 40, 23, 1);  // TX_FILTER_SOPRANO   NIZZZ
+											if (var_change)
+											{
+												ts.tx_bass_gain = (int32_t) temp_var_u8 - 20;
+
+												ads.tx_filter_adjusting++;
+												AudioDriver_Set_Tx_Audio_Equalizer();
+												if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+
+												// AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);// set filter instance
+											}
+											snprintf(options,32, "%+3d dB", (int16_t) ts.tx_bass_gain);
+
+											break;
+
+		case CONFIG_SSB_TX_BASS_FILTER_FREQ : /// NIZZZ 	// Type of SSB TX audio filter
+											var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_bass_filter_freq, 0, 255, 75, 1);  // TX_FILTER_SOPRANO   NIZZZ
+											if(var_change)
+											{
+												ads.tx_filter_adjusting++;
+												AudioDriver_Set_Tx_Audio_Equalizer();
+												if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+												// AudioDriver_SetRxAudioProcessing (ts.dmod_mode, false);
+											}
+											snprintf(options,32, "%3d Hz", (int16_t) ts.tx_bass_filter_freq*2 + 130);
+											break;
+
+
+
+
+
+		case CONFIG_SSB_TX_BASS_FILTER_BWIDTH : /// NIZZZ   // Type of SSB TX audio filter
+
+											var_change = UiDriverMenuItemChangeUInt8( var, mode, &ts.tx_bass_filter_bwidth, 1, 99, 99,  -1 );  // TX_FILTER_SOPRANO   NIZZZ
+											if ( var_change )
+											{
+												ads.tx_filter_adjusting++;
+												AudioDriver_Set_Tx_Audio_Equalizer();
+												if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+												// AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
+											}
+											snprintf(options,32, "% 2.1f %%", (float32_t) (100 -  ts.tx_bass_filter_bwidth)/2.0);
+											break;
+
+
+		case MENU_MIC_NOISE_GATE_THRESH : /// NIZZZ   // Type of SSB TX audio filter
+											var_change = UiDriverMenuItemChangeInt16( var, mode, &ts.Noise_Gate_Thresh, 0, 6000, 500,  10);  // TX_FILTER_SOPRANO   NIZZZ
+											snprintf ( options,32, "%4d", ts.Noise_Gate_Thresh /10 );
+											break;
+
+
+		case MENU_REVERBERATION_ENABLE : /// NIZZZ
+
+											{	uint8_t    reverb = ts.reverberation_enable & 0x1; // les 4 bits superieur sont reservés à l'équaliseur parametrique
+
+												var_change = UiDriverMenuItemChangeUInt8( var , mode, &reverb, 0, 1, 0,  1);  // TX_FILTER_SOPRANO   NIZZZ
+
+												switch( reverb )
+												{
+													case 0:   txt_ptr = "OFF";  ts.reverberation_enable &= 0xFE;  break;
+													case 1:   txt_ptr = " ON";  ts.reverberation_enable |= 0x01;  break;
+												}
+
+												// ts.reverberation_enable = reverb + ts.tx_equalizer * 16;
+											}
+
+												break;
+
+		case MENU_REVERBERATION_RATE : 		var_change = UiDriverMenuItemChangeUInt8( var , mode, &ts.reverberation_rate, 0, 15, 10,  1 );  // TX_FILTER_SOPRANO   NIZZZ
+												snprintf ( options,32, "%2d %%", ts.reverberation_rate );
+
+												break;
+
+		case MENU_REVERBERATION_DELAY : 	var_change = UiDriverMenuItemChangeUInt8 ( var , mode, &ts.reverberation_delay, 10, 96, 48,  1);  // TX_FILTER_SOPRANO   NIZZZ
+												snprintf ( options,32, "%3.1f ms", 0.6666666 * ts.reverberation_delay );
+												break;
+
+		case CONFIG_SSB_TX_BASS_SHEEFT : /// NIZZZ   // Type of SSB TX audio filter
+													// de +5Hz a -15Hz
+													var_change = UiDriverMenuItemChangeUInt8( var, mode, &ts.tx_bass_sheeft, 0, 20, 15,  1);  // TX_FILTER_SOPRANO   NIZZZ
+
+													snprintf ( options,32, "%+3d Hz", ts.tx_bass_sheeft - 15 );
+													break;
+
+
+		case CONFIG_SSB_TX_MEDIUM_FILTER_FREQ : /// NIZZZ 	// Type of SSB TX audio filter
+													var_change = UiDriverMenuItemChangeUInt8( var, mode, &ts.tx_medium_filter_freq, 0, 254, 100, 1);
+													if(var_change)
+													{
+														ads.tx_filter_adjusting++;
+														AudioDriver_Set_Tx_Audio_Equalizer();
+														if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+													}
+													snprintf( options,32, "%4d Hz", 400 + (int) ts.tx_medium_filter_freq * 5 );
+													break;
+
+
+		case CONFIG_SSB_TX_MEDIUM_FILTER_GAIN : /// NIZZZ :
+													temp_var_u8 = (ts.tx_medium_filter_gain + 30);
+													var_change  = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,	0, 60, 43, 1);  // TX_FILTER_SOPRANO   NIZZZ
+													if ( var_change )
+													{
+														ts.tx_medium_filter_gain = (int32_t) temp_var_u8 - 30;
+
+														ads.tx_filter_adjusting++;
+														AudioDriver_Set_Tx_Audio_Equalizer();
+														if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+
+													}
+													snprintf(options,32, "%+5.1f dB", (float32_t) ts.tx_medium_filter_gain/2.0);
+													break;
+
+
+
+		case CONFIG_SSB_TX_MEDIUM_FILTER_BWIDTH :
+													var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_medium_filter_bwidth, 70, 99, 85,  -1);  // TX_FILTER_SOPRANO   NIZZZ
+
+													if( var_change )
+													{
+														ads.tx_filter_adjusting++;
+														AudioDriver_Set_Tx_Audio_Equalizer();
+														if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+													}
+													snprintf ( options,32, "0.%02d", 100 -  ts.tx_medium_filter_bwidth);
+													break;
+
+
+
+
+
+		case CONFIG_SSB_TX_TREB_FILTER_GAIN : /// NIZZZ :
+											temp_var_u8 = (ts.tx_treble_gain + 30);
+
+											var_change  = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,	0, 60, 50, 1);  // TX_FILTER_SOPRANO   NIZZZ
+
+											if (var_change)
+											{
+												ts.tx_treble_gain = (int32_t) temp_var_u8 - 30;
+
+												ads.tx_filter_adjusting++;
+												AudioDriver_Set_Tx_Audio_Equalizer();
+												if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+												// AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false); // set filter instance
+											}
+											snprintf(options,32, "%+5.1f dB",  (float) ts.tx_treble_gain/2.0);
+											break;
+
+
+		case CONFIG_SSB_TX_TREB_FILTER_FREQ : /// NIZZZ 	// Type of SSB TX audio filter
+											var_change = UiDriverMenuItemChangeUInt8( var, mode, &ts.tx_treb_filter_freq, 0, 255, 255, 1);
+											if(var_change)
+											{
+												ads.tx_filter_adjusting++;
+												AudioDriver_Set_Tx_Audio_Equalizer();
+												if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+												// AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
+											}
+											snprintf( options,32, "%4d Hz", 1475 + (int) ts.tx_treb_filter_freq * 5 );
+											break;
+
+
+		case CONFIG_SSB_TX_TREB_FILTER_BWIDTH : /// NIZZZ	// Type of SSB TX audio filter
+											var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_treb_filter_bwidth, 70, 99, 70,  -1);  // TX_FILTER_SOPRANO   NIZZZ
+
+											if ( var_change )
+											{
+												ads.tx_filter_adjusting++;
+												AudioDriver_Set_Tx_Audio_Equalizer();
+												if ( ads.tx_filter_adjusting )  { ads.tx_filter_adjusting--;}
+											    // AudioDriver_SetRxAudioProcessing(ts.dmod_mode, false);
+											}
+											snprintf ( options,32, "0.%02d", 100 -  ts.tx_treb_filter_bwidth);
+											break;
+
 
         case CONFIG_TUNE_TONE_MODE: // set power for antenne tuning
-        temp_var_u8 = ts.menu_var_changed;
-        // this is not save, so no need to mark as dirty,
-        // we just remember the state and restore it
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tune_tone_mode,
-                                              TUNE_TONE_SINGLE,
-                                              TUNE_TONE_TWO,
-                                              TUNE_TONE_SINGLE,
-                                              1);
-        switch(ts.tune_tone_mode)
-        {
-        case TUNE_TONE_SINGLE:
-            txt_ptr = "  Single";
-            break;
-        case TUNE_TONE_TWO:
-            txt_ptr = "Two Tone";
-            break;
-        default:
-            break;
-        }
-        ts.menu_var_changed = temp_var_u8;
-        break;
+									temp_var_u8 = ts.menu_var_changed;
+									// this is not save, so no need to mark as dirty,
+									// we just remember the state and restore it
+									var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tune_tone_mode,
+																										  TUNE_TONE_SINGLE,
+																										  TUNE_TONE_TWO,
+																										  TUNE_TONE_SINGLE,
+																										  1);
+									switch ( ts.tune_tone_mode )
+									{
+										case TUNE_TONE_SINGLE:   txt_ptr = "  Single";   break;
+										case TUNE_TONE_TWO   :   txt_ptr = "Two Tone";   break;
+										default              :				             break;
+									}
+									ts.menu_var_changed = temp_var_u8;
+									break;
+
         case CONFIG_TUNE_POWER_LEVEL: // set power for antenne tuning
-            var_change = UiDriverMenuItemChangeUInt8(var*(-1), mode, &ts.tune_power_level,
-                                                  0,
-                                                  PA_LEVEL_TUNE_KEEP_CURRENT,
-                                                  PA_LEVEL_TUNE_KEEP_CURRENT,
-                                                  1);
-            switch(ts.tune_power_level)
-            {
-            case PA_LEVEL_FULL:
-                txt_ptr = "FULL POWER";
-                break;
-            case PA_LEVEL_5W:
-                txt_ptr = "        5W";
-                break;
-            case PA_LEVEL_2W:
-                txt_ptr = "        2W";
-                break;
-            case PA_LEVEL_1W:
-                txt_ptr = "        1W";
-                break;
-            case PA_LEVEL_0_5W:
-                txt_ptr = "      0.5W";
-                break;
-            case PA_LEVEL_TUNE_KEEP_CURRENT:
-                txt_ptr = " as TX PWR";
-                break;
-            }
-            break;
+									var_change = UiDriverMenuItemChangeUInt8(var*(-1), mode, &ts.tune_power_level,
+																												  0,
+																												  PA_LEVEL_TUNE_KEEP_CURRENT,
+																												  PA_LEVEL_TUNE_KEEP_CURRENT,
+																												  1);
+									switch(ts.tune_power_level)
+									{
+										case PA_LEVEL_FULL             :    txt_ptr = "FULL POWER";    break;
+										case PA_LEVEL_5W               :    txt_ptr = "        5W";    break;
+										case PA_LEVEL_2W               :    txt_ptr = "        2W";    break;
+										case PA_LEVEL_1W               :    txt_ptr = "        1W";    break;
+										case PA_LEVEL_0_5W             :    txt_ptr = "      0.5W";    break;
+										case PA_LEVEL_TUNE_KEEP_CURRENT:    txt_ptr = " as TX PWR";    break;
+									}
+									break;
+
 #if 0
     case CONFIG_SPECTRUM_FFT_WINDOW_TYPE:   // set step size of of waterfall display?
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.fft_window_type,
+        							var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.fft_window_type,
                                               0,
                                               FFT_WINDOW_MAX-1,
                                               FFT_WINDOW_DEFAULT,
@@ -3456,82 +3967,60 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
         switch(ts.fft_window_type)
         {
-        case FFT_WINDOW_RECTANGULAR:
-            txt_ptr = "Rectangular";
-            break;
-        case FFT_WINDOW_COSINE:
-            txt_ptr = "     Cosine";
-            break;
-        case FFT_WINDOW_BARTLETT:
-            txt_ptr = "   Bartlett";
-            break;
-        case FFT_WINDOW_WELCH:
-            txt_ptr = "      Welch";
-            break;
-        case FFT_WINDOW_HANN:
-            txt_ptr = "       Hann";
-            break;
-        case FFT_WINDOW_HAMMING:
-            txt_ptr = "    Hamming";
-            break;
-        case FFT_WINDOW_BLACKMAN:
-            txt_ptr = "   Blackman";
-            break;
-        case FFT_WINDOW_NUTTALL:
-            txt_ptr = "    Nuttall";
-            break;
+			case FFT_WINDOW_RECTANGULAR:  	txt_ptr = "Rectangular";	break;
+			case FFT_WINDOW_COSINE:			txt_ptr = "     Cosine";	break;
+			case FFT_WINDOW_BARTLETT:		txt_ptr = "   Bartlett";	break;
+			case FFT_WINDOW_WELCH:			txt_ptr = "      Welch";	break;
+			case FFT_WINDOW_HANN:			txt_ptr = "       Hann";	break;
+			case FFT_WINDOW_HAMMING:		txt_ptr = "    Hamming";	break;
+			case FFT_WINDOW_BLACKMAN:		txt_ptr = "   Blackman";	break;
+			case FFT_WINDOW_NUTTALL:		txt_ptr = "    Nuttall";	break;
         }
         break;
 #endif
         case CONFIG_RESET_SER_EEPROM:
-        if(SerialEEPROM_24xx_Exists() == false)
-        {
-            txt_ptr = "   n/a";
-            clr = Red;
-        }
-        else
-        {
-      		txt_ptr = "n/a";
-			uint8_t test = 0;
-      		clr = White;
-      		UiDriverMenuItemChangeUInt8(var, mode, &test,
-        	                            	0,
-                                        	0,
-                                            10,
-                                            1
-                                           );
-      		switch(test)
-      		{
-      		  case 0:
-          		txt_ptr = "press DEFLT";
-          		break;
-      		  case 10:
-          		UiMenu_DisplayValue("    Working",Red,pos);
-          		// clear EEPROM
-          		SerialEEPROM_Clear_Signature();
-          		Board_Reboot();
-          		break;
-      		}
-        }
-        break;
+								if ( SerialEEPROM_24xx_Exists() == false )
+								{
+									txt_ptr = "   n/a";
+									clr     = Red;
+								}
+								else
+								{
+									txt_ptr      = "n/a";
+									uint8_t test = 0;
+									clr          = White;
+									UiDriverMenuItemChangeUInt8(var, mode, &test,	0,	0,	10,	1  );
+									switch(test)
+									{
+									  case  0:	txt_ptr = "press DEFLT";     		break;
+									  case 10:
+												UiMenu_DisplayValue("    Working",Red,pos);
+												// clear EEPROM
+												SerialEEPROM_Clear_Signature();
+												Board_Reboot();
+												break;
+									}
+								}
+								break;
+
     case    MENU_FP_CW_01:
     case    MENU_FP_CW_02:
     case    MENU_FP_CW_03:
     case    MENU_FP_CW_04:
-        UiMenu_ChangeFilterPathMemory(var, mode, options, &clr, FILTER_MODE_CW,(select - MENU_FP_CW_01)+1);
-        break;
+							UiMenu_ChangeFilterPathMemory(var, mode, options, &clr, FILTER_MODE_CW,(select - MENU_FP_CW_01)+1);
+							break;
     case    MENU_FP_AM_01:
     case    MENU_FP_AM_02:
     case    MENU_FP_AM_03:
     case    MENU_FP_AM_04:
-        UiMenu_ChangeFilterPathMemory(var, mode, options, &clr, FILTER_MODE_AM,(select - MENU_FP_AM_01)+1);
-        break;
+							UiMenu_ChangeFilterPathMemory(var, mode, options, &clr, FILTER_MODE_AM,(select - MENU_FP_AM_01)+1);
+							break;
     case    MENU_FP_SSB_01:
     case    MENU_FP_SSB_02:
     case    MENU_FP_SSB_03:
     case    MENU_FP_SSB_04:
-        UiMenu_ChangeFilterPathMemory(var, mode, options, &clr, FILTER_MODE_SSB,(select - MENU_FP_SSB_01)+1);
-        break;
+							UiMenu_ChangeFilterPathMemory(var, mode, options, &clr, FILTER_MODE_SSB,(select - MENU_FP_SSB_01)+1);
+							break;
 
 //    case    MENU_FP_SAM_01:
 //    case    MENU_FP_SAM_02:
@@ -3540,274 +4029,225 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 //        UiMenu_ChangeFilterPathMemory(var, mode, options, &clr, FILTER_MODE_SAM,(select - MENU_FP_SAM_01)+1);
 //        break;
     case CONFIG_CAT_IN_SANDBOX:
-        var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_CAT_IN_SANDBOX);
+								var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_CAT_IN_SANDBOX);
 
-        if(!(ts.flags1 & FLAGS1_CAT_IN_SANDBOX))
-        {
-            ts.cat_band_index = 255;
-        }
-        break;
+								if(!(ts.flags1 & FLAGS1_CAT_IN_SANDBOX))
+								{
+									ts.cat_band_index = 255;
+								}
+								break;
+
     case CONFIG_CAT_XLAT:   // CAT xlat reporting
-        var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &ts.xlat,0,options,&clr);
-        break;
+							var_change = UiDriverMenuItemChangeEnableOnOff(var, mode, &ts.xlat,0,options,&clr);
+							break;
+
+
+	/*
     case MENU_DEBUG_TX_AUDIO:  // Step size button swap on/off
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.stream_tx_audio,
-                0,
-                STREAM_TX_AUDIO_NUM-1,
-                STREAM_TX_AUDIO_OFF,
-                1);
-        switch(ts.stream_tx_audio)
-        {
-        case STREAM_TX_AUDIO_OFF:
-            txt_ptr = "     OFF";
-            break;
-        case STREAM_TX_AUDIO_SRC:
-            txt_ptr = "  Source";
-            break;
-        case STREAM_TX_AUDIO_FILT:
-            txt_ptr = "Filtered";
-            break;
-        case STREAM_TX_AUDIO_DIGIQ:
-            txt_ptr = "Final IQ";
-            break;
-        }
-        break;
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.stream_tx_audio,
+																										0,
+																										STREAM_TX_AUDIO_NUM-1,
+																										STREAM_TX_AUDIO_OFF,
+																										1);
+								switch(ts.stream_tx_audio)
+								{
+									case STREAM_TX_AUDIO_OFF: 	txt_ptr = "     OFF";	break;
+									case STREAM_TX_AUDIO_SRC:	txt_ptr = "  Source";	break;
+									case STREAM_TX_AUDIO_FILT:	txt_ptr = "Filtered";	break;
+									case STREAM_TX_AUDIO_DIG_IQ:txt_ptr = "Final IQ";	break;
+								}
+								break;
+								*/
 
     case CONFIG_I2C1_SPEED:      //
-        var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.i2c_speed[I2C_BUS_1],
-                1,
-                20,
-                I2C1_SPEED_DEFAULT,
-                1
-        );
-        if(var_change)
-        {
-            mchf_hw_i2c1_init();
-        }
-        snprintf(options, 32, " %3dkHz",(unsigned int)(ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 );
-		if((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 50 || (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 250)
-		{
-		  clr = Red;
-		}
-		if(((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 50 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 90) || ((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 210 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 250))
-		{
-		  clr = Yellow;
-		}
-		if((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 90 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 210)
-		{
-		  clr = Green;
-		}
-        break;
+							var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.i2c_speed[I2C_BUS_1],
+																											1,
+																											20,
+																											I2C1_SPEED_DEFAULT,
+																											1 );
+							if(var_change)
+							{
+								mchf_hw_i2c1_init();
+							}
+							snprintf(options, 32, " %3dkHz",(unsigned int)(ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 );
+							if((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 50 || (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 250)
+							{
+							  clr = Red;
+							}
+							if(((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 50 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 90) || ((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 210 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 250))
+							{
+							  clr = Yellow;
+							}
+							if((ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 > 90 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 210)
+							{
+							  clr = Green;
+							}
+							break;
+
     case CONFIG_I2C2_SPEED:      //
-        var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.i2c_speed[I2C_BUS_2],
-                1,
-                20,
-                I2C2_SPEED_DEFAULT,
-                1
-        );
-        if(var_change)
-        {
-            mchf_hw_i2c2_init();
-        }
-        snprintf(options, 32, " %3ukHz",(unsigned int)(ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 );
-		if((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 < 50 || (ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 250)
-		{
-		  clr = Red;
-		}
-		if(((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 50 && (ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 < 90) || ((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 210 && (ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 < 250))
-		{
-		  clr = Yellow;
-		}
-		if((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 90 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 210)
-		{
-		  clr = Green;
-		}
-        break;
+							var_change = UiDriverMenuItemChangeUInt32(var, mode, &ts.i2c_speed[I2C_BUS_2],
+																					1,
+																					20,
+																					I2C2_SPEED_DEFAULT,
+																					1
+																					);
+							if(var_change)
+							{
+								mchf_hw_i2c2_init();
+							}
+							snprintf(options, 32, " %3ukHz",(unsigned int)(ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 );
+							if((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 < 50 || (ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 250)
+							{
+							  clr = Red;
+							}
+							if(((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 50 && (ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 < 90) || ((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 210 && (ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 < 250))
+							{
+							  clr = Yellow;
+							}
+							if((ts.i2c_speed[I2C_BUS_2]*I2C_BUS_SPEED_MULT) / 1000 > 90 && (ts.i2c_speed[I2C_BUS_1]*I2C_BUS_SPEED_MULT) / 1000 < 210)
+							{
+							  clr = Green;
+							}
+							break;
 
     case CONFIG_RTC_HOUR:
-    {
-        RTC_TimeTypeDef rtc;
-        MchfRtc_GetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
-        rtc.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-        rtc.StoreOperation = RTC_STOREOPERATION_SET;
+						{
+							RTC_TimeTypeDef rtc;
+							MchfRtc_GetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
+							rtc.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+							rtc.StoreOperation = RTC_STOREOPERATION_SET;
 
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &rtc.Hours,
-                                              0,
-                                              23,
-                                              0,
-                                              1);
-        if(var_change)      // did something change?
-        {
-            HAL_RTC_SetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
-        }
-        snprintf(options,32, "  %2u", rtc.Hours);
-        break;
-    }
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &rtc.Hours,
+																  0,
+																  23,
+																  0,
+																  1);
+							if(var_change)      // did something change?
+							{
+								HAL_RTC_SetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
+							}
+							snprintf(options,32, "  %2u", rtc.Hours);
+							break;
+						}
+
+
     case CONFIG_RTC_MIN:
-    {
-        RTC_TimeTypeDef rtc;
-        MchfRtc_GetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
-        rtc.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-        rtc.StoreOperation = RTC_STOREOPERATION_SET;
+						{
+							RTC_TimeTypeDef rtc;
+							MchfRtc_GetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
+							rtc.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+							rtc.StoreOperation = RTC_STOREOPERATION_SET;
 
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &rtc.Minutes,
-                                              0,
-                                              59,
-                                              0,
-                                              1);
-        if(var_change)      // did something change?
-        {
-            HAL_RTC_SetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
-        }
-        snprintf(options,32, "  %2u", rtc.Minutes);
-        break;
-    }
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &rtc.Minutes,
+																  0,
+																  59,
+																  0,
+																  1);
+							if(var_change)      // did something change?
+							{
+								HAL_RTC_SetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
+							}
+							snprintf(options,32, "  %2u", rtc.Minutes);
+							break;
+						}
+
+
     case CONFIG_RTC_SEC:
-    {
-        RTC_TimeTypeDef rtc;
-        MchfRtc_GetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
-        rtc.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-        rtc.StoreOperation = RTC_STOREOPERATION_SET;
+						{
+							RTC_TimeTypeDef rtc;
+							MchfRtc_GetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
+							rtc.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+							rtc.StoreOperation = RTC_STOREOPERATION_SET;
 
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &rtc.Seconds,
-                                              0,
-                                              59,
-                                              0,
-                                              1);
-        if(var_change)      // did something change?
-        {
-            HAL_RTC_SetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
-        }
-        snprintf(options,32, "  %2u", rtc.Seconds);
-        break;
-    }
+							var_change = UiDriverMenuItemChangeUInt8(var, mode, &rtc.Seconds,
+																							  0,
+																							  59,
+																							  0,
+																							  1);
+							if(var_change)      // did something change?
+							{
+								HAL_RTC_SetTime(&hrtc, &rtc, RTC_FORMAT_BIN);
+							}
+							snprintf(options,32, "  %2u", rtc.Seconds);
+							break;
+						}
 
     case CONFIG_RTC_CALIB:
-     {
-         var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.rtc_calib,
-                                               RTC_CALIB_PPM_MIN,
-                                               RTC_CALIB_PPM_MAX,
-                                               RTC_CALIB_PPM_DEFAULT,
-                                               1);
-         if(var_change)      // did something change?
-         {
-             MchfRtc_SetPpm(ts.rtc_calib);
-         }
-         snprintf(options,32, "%4dppm", ts.rtc_calib);
-         break;
-     }
+							 {
+								 var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.rtc_calib,
+																								   RTC_CALIB_PPM_MIN,
+																								   RTC_CALIB_PPM_MAX,
+																								   RTC_CALIB_PPM_DEFAULT,
+																								   1);
+								 if(var_change)      // did something change?
+								 {
+									 MchfRtc_SetPpm(ts.rtc_calib);
+								 }
+								 snprintf(options,32, "%4dppm", ts.rtc_calib);
+								 break;
+							 }
 
     case CONFIG_RTC_START:
-        txt_ptr = "Do it!";
-        clr = White;
-        if(var>=1)
-        {
-            MchfRtc_Start();
-            Board_Reboot();
-            // TODO: we will not reach this but in future we may switch the keyboard dynamically...
-            txt_ptr = " Done!";
-            clr = Green;
-        }
-        break;
+							txt_ptr = "Do it!";
+							clr = White;
+							if(var>=1)
+							{
+								MchfRtc_Start();
+								Board_Reboot();
+								// TODO: we will not reach this but in future we may switch the keyboard dynamically...
+								txt_ptr = " Done!";
+								clr = Green;
+							}
+							break;
 
     case CONFIG_RTC_RESET:
-        txt_ptr = "Do it!";
-        clr = White;
-        if(var>=1)
-        {
-            MchfRtc_FullReset();
+							txt_ptr = "Do it!";
+							clr     = White;
+							if(var >= 1)
+							{
+								MchfRtc_FullReset();
 
-            txt_ptr = " Done!";
-            clr = Green;
-        }
-        break;
+								txt_ptr = " Done!";
+								clr     =   Green;
+							}
+							break;
+
     case MENU_DEBUG_ENABLE_INFO:  // Debug infos on LCD on/off
 
-        var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.show_debug_info,0,options,&clr);
-        if(var_change)
-        {
-            UiDriver_DebugInfo_DisplayEnable(ts.show_debug_info);
-        }
-        break;
-#ifdef USE_TWO_CHANNEL_AUDIO
-    case MENU_DEBUG_ENABLE_STEREO:  // stereo demodulation on/off
+								 var_change = UiDriverMenuItemChangeEnableOnOffBool( var, mode, &ts.show_debug_info, 0, options, &clr );
 
-        var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.stereo_enable,0,options,&clr);
-        switch(ts.stereo_enable)
-        {
-        case 0:
-            txt_ptr = " OFF";
-            break;
-        case 1:
-            txt_ptr = "  ON";
-            break;
-        }
-        break;
-#endif
-#ifdef USE_LEAKY_LMS
-        case MENU_DEBUG_LEAKY_LMS:
-            var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.enable_leaky_LMS,0,options,&clr);
-            break;
+								if ( var_change )
+								{
+									UiDriver_DebugInfo_DisplayEnable ( ts.show_debug_info );
+									///  AudioDriver_SetupAgcWdsp(); /// ajout� pour tester les euilles niveau maxi du CAG
+									if ( !ts.show_debug_info) { ts.old_rfg_calc = 100; }
 
 
-        case MENU_DEBUG_ANR_GAIN:      //
-            var_change = UiDriverMenuItemChangeUInt32(var, mode, &leakyLMS.two_mu_int,
-                    1,
-                    10000,
-                    100,
-                    10
-            );
-            if(var_change)
-            {
-            	leakyLMS.two_mu = leakyLMS.two_mu_int / 1000000;
-            }
-            snprintf(options, 32, " %4u",(unsigned int)leakyLMS.two_mu_int);
 
-        break;
-        case MENU_DEBUG_ANR_LEAK:      //
-            var_change = UiDriverMenuItemChangeUInt32(var, mode, &leakyLMS.gamma_int,
-                    1,
-                    1000,
-                    100,
-                    10
-            );
-            if(var_change)
-            {
-            	leakyLMS.gamma = leakyLMS.gamma_int / 1000;
-            }
-            snprintf(options, 32, " %4u",(unsigned int)leakyLMS.gamma_int);
 
-        break;
+								}
+								break;
 
-        case MENU_DEBUG_ANR_TAPS:      //
-            var_change = UiDriverMenuItemChangeInt16(var, mode, &leakyLMS.n_taps,
-                    1,
-                    192,
-                    64,
-                    2
-            );
-            if(var_change)
-            {
-//            	leakyLMS.gamma = leakyLMS.gamma_int / 1000;
-            }
-            snprintf(options, 32, " %3u",(unsigned int)leakyLMS.n_taps);
+    case  MENU_DEBUG_COEFF_1 :
+    							var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.debug_coeff_1, 0, 120,  70,  5);
 
-        break;
-        case MENU_DEBUG_ANR_DELAY:      //
-            var_change = UiDriverMenuItemChangeInt16(var, mode, &leakyLMS.delay,
-                    1,
-                    64,
-                    16,
-                    2
-            );
-            if(var_change)
-            {
-//            	leakyLMS.gamma = leakyLMS.gamma_int / 1000;
-            }
-            snprintf(options, 32, " %3u",(unsigned int)leakyLMS.delay);
+								if(var_change)      // did something change?
+								{
 
-        break;
-#endif
+								}
+								snprintf(options,32, "  %3u", (unsigned int) ts.debug_coeff_1 );
+								break;
+
+    case  MENU_DEBUG_COEFF_2 :
+        							var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.debug_coeff_2, 0, 20,  5,  1);
+
+    								if(var_change)      // did something change?
+    								{
+
+    								}
+    								snprintf(options,32, "  %3u", (unsigned int) ts.debug_coeff_2 );
+    								break;
+
 
 // this is now adjusted by ts.dsp_nr_strength
 /*        case MENU_DEBUG_NR_ALPHA:      //
@@ -3825,30 +4265,28 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
         break;
 */
-        case MENU_DEBUG_NR_GAIN_SHOW:      //
-            var_change = UiDriverMenuItemChangeInt16(var, mode, &NR.gain_display,
-                    0,
-                    1,
-                    0,
-                    1
-            );
-            switch(NR.gain_display)
-            {
-            case 0:
-                txt_ptr = "        OFF";
-                break;
-            case 1:
-                txt_ptr = "        Hk";
-                break;
-            /*case 2:
-                txt_ptr = "     notch";
-                break;
-            case 3:
-                txt_ptr = "HK & notch";
-                break; */
-            }
 
-        break;
+#if 0
+        case MENU_DEBUG_NR_GAIN_SHOW:      //
+									var_change = UiDriverMenuItemChangeInt16(var, mode, &NR.gain_display,
+																											0,
+																											1,
+																											0,
+																											1  );
+									switch( NR.gain_display )
+									{
+										case 0: 	txt_ptr = "        OFF";	break;
+										case 1:		txt_ptr = "        Hk";		break;
+										/*case 2:
+											txt_ptr = "     notch";
+											break;
+										case 3:
+											txt_ptr = "HK & notch";
+											break; */
+									}
+
+									break;
+#endif
 
         /*case MENU_DEBUG_NR_GAIN_SMOOTH_ALPHA:      //
             var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.nr_gain_smooth_alpha_int,
@@ -3909,21 +4347,20 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
         break;*/
 
-        case MENU_DEBUG_NR_BETA:      //
-            var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.nr_beta_int,
-                    700,
-                    999,
-                    960,
-                    2
-            );
-            if(var_change)
-            {
-            	ts.nr_beta = (float32_t)ts.nr_beta_int / 1000.0;
-            }
-            snprintf(options, 32, " %3u",(unsigned int)ts.nr_beta_int);
+  /*      case MENU_DEBUG_NR_BETA:      //
+								var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.nr_beta_int,
+																									700,
+																									999,
+																									960,
+																									2  );
+								if(var_change)
+								{
+									ts.nr_beta = (float32_t)ts.nr_beta_int / 1000.0;
+								}
+								snprintf(options, 32, " %3u",(unsigned int)ts.nr_beta_int);
 
-        break;
-
+								break;
+*/
         /*case MENU_DEBUG_NR_Mode:      //
             var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.nr_mode,
                     0,
@@ -3967,45 +4404,48 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 			}
         break; */
 
-            case MENU_DEBUG_NR_ASNR:
-             var_change = UiDriverMenuItemChangeInt16(var, mode, &NR2.asnr,
-                                                   2,
-                                                   30,
-                                                   30,
-                                                   1);
-             if(var_change)      // did something change?
-             {
-             	//ts.nr_first_time = 1;
-             }
-             snprintf(options,32, "  %3u", (unsigned int)NR2.asnr);
-             break;
+      /*      case MENU_DEBUG_NR_ASNR:
+									 var_change = UiDriverMenuItemChangeInt16(var, mode, &NR2.asnr,
+																		   2,
+																		   30,
+																		   30,
+																		   1);
+									 if(var_change)      // did something change?
+									 {
+										//ts.nr_first_time = 1;
+									 }
+									 snprintf(options,32, "  %3u", (unsigned int)NR2.asnr);
+									 break;
+*/
+
+  /*      case MENU_DEBUG_NR_GAIN_SMOOTH_WIDTH:
+									var_change = UiDriverMenuItemChangeInt16(var, mode, &NR2.width,
+																		  1,
+																		  5,
+																		  1,
+																		  1);
+									if(var_change)      // did something change?
+									{
+										//ts.nr_first_time = 1;
+									}
+									snprintf(options,32, "  %3u", (unsigned int)NR2.width);
+									break;  */
 
 
-        case MENU_DEBUG_NR_GAIN_SMOOTH_WIDTH:
-        var_change = UiDriverMenuItemChangeInt16(var, mode, &NR2.width,
-                                              1,
-                                              5,
-                                              4,
-                                              1);
-        if(var_change)      // did something change?
-        {
-        	//ts.nr_first_time = 1;
-        }
-        snprintf(options,32, "  %3u", (unsigned int)NR2.width);
-        break;
+  /*      case MENU_DEBUG_NR_GAIN_SMOOTH_THRESHOLD:
+									var_change = UiDriverMenuItemChangeInt16(var, mode, &NR2.power_threshold_int,
+																		  10,
+																		  100,
+																		  30,
+																		  5);
+									if(var_change)      // did something change?
+									{
+										//ts.nr_first_time = 1;
+									}
+									snprintf(options,32, "  %3u", (unsigned int)NR2.power_threshold_int);
+									break;
+			*/
 
-        case MENU_DEBUG_NR_GAIN_SMOOTH_THRESHOLD:
-                var_change = UiDriverMenuItemChangeInt16(var, mode, &NR2.power_threshold_int,
-                                                      10,
-                                                      100,
-                                                      40,
-                                                      5);
-                if(var_change)      // did something change?
-                {
-                	//ts.nr_first_time = 1;
-                }
-                snprintf(options,32, "  %3u", (unsigned int)NR2.power_threshold_int);
-                break;
 
 /*
         case MENU_DEBUG_NR_VAD_DELAY:      //
@@ -4024,27 +4464,30 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         break;
 */
         case MENU_DEBUG_CLONEOUT:
-        txt_ptr = " Do it!";
-        clr = White;
-        if(var>=1)
-        {
-            CatDriver_CloneOutStart();
-            txt_ptr = "Working";
-            var = 1;
-            clr = Green;
-        }
-        break;
+								txt_ptr = " Do it!";
+								clr = White;
+								if(var>=1)
+								{
+									CatDriver_CloneOutStart();
+									txt_ptr = "Working";
+									var     = 1;
+									clr     = Green;
+								}
+								break;
+
+
      case MENU_DEBUG_CLONEIN:
-        txt_ptr = " Do it!";
-        clr = White;
-        if(var>=1)
-        {
-            CatDriver_CloneInStart();
-            txt_ptr = "Waiting";
-            var = 1;
-            clr = Green;
-        }
-        break;
+								txt_ptr = " Do it!";
+								clr     = White;
+								if(var>=1)
+								{
+									CatDriver_CloneInStart();
+									txt_ptr = "Waiting";
+									var     = 1;
+									clr     = Green;
+								}
+								break;
+
         //     case MENU_DEBUG_NEW_NB:
         //         var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.new_nb,0,options,&clr);
         //         break;//
@@ -4059,9 +4502,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
                 	 ts.NR_FFT_L = 256;
                  }
         break;
-     case MENU_DEBUG_NR_DEC_ENABLE:
-                 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.NR_decimation_enable,0,options,&clr);
-        break;
+
 //#endif
 //     case MENU_DEBUG_NR_ENABLE:
 //             var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.nr_enable,0,options,&clr);
@@ -4102,98 +4543,128 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 //         var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.rtty_atc_enable,0,options,&clr);
 //         break;
 
+/*
+     case CONFIG_PREDISTORSION_ALPHA : var_change = UiDriverMenuItemChangeInt16( var, mode, &ts.pdp_alpha_int,
+    		                                        										00,
+																							 1000,
+																							 500,
+																							 1);
+     	 	 	 	 	 	 	 	  if (var_change)
+     	 	 	 	 	 	 	 	  {
+     	 	 	 	 	 	 	 		  ts.pdp_alpha = (ts.pdp_alpha_int - 500 )* 2E-13;
+     	 	 	 	 	 	 	 	  }
+
+     	 	 	 	 	 	 	 	  snprintf(options, 32, "%4d",  ts.pdp_alpha_int -500);
+    	                              break;
+
+     case CONFIG_PREDISTORSION_BETTA : var_change = UiDriverMenuItemChangeInt16( var, mode, &ts.pdp_betta_int,
+     																							0,
+     																							1000,
+     																							 500,
+     																							 1);
+          	 	 	 	 	 	 	 	  if (var_change)
+          	 	 	 	 	 	 	 	  {
+          	 	 	 	 	 	 	 		  ts.pdp_betta = (ts.pdp_betta_int - 500 ) * 3E-8;
+          	 	 	 	 	 	 	 	  }
+
+          	 	 	 	 	 	 	 	  snprintf(options, 32, "%4d",  ts.pdp_betta_int -500);
+         	                              break;
+  */
+
      case MENU_CW_DECODER:
-         var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_decoder_enable,
-                 0,
-                 1,
-                 0,
-                 1);
-         if (var_change)
-         {
-             if (ts.dmod_mode == DEMOD_CW)
-             {
-                 UiDriver_UpdateDemodSpecificDisplayAfterParamChange();
-             }
-             Board_RedLed(LED_STATE_OFF);
-         }
-         switch(ts.cw_decoder_enable)
-         {
-         case 0:
-             txt_ptr = "OFF";
-             break;
-         case 1:
-             txt_ptr = " ON";
-             break;
-         }
-         break;
+						 var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.cw_decoder_enable,
+																									 0,
+																									 1,
+																									 0,
+																									 1);
+						 if (var_change)
+						 {
+							 if (ts.dmod_mode == DEMOD_CW)
+							 {
+								 UiDriver_UpdateDemodSpecificDisplayAfterParamChange();
+							 }
+							 Board_RedLed(LED_STATE_OFF);
+						 }
+						 switch(ts.cw_decoder_enable)
+						 {
+							 case 0: txt_ptr = "OFF";	 break;
+							 case 1: txt_ptr = " ON";	 break;
+						 }
+						 break;
 
      case MENU_DEBUG_CW_OFFSET_SHIFT_KEEP_SIGNAL:
-         var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.cw_offset_shift_keep_signal,0,options,&clr);
-         break;
+						 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.cw_offset_shift_keep_signal,0,options,&clr);
+						 break;
 
      case MENU_CW_DECODER_USE_3_GOERTZEL:
-         var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.use_3_goertzels,0,options,&clr);
-    	 break;
+						 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.use_3_goertzels,0,options,&clr);
+						 break;
 
      case MENU_CW_DECODER_SHOW_CW_LED:
-         var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.show_CW_LED,0,options,&clr);
-         if (cw_decoder_config.show_CW_LED == false)
-         {
-             Board_RedLed(LED_STATE_OFF);
-         }
-    	 break;
+							 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.show_CW_LED,0,options,&clr);
+
+							 if (cw_decoder_config.show_CW_LED == false)
+							 {
+								 Board_RedLed(LED_STATE_OFF);
+								 ts.flags2  &= ~FLAGS2_SHOW_CW_LED;
+							 }
+							 else
+							 {
+								 ts.flags2  |= FLAGS2_SHOW_CW_LED;
+							 }
+							 break;
+
+
      case MENU_CW_DECODER_SNAP_ENABLE:
-         var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.snap_enable,0,options,&clr);
-         if (var_change)
-         {
-             if (ts.dmod_mode == DEMOD_CW)
-             {
-                 UiDriver_UpdateDemodSpecificDisplayAfterParamChange();
-             }
-         }
-    	 break;
+							 var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &cw_decoder_config.snap_enable,0,options,&clr);
+							 if (var_change)
+							 {
+								 if (ts.dmod_mode == DEMOD_CW)
+								 {
+									 UiDriver_UpdateDemodSpecificDisplayAfterParamChange();
+								 }
+							 }
+							 break;
 
     case MENU_DIGITAL_MODE_SELECT:
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.digital_mode,0,DigitalMode_Num_Modes-1,0,1);
-        if (var_change)
-        {
-            // TODO: Factor this out into a Ui function for (de-)activating Rtty mode
-            if (RadioManagement_IsApplicableDemodMode(DEMOD_DIGI))
-            {
-                UiDriver_SetDemodMode(DEMOD_DIGI);
-            }
-        }
-        snprintf(options,32,"     %s",digimodes[ts.digital_mode].label);
-        clr = digimodes[ts.digital_mode].enabled?White:Red;
-        break;
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.digital_mode,0,DigitalMode_Num_Modes-1,0,1);
+								if (var_change)
+								{
+									// TODO: Factor this out into a Ui function for (de-)activating Rtty mode
+									if (RadioManagement_IsApplicableDemodMode(DEMOD_DIGI))
+									{
+										UiDriver_SetDemodMode(DEMOD_DIGI);
+									}
+								}
+								snprintf(options,32,"     %s",digimodes[ts.digital_mode].label);
+								clr = digimodes[ts.digital_mode].enabled?White:Red;
+								break;
+
     case CONFIG_CAT_PTT_RTS:
-        var_change = UiDriverMenuItemChangeEnableOnOffBool(var, mode, &ts.enable_ptt_rts,0,options,&clr);
-        break;
+							var_change = UiDriverMenuItemChangeEnableOnOffBool( var, mode, &ts.enable_ptt_rts, 0, options, &clr);
+
+
+							break;
+
 
     case MENU_DEBUG_OSC_SI5351_PLLRESET:
-        var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.debug_si5351a_pllreset,
-                0,
-                3,
-                0,
-                1);
-        switch(ts.debug_si5351a_pllreset)
-        {
-        case 0:
-            txt_ptr = "    Always";
-            break;
-        case 1:
-            txt_ptr = "   Divider";
-            break;
-        case 2:
-            txt_ptr = "IQ Divider";
-            break;
-        case 3:
-            txt_ptr = "      Never";
-            break;
-        }
-        break;
+										var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.debug_si5351a_pllreset,
+																														0,
+																														3,
+																														0,
+																														1);
+										ts.debug_si5351a_pllreset = 3 ; // forc� � "NEVER"
 
-    default:                        // Move to this location if we get to the bottom of the table!
+										switch(ts.debug_si5351a_pllreset)
+										{
+											case 0:	txt_ptr = "    Always";	break;
+											case 1:	txt_ptr = "   Divider";	break;
+											case 2:	txt_ptr = "IQ Divider";	break;
+											case 3:	txt_ptr = "     Never"; break;
+										}
+										break;
+
+    default:                         // Move to this location if we get to the bottom of the table!
         txt_ptr = "ERROR!";
         break;
     }

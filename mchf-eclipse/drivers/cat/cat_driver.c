@@ -23,17 +23,19 @@
 #include "radio_management.h"
 #include "config_storage.h"
 
-uint8_t limit_4bits(uint32_t in)
+
+uint8_t limit_4bits( uint32_t  in )
 {
     return in > 15 ? 15 : in;
 }
+
 // CAT driver internal structure
 typedef struct CatDriver
 {
-    bool    cat_ptt_active;
-    CatInterfaceState state;
-    CatInterfaceProtocol protocol;
-    uint32_t lastbufferadd_time;
+    bool                  cat_ptt_active;
+    CatInterfaceState     state;
+    CatInterfaceProtocol  protocol;
+    uint32_t              lastbufferadd_time;
 
 } CatDriver;
 
@@ -44,18 +46,8 @@ CatDriver                  cat_driver;
 static void CatDriver_CatEnableTX(bool enable)
 {
     if (enable)
-    {
-        if(RadioManagement_IsTxDisabled() == false)
-        {
-            ts.ptt_req = true;
-            cat_driver.cat_ptt_active = true;
-        }
-    }
-    else
-    {
-        ts.ptt_req = false;
-        cat_driver.cat_ptt_active = false;
-    }
+    {  if(RadioManagement_IsTxDisabled() == false) { ts.ptt_req = true;   cat_driver.cat_ptt_active = true;                                  } }
+    else                                           { ts.ptt_req = false;  cat_driver.cat_ptt_active = false;  ts.tx_immediate_stop_req = true; }
 }
 
 
@@ -69,8 +61,9 @@ bool CatDriver_CatPttActive()
 
 bool CatDriver_CWKeyPressed()
 {
-    return cdcvcp_ctrllines.dtr != 0;
+    return (cdcvcp_ctrllines.dtr != 0); //  || (cdcvcp_ctrllines.rts != 0) ;  // Nizou  pour activer le RTS a la generation du CW
 }
+
 
 bool CatDriver_PTTKeyPressed()
 {
@@ -81,8 +74,8 @@ bool CatDriver_PTTKeyChangedState()
 {
     static bool ptt_key_last_state;
 
-    bool curval = CatDriver_PTTKeyPressed();
-    bool retval = ptt_key_last_state != curval;
+    bool curval        = CatDriver_PTTKeyPressed();
+    bool retval        = ptt_key_last_state != curval;
     ptt_key_last_state = curval;
 
     return retval;
@@ -102,8 +95,8 @@ __IO int32_t cat_tail = 0;
 
 static uint8_t CatDriver_InterfaceBufferHasData()
 {
-    int32_t len = cat_head - cat_tail;
-    return len < 0?len+CAT_BUFFER_SIZE:len;
+    int32_t  len  = cat_head - cat_tail;
+    return   len  < 0?len+CAT_BUFFER_SIZE:len;
 }
 
 
@@ -114,9 +107,9 @@ static int cat_buffer_remove(uint8_t* c_ptr)
 
     if (cat_head != cat_tail)
     {
-        int c = cat_buffer[cat_tail];
+        int c    = cat_buffer[cat_tail];
         cat_tail = (cat_tail + 1) % CAT_BUFFER_SIZE;
-        *c_ptr = (uint8_t)c;
+        *c_ptr   = (uint8_t)c;
         ret++;
     }
     return ret;
@@ -131,8 +124,8 @@ int CatDriver_InterfaceBufferAddData(uint8_t c)
     if (next_head != cat_tail)
     {
         /* there is room */
-        cat_buffer[cat_head] = c;
-        cat_head = next_head;
+        cat_buffer[ cat_head ]        = c;
+        cat_head                      = next_head;
         cat_driver.lastbufferadd_time = ts.sysclock;
         ret ++;
     }
@@ -144,7 +137,7 @@ static void cat_buffer_reset()
     cat_tail = cat_head;
 }
 
-#define CAT_DRIVER_TIMEOUT 30
+#define CAT_DRIVER_TIMEOUT 30     // 30   base de temps 5ms au lieu de 10ms originale
 // defined in increments of 10ms, needs to be longer than the longest running operation
 // the mcHF can do. It seems band switching is taking longest time.
 // According to the FT817 manual, timeout is 200ms, so we use that plus a little extra and it seems to work
@@ -164,7 +157,7 @@ static void cat_driver_sync_data( void)
 
     if (bufsz)
     {
-        if ( ts.sysclock - CAT_DRIVER_TIMEOUT > cat_driver.lastbufferadd_time)
+        if ( ts.sysclock  - CAT_DRIVER_TIMEOUT > cat_driver.lastbufferadd_time)
         {
             // if we are here the first bufsz bytes are older than 200ms
             // if in the meantime new bytes arrive, no problem, we keep them
@@ -447,12 +440,12 @@ typedef enum {
 
 struct FT817
 {
-    uint8_t req[5];
-    ft817_cat_st state;
-    ft817_clone_out_st cloneout_state;
-    ft817_clone_in_st clonein_state;
+    uint8_t             req[5];
+    ft817_cat_st        state;
+    ft817_clone_out_st  cloneout_state;
+    ft817_clone_in_st   clonein_state;
 // #define DEBUG_FT817
-#ifdef DEBUG_FT817
+#ifdef  DEBUG_FT817
 #define FT817_MAX_CMD 100
     uint8_t reqs[FT817_MAX_CMD*5];
     uint32_t cmd_cntr;
@@ -563,72 +556,64 @@ bool CatDriver_Ft817_EEPROM_RW_Func(bool readEEPROM, uint16_t addr, uint8_t* dat
     {
         switch(addr)
         {
-        /*
-        HRD:
-        case 0x56:
+			/*
+			HRD:
+			case 0x56:
 
-        case 0x57:
-        case 0x58:
+			case 0x57:
+			case 0x58:
 
-        case 0x5F:
-        case 0x60:
+			case 0x5F:
+			case 0x60:
 
-        case 0x80
+			case 0x80
 
-        case 0x7B:
-         */
-        case 0x55:
-            // Used by: HRD
-            // Bit 0: 0 -> VFO A, 1 -> VFO B
-            // Bit 5: 0 -> Memory, 1 -> MTUNE
-            // Bit 6: Unknown
-            // Bit 7: 0 -> Memory Mode, 1 -> VFO
-            *data_p = is_vfo_b()? 0x81:0x80;
+			case 0x7B:
+			 */
+			case 0x55:
+							// Used by: HRD
+							// Bit 0: 0 -> VFO A, 1 -> VFO B
+							// Bit 5: 0 -> Memory, 1 -> MTUNE
+							// Bit 6: Unknown
+							// Bit 7: 0 -> Memory Mode, 1 -> VFO
+							*data_p = is_vfo_b()? 0x81:0x80;
 
-            // TODO: If memmode gets implmented, we need more complex handling here
-            retval = true;
-            break;
-        case 0x79:
-        {
-            // Used by: HRD
-            // Bit 0 - 1: TX Power 00 - Hi -> 11: L1 (lowest)
-            // Bit 2: Unknown
-            // Bit 3: PRI On?
-            // Bit 4: DW On?
-            // Bit 5-6: Scan Mode: 00 No, 10 Scan Up, 11 Scan Down
-            // Bit 7: ART On?
-            uint8_t powerlevel = 0;
-            switch (ts.power_level)
-            {
-            case PA_LEVEL_0_5W:
-                powerlevel = 3;
-                break;
-            case PA_LEVEL_1W:
-                powerlevel = 2;
-                break;
-            case PA_LEVEL_2W:
-                powerlevel = 1;
-                break;
-            default:
-                // we report 5W and FULL as High
-                // TODO: or shall we merge two other power settings?
-                powerlevel = 0;
-                break;
-            }
-            *data_p = powerlevel;
-            retval = true;
-            break;
-        }
-        case 0x7A:
-        {
-            // Used by: HRD, N1MM
-            // Bit 0 - 5: Antenna Select   HF/6m/FM Broadcast/Airband/2m/70cm
-            // Bit 6: Unknown
-            // Bit 7 indicates split mode
-            *data_p = is_splitmode() ? 0x80:00;
-            retval = true;
-            break;
-        }
+							// TODO: If memmode gets implmented, we need more complex handling here
+							retval = true;
+							break;
+			case 0x79:
+						{
+							// Used by: HRD
+							// Bit 0 - 1: TX Power 00 - Hi -> 11: L1 (lowest)
+							// Bit 2: Unknown
+							// Bit 3: PRI On?
+							// Bit 4: DW On?
+							// Bit 5-6: Scan Mode: 00 No, 10 Scan Up, 11 Scan Down
+							// Bit 7: ART On?
+							uint8_t powerlevel = 0;
+							switch (ts.power_level)
+							{
+								case PA_LEVEL_0_5W:		powerlevel = 3;		break;
+								case PA_LEVEL_1W:		powerlevel = 2;		break;
+								case PA_LEVEL_2W:		powerlevel = 1;		break;
+								default:				powerlevel = 0;		break;
+														// we report 5W and FULL as High
+														// TODO: or shall we merge two other power settings?
+							}
+							*data_p = powerlevel;
+							retval = true;
+							break;
+						}
+			case 0x7A:
+						{
+							// Used by: HRD, N1MM
+							// Bit 0 - 5: Antenna Select   HF/6m/FM Broadcast/Airband/2m/70cm
+							// Bit 6: Unknown
+							// Bit 7 indicates split mode
+							*data_p = is_splitmode() ? 0x80:00;
+							retval = true;
+							break;
+						}
         }
     }
     return retval;
@@ -641,6 +626,7 @@ static const ft817_eeprom_emul_t ft817_eeprom[] =
         { .type = FT817EE_DATA,     .start = 0,     .end = 3,       .content.value = 0      }, // checksum
         { .type = FT817EE_DATA,     .start = 4,     .end = 4,       .content.value = 0xD8   }, // radio config
         { .type = FT817EE_DATA,     .start = 5,     .end = 5,       .content.value = 0xBF   }, // radio config
+		{ .type = FT817EE_DATA,     .start = 0x54,  .end = 0x54,    .content.value = 0xFF   }, // this is just to make HAMLIB happy when reading 0x55 by requesting 0x54
         { .type = FT817EE_FUNC,     .start = 0x55,  .end = 0x55,    .content.funcPtr = CatDriver_Ft817_EEPROM_RW_Func }, // VOX Delay and other stuff, fixed value, required by WSJT-X
         { .type = FT817EE_DATA,     .start = 0x64,  .end = 0x64,    .content.value = 0x00 }, // VOX Delay and other stuff, fixed value, required by WSJT-X
         { .type = FT817EE_FUNC,     .start = 0x79,  .end = 0x79,    .content.funcPtr = CatDriver_Ft817_EEPROM_RW_Func }, // VOX Delay and other stuff, fixed value, required by WSJT-X
@@ -658,13 +644,10 @@ static bool CatDriver_Ft817_EEPROM_Write(uint16_t addr,uint8_t* data_p)
     {
         if (ft817_eeprom[idx].start <= addr && addr <= ft817_eeprom[idx].end)
         {
-            switch(ft817_eeprom[idx].type)
+            switch( ft817_eeprom[idx].type )
             {
-            case FT817EE_FUNC:
-                retval = (*ft817_eeprom[idx].content.funcPtr)(false, addr,data_p);
-                break;
-            default:
-                break;
+				case FT817EE_FUNC: 	retval = (*ft817_eeprom[idx].content.funcPtr)(false, addr,data_p);  break;
+				default:					                                                            break;
             }
             break;
         }
@@ -683,15 +666,15 @@ static bool CatDriver_Ft817_EEPROM_Read(uint16_t addr,uint8_t* data_p)
         {
             switch(ft817_eeprom[idx].type)
             {
-            case FT817EE_DATA:
-                *data_p = ft817_eeprom[idx].content.value;
-                retval = true;
-                break;
-            case FT817EE_FUNC:
-                retval = (*ft817_eeprom[idx].content.funcPtr)(true, addr,data_p);
-                break;
-            default:
-                break;
+				case FT817EE_DATA:
+								*data_p = ft817_eeprom[idx].content.value;
+								retval = true;
+								break;
+				case FT817EE_FUNC:
+								retval = (*ft817_eeprom[idx].content.funcPtr)(true, addr,data_p);
+								break;
+				default:
+					break;
             }
 
             break;
@@ -742,34 +725,36 @@ void CatDriver_BlockPrepare(uint8_t num, uint8_t idx, uint8_t rpt, uint8_t* buf,
     buf[0] = num;
     if (num == 7)
     {
-        buf[2] = 0x1; // Memory[0] visible;
+        buf[2   ] = 0x1; // Memory[0] visible;
         buf[2+26] = 0x1; // Memory[0] filled;
     }
     if (num == 8)
     {
         ft817_memory_t* mem = (ft817_memory_t*)&buf[1];
-        mem->freq=__builtin_bswap32(700100); // need to convert big / little endian!!
-        mem->tag_on_off = 1;
-        mem->freq_range = 0;
-        mem->am_step = 1;
-        mem->ssb_step = 1;
-        mem->tone = 0x08;
+        mem->freq           = __builtin_bswap32(700100); // need to convert big / little endian!!
+        mem->tag_on_off     = 1;
+        mem->freq_range     = 0;
+        mem->am_step        = 1;
+        mem->ssb_step       = 1;
+        mem->tone           = 0x08;
         memcpy(&mem->name[0],"A1234567",8);
     }
     buf[cloneblock_len[idx ].len+1] = CatDriver_Clone_Checksum(&buf[1],cloneblock_len[idx].len);
 }
 
-bool CatDriver_BlockRecv(uint8_t num, uint8_t idx, uint8_t rpt, uint8_t* buf, size_t len)
+
+
+bool  CatDriver_BlockRecv( uint8_t  num, uint8_t  idx, uint8_t  rpt, uint8_t*  buf, size_t  len )
 {
     bool retval = false;
 
-    if (buf[0] == num  && (buf[len - 1]  == CatDriver_Clone_Checksum(&buf[1],len-2)))
+    if (buf[0] == num  && (buf[len - 1]  == CatDriver_Clone_Checksum( &buf[1], len-2 )))
     {
         if (num == 8)
         {
             // we simply set the dial frequency here just for the show!
             ft817_memory_t* mem = (ft817_memory_t*)&buf[1];
-            df.tune_new = __builtin_bswap32(mem[0].freq) * (10 * TUNE_MULT);
+            df.tune_new         = __builtin_bswap32(mem[0].freq) * (10 );
         }
         retval = true;
     }
@@ -811,194 +796,203 @@ bool CatDriver_BlockAck()
 
 static void CatDriver_HandleCloneOut()
 {
-    static uint16_t blockIdx = 0;
-    static uint16_t blockRpt = 0;
-    static uint16_t blockNum = 0;
-    static uint8_t buf[256];
-    static uint32_t last_sysclk;
+    static uint16_t  blockIdx = 0;
+    static uint16_t  blockRpt = 0;
+    static uint16_t  blockNum = 0;
+    static uint8_t   buf[256];
+    static uint32_t  last_sysclk;
 
     switch (ft817.cloneout_state)
     {
-    case CLONEOUT_INIT:
-    {
-        blockIdx = 0;
-        blockRpt = 0;
-        blockNum = 0;
-        ft817.cloneout_state = CLONEOUT_BLOCK_SEND;
-        break;
-    }
-    case CLONEOUT_BLOCK_SEND:
-    {
-        CatDriver_BlockPrepare(blockNum,blockIdx,blockRpt,buf,256);
-        CatDriver_BlockSend(buf,cloneblock_len[blockIdx].len+2);
-        // +2 since we added blocknum and checksum, each 8bit.
-        ft817.cloneout_state = CLONEOUT_BLOCK_ACK_WAIT;
-        last_sysclk = ts.sysclock + 100;
-        break;
-    }
-    case CLONEOUT_BLOCK_ACK_WAIT:
-    {
-        if (CatDriver_BlockAck())
-        {
-            blockNum++;
-            blockRpt++;
-            if (blockRpt == cloneblock_len[blockIdx].count)
-            {
-               blockIdx++;
-               blockRpt = 0;
-            }
+		case CLONEOUT_INIT:
+						{
+							blockIdx = 0;
+							blockRpt = 0;
+							blockNum = 0;
+							ft817.cloneout_state = CLONEOUT_BLOCK_SEND;
+							break;
+						}
 
-            if (blockIdx == 11)
-            {
-                ft817.cloneout_state = CLONEOUT_DONE;
-            }
-            else
-            {
-                ft817.cloneout_state = CLONEOUT_BLOCK_SEND;
-            }
-        }
-        else
-        {
-            if (last_sysclk < ts.sysclock)
-            {
-                // after a while we will give up
-                ft817.cloneout_state = CLONEOUT_BLOCK_ACK_NACK;
-            }
-        }
-        break;
-    }
-    case CLONEOUT_BLOCK_ACK_NACK:
-    {
-        ft817.cloneout_state = CLONEOUT_DONE;
-        break;
-    }
-    case CLONEOUT_DONE:
-    {
-        // go back to normal CAT MODE and prepare for next round
-        ft817.cloneout_state = CLONEOUT_INIT;
-        ft817.state = CAT_INIT;
-        break;
-    }
+		case CLONEOUT_BLOCK_SEND:
+						{
+							CatDriver_BlockPrepare( blockNum, blockIdx, blockRpt, buf, 256 );
+							CatDriver_BlockSend(buf,cloneblock_len[blockIdx].len+2);
+							// +2 since we added blocknum and checksum, each 8bit.
+							ft817.cloneout_state = CLONEOUT_BLOCK_ACK_WAIT;
+							last_sysclk = ts.sysclock  + 100;  // 100 ,  base de temps de 5ms au lieu de 10ms original
+							break;
+						}
+
+		case CLONEOUT_BLOCK_ACK_WAIT:
+						{
+							if (CatDriver_BlockAck())
+							{
+							   blockNum++;
+							   blockRpt++;
+								if (blockRpt == cloneblock_len[blockIdx].count)
+								{
+								   blockIdx++;
+								   blockRpt = 0;
+								}
+
+								if (blockIdx == 11)
+								{
+									ft817.cloneout_state = CLONEOUT_DONE;
+								}
+								else
+								{
+									ft817.cloneout_state = CLONEOUT_BLOCK_SEND;
+								}
+							}
+							else
+							{
+								if (last_sysclk < ts.sysclock)
+								{
+									// after a while we will give up
+									ft817.cloneout_state = CLONEOUT_BLOCK_ACK_NACK;
+								}
+							}
+							break;
+						}
+
+		case CLONEOUT_BLOCK_ACK_NACK:
+						{
+							ft817.cloneout_state = CLONEOUT_DONE;
+							break;
+						}
+
+		case CLONEOUT_DONE:
+						{
+							// go back to normal CAT MODE and prepare for next round
+							ft817.cloneout_state = CLONEOUT_INIT;
+							ft817.state          = CAT_INIT;
+							break;
+						}
     }
 
 }
 
 static void CatDriver_HandleCloneIn()
 {
-    static uint16_t blockIdx = 0;
-    static uint16_t blockRpt = 0;
-    static uint16_t blockNum = 0;
-    static uint8_t buf[256];
-    static uint8_t blockWant = 0;
-    static uint32_t last_sysclk;
+    static uint16_t  blockIdx   = 0;
+    static uint16_t  blockRpt   = 0;
+    static uint16_t  blockNum   = 0;
+    static uint8_t   buf[256];
+    static uint8_t   blockWant  = 0;
+    static uint32_t  last_sysclk;
 
-    switch (ft817.clonein_state)
+    switch ( ft817.clonein_state )
     {
-    case CLONEIN_INIT:
-    {
-        blockIdx = 0;
-        blockRpt = 0;
-        blockNum = 0;
-        ft817.clonein_state = CLONEIN_BLOCK_RECV_START;
-        break;
-    }
-    case CLONEIN_BLOCK_RECV_START:
-    {
-        last_sysclk = ts.sysclock + 600; // that is 6s, enough to start the CAT clone transmit on the PC
-        blockWant = cloneblock_len[blockIdx].len + 2; // two more for blocknum and checksum
-        ft817.clonein_state = CLONEIN_BLOCK_RECV;
-        break;
-    }
-    case CLONEIN_BLOCK_RECV:
-    {
-        // we can ask for the full amount since our buffer will be able to hold all of the packets contents
-        if (CatDriver_InterfaceBufferGetData(buf,blockWant))
-        {
-            // analyse block
-            if (CatDriver_BlockRecv(blockNum,blockIdx,blockRpt,buf,blockWant))
-            {
-                // now continue
-                CatDriver_CloneSendAck();
-                blockNum++;
-                blockRpt++;
-                if (blockRpt == cloneblock_len[blockIdx].count)
-                {
-                    blockIdx++;
-                    blockRpt = 0;
-                }
-                if (blockIdx == 11)
-                {
-                    // we are done receiving, so now lets do the final data processing
-                    ft817.clonein_state = CLONEIN_FINAL_PROCESSING;
-                }
-                else
-                {
-                    ft817.clonein_state = CLONEIN_BLOCK_RECV_START;
-                }
+		case CLONEIN_INIT:
+						{
+							blockIdx = 0;
+							blockRpt = 0;
+							blockNum = 0;
+							ft817.clonein_state = CLONEIN_BLOCK_RECV_START;
+							break;
+						}
 
-            }
-            else
-            {
-                ft817.clonein_state = CLONEIN_DONE;
-            }
-        }
-        else if (last_sysclk <= ts.sysclock)
-        {
-            // timeout
-            ft817.clonein_state = CLONEIN_DONE;
-        }
-        break;
-    }
-    case CLONEIN_FINAL_PROCESSING:
-    {
-        // TODO: Now that all infos have been received, do the processing of it
-        // TBW
+		case CLONEIN_BLOCK_RECV_START:
+						{
+							last_sysclk         = ts.sysclock + 600;                // 600,  that is 6s, enough to start the CAT clone transmit on the PC
+							blockWant           = cloneblock_len[blockIdx].len + 2;  // two more for blocknum and checksum
+							ft817.clonein_state = CLONEIN_BLOCK_RECV;
+							break;
+						}
 
-        // once done, get back to normal CAT operation
-        ft817.clonein_state = CLONEIN_DONE;
-        break;
-    }
-    case CLONEIN_DONE:
-    {
-        // go back to normal CAT MODE and prepare for next round
-        ft817.clonein_state = CLONEIN_INIT;
-        ft817.state = CAT_INIT;
-        break;
-    }
+		case CLONEIN_BLOCK_RECV:
+						{
+							// we can ask for the full amount since our buffer will be able to hold all of the packets contents
+							if (CatDriver_InterfaceBufferGetData(buf,blockWant))
+							{
+								// analyse block
+								if (CatDriver_BlockRecv(blockNum,blockIdx,blockRpt,buf,blockWant))
+								{
+									// now continue
+									CatDriver_CloneSendAck();
+								   blockNum++;
+								   blockRpt++;
+									if (blockRpt == cloneblock_len[blockIdx].count)
+									{
+										blockIdx++;
+										blockRpt = 0;
+									}
+									if (blockIdx == 11)
+									{
+										// we are done receiving, so now lets do the final data processing
+										ft817.clonein_state = CLONEIN_FINAL_PROCESSING;
+									}
+									else
+									{
+										ft817.clonein_state = CLONEIN_BLOCK_RECV_START;
+									}
+
+								}
+								else
+								{
+									ft817.clonein_state = CLONEIN_DONE;
+								}
+							}
+							else if (last_sysclk <= ts.sysclock)
+							{
+								// timeout
+								ft817.clonein_state = CLONEIN_DONE;
+							}
+							break;
+						}
+		case CLONEIN_FINAL_PROCESSING:
+						{
+							// TODO: Now that all infos have been received, do the processing of it
+							// TBW
+
+							// once done, get back to normal CAT operation
+							ft817.clonein_state = CLONEIN_DONE;
+							break;
+						}
+		case CLONEIN_DONE:
+						{
+							// go back to normal CAT MODE and prepare for next round
+							ft817.clonein_state = CLONEIN_INIT;
+							ft817.state         = CAT_INIT;
+							break;
+						}
     }
 
 }
 
 
-bool CatDriver_CloneOutStart()
+bool   CatDriver_CloneOutStart()
 {
-    bool retval = false;
+    bool   retval   = false;
     if (ft817.state == CAT_CAT)
     {
-        retval = true;
-        ft817.state = CAT_CLONEOUT;
+        retval               = true;
+        ft817.state          = CAT_CLONEOUT;
         ft817.cloneout_state = CLONEOUT_INIT;
     }
     return retval;
 }
 
-bool CatDriver_CloneInStart()
+
+
+bool   CatDriver_CloneInStart()
 {
     bool retval = false;
-    if (ft817.state == CAT_CAT)
+
+    if ( ft817.state == CAT_CAT )
     {
-        retval = true;
-        ft817.state = CAT_CLONEIN;
+        retval              = true;
+        ft817.state         = CAT_CLONEIN;
         ft817.clonein_state = CLONEIN_INIT;
     }
-    return retval;
+    return   retval;
 }
 
 
 static void CatDriver_HandleCommands()
 {
-    uint8_t bc = 0;
-    uint8_t resp[32];
+    uint8_t  bc = 0;
+    uint8_t  resp[32];
 
     cat_driver_sync_data();
 
@@ -1013,294 +1007,319 @@ static void CatDriver_HandleCommands()
         ft817.cmd_cntr++;
 #endif
 
-        switch((Ft817_CatCmd_t)ft817.req[4])
+        switch  ( (Ft817_CatCmd_t) ft817.req[4] )
         {
-        case FT817_SET_FREQ:
-        {
-            ulong f = 0;
-            ulong fdelta;
+			case FT817_SET_FREQ:    // 0x01 = 1
 
-            if(ts.xlat == 0)
-            {
-                fdelta = (ts.tx_audio_source == TX_AUDIO_DIGIQ)?AudioDriver_GetTranslateFreq()*4:0;
-                // If we are in DIGITAL IQ Output mode, use real tune frequency frequency instead
-                // translated RX frequency
-            }
-            else
-            {
-                fdelta = 0;
-            }
+								{
+									ulong f = 0;
+									ulong fdelta;
 
-            int fidx;
-            for (fidx = 0; fidx < 4; fidx++)
-            {
-                f *= 100;
-                f +=  (ft817.req[fidx] >> 4) * 10 + (ft817.req[fidx] & 0x0f);
-            }
-            f *= TUNE_MULT*10;
-            df.tune_new = f - fdelta;
+									if(ts.xlat == 0)
+									{
+										fdelta = (ts.tx_audio_source == TX_AUDIO_DIG_IQ)?AudioDriver_GetTranslateFreq():0;
+										// If we are in DIGITAL IQ Output mode, use real tune frequency frequency instead
+										// translated RX frequency
+									}
+									else
+									{
+										fdelta = 0;
+									}
 
-            resp[0] = 0;
-            bc = 1;
-            if(ts.flags1 & FLAGS1_CAT_IN_SANDBOX)           // if running in sandbox store active band
-            {
-                ts.cat_band_index = ts.band;
-            }
+									int fidx;
+									for (fidx = 0; fidx < 4; fidx++)
+									{
+										f *= 100;
+										f +=  (ft817.req[fidx] >> 4) * 10 + (ft817.req[fidx] & 0x0f);
+									}
+									f          *= 10;
+									if ( ts.dmod_mode == DEMOD_CW ) { f   +=  ts.cw_sidetone_freq; }
+																	  f   -=  fdelta;
+
+									uint8_t   tx_band = RadioManagement_GetBand( (f ));
+
+									if ( (tx_band != ts.band)  &&  (tx_band != MAX_BANDS) ) // mise � jour de la bande en cours  avant Txing si n�cessaire .
+									{
+										uint16_t   vfo_sell = is_vfo_b()?  VFO_B : VFO_A;
+										UiDriver_UpdateBand ( vfo_sell, ts.band, tx_band);      // chnager de bande
+										RadioManagement_PowerLevelChange  (tx_band, ts.power_level);
+
+										// RadioManagement_SetBandPowerFactor(tx_band); // mise a jour des parametres Tx pour chaque Tx.
+									}
+
+									df.tune_new = f ;
+
+									resp[0]     = 0;
+									bc 			= 1;
+									if( ts.flags1 & FLAGS1_CAT_IN_SANDBOX )           // if running in sandbox store active band
+									{
+										ts.cat_band_index = ts.band;
+									}
+								}
+								break;
+
+			case FT817_GET_FREQ:           // 0x03  = 3
+
+							{
+								ulong fdelta = 0;
+
+								if(ts.xlat == 0)
+								{
+									fdelta = (ts.tx_audio_source == TX_AUDIO_DIG_IQ)?AudioDriver_GetTranslateFreq():0;
+									// If we are in DIGITAL IQ Output mode, send real tune frequency frequency instead
+									// translated RX frequency
+								}
+							/*	else
+								{
+									fdelta = 0;
+								}*/
+
+								ulong f = (df.tune_new + fdelta  + 5);
+								if ( ts.dmod_mode == DEMOD_CW ) { f    -= ts.cw_sidetone_freq; }
+								f /= (10);
+								ulong fbcd = 0;
+								int fidx;
+								for (fidx = 0; fidx < 8; fidx++)
+								{
+									fbcd >>=  4;
+									fbcd  |= (f % 10) << 28;
+									f      = f / 10;
+								}
+
+								resp[0] = (uint8_t)(fbcd >> 24);
+								resp[1] = (uint8_t)(fbcd >> 16);
+								resp[2] = (uint8_t)(fbcd >> 8);
+								resp[3] = (uint8_t)fbcd;
+							}
+							switch(ts.dmod_mode)
+							{
+								case DEMOD_LSB:  resp[4] = 0;   						break;
+								case DEMOD_USB:	 resp[4] = 1;							break;
+								case DEMOD_CW :	 resp[4] = 2 + (ts.cw_lsb==true?1:0); 	break;    // return 3 if CW in LSB aka 2 in CW-R
+								case DEMOD_SAM:
+								case DEMOD_AM :	 resp[4] = 4;                           break;
+								case DEMOD_FM :	 resp[4] = 8;							break;
+								default       :  resp[4] = 1;
+							}
+							bc = 5;
+							break;
+
+			case FT817_MODE_SET:           // 0x07 = 7
+
+							{
+								resp[0] = 0; // ACK
+								bc      = 1;
+
+								uint8_t   new_mode      = ts.dmod_mode;
+								bool      new_cwlsb     = ts.cw_lsb;
+								uint32_t  new_fmdev5khz = RadioManagement_FmDevIs5khz();
+
+								switch ( ft817.req[0] )
+								{
+									case 0   : new_mode = DEMOD_LSB;			              break; // LSB
+									case 1   : new_mode = DEMOD_USB;			              break; // USB
+									case 2   : new_mode = DEMOD_CW;   new_cwlsb = true;       break; // CW // NIZZ forcer toujour ts.cw_lsb a true  (mode unique)
+									case 3   : new_mode = DEMOD_CW;   new_cwlsb = true;       break; // CW-R
+									case 4   : new_mode = DEMOD_AM;  			              break; // AM
+									case 8   : new_mode = DEMOD_FM;   new_fmdev5khz = true;   break; // FM
+									case 0x88: new_mode = DEMOD_FM;   new_fmdev5khz = false;  break; // FM-N
+									case 0x0a: new_mode = DEMOD_USB; 		                  break; // DIG - SSB, side band controlled by some menu configuration in ft817, we use USB here
+									case 0x0c: new_mode = DEMOD_FM; 	                      break; // PKT - FM, 9k6
+									default  : resp[0]  = 0xFF;                                      // NACK
+								}
+								if  ( new_mode != ts.dmod_mode || new_cwlsb != ts.cw_lsb || new_fmdev5khz != RadioManagement_FmDevIs5khz() )
+								{
+									if(ts.flags1 & FLAGS1_CAT_IN_SANDBOX)           // if running in sandbox store active band
+									{
+										ts.cat_band_index = ts.band;
+									}
+									RadioManagement_FmDevSet5khz ( new_fmdev5khz );
+									ts.cw_lsb = true;  // new_cwlsb;   // true; // new_cwlsb;   // a tester
+									RadioManagement_SetDemodMode ( new_mode , true);
+									UiDriver_UpdateDisplayAfterParamChange();
+								}
+							}
+							break;
+
+
+			case FT817_PTT_ON:
+									resp[0] = cat_driver.cat_ptt_active? 0xF0 : 0x00;
+									/* 0xF0 if PTT was already on */
+
+									CatDriver_CatEnableTX(true);
+
+									bc = 1;
+									break;
+
+			case FT817_PTT_OFF:
+									resp[0] = cat_driver.cat_ptt_active?0x00:0xF0; /* 0xF0 if PTT was already off */
+									bc = 1;
+									CatDriver_CatEnableTX(false);
+									break;
+
+
+			case FT817_READ_TX_STATE:
+									if(RadioManagement_IsTxDisabled()||(ts.txrx_mode != TRX_MODE_TX))
+									{
+										resp[0] = 0;         // valeur de la version originale
+									 // resp[0] = 0x20;      // 0;     // NIZZ pour forcer info Split a OFF
+										bc = 1;
+									}
+									else
+									{
+										// PWR / SWR
+										// resp[0] = (limit_4bits(roundf(swrm.fwd_pwr))<<4)+limit_4bits(roundf(swrm.vswr_dampened));
+										// ALC / MOD
+										// resp[1] = (limit_4bits(0)<<4)+limit_4bits(0);
+
+
+										resp[0] =  0x31;   // NIZZ
+										resp[1] =  0x00;   // NIZZ
+										bc = 2;
+									}
+
+									break;
+
+
+			case FT817_READ_RX_STATE: /* E7 */
+								resp[0] = (uint8_t)roundf(sm.s_count*0.5);   //S-Meter signal
+								bc = 1;
+								break;
+
+			case FT817_PTT_STATE:
+							/*	{
+									uint8_t  tx_state  =  0x87;                          // Power 7 Watt, PTT_ON   NIZZZ
+											 tx_state |=  is_splitmode() ? 0x00 : 0x02;  // NIZZ
+
+									resp[0] = ts.txrx_mode == TRX_MODE_TX?  0x20  : 0xFF;
+									if ( RadioManagement_IsTxDisabled () )  { resp[0] = 0xFF; }
+									bc = 1;
+									break;
+								} */
+
+								{   // c'est la version originale tel qu'elle est faite par la version UHSDR 2.12.2
+									uint8_t tx_state = limit_4bits(roundf(swrm.fwd_pwr));
+									tx_state |= is_splitmode() ? 0x20 : 0x00;
+									//  tx_state |= swrm.vswr_dampened > 3.0 ? 0x40 : 0x00;
+
+									// the only correct response when in rx mode is 0xff, confirmed
+									// with a real FT-817
+									resp[0]= ts.txrx_mode == TRX_MODE_TX ? tx_state : 0xff;
+									if(RadioManagement_IsTxDisabled())
+									{
+										resp[0] = 0xFF;
+									}
+									bc = 1;
+									break;
+								}
+
+
+			case FT817_PWR_ON:
+									resp[0] = 0;
+									bc = 1;
+									break;
+			case FT817_TOGGLE_VFO:
+									UiAction_ToggleVfoAB();
+									resp[0] = 0;
+									bc = 1;
+									break;
+			case FT817_SPLIT_ON:
+									UiDriver_SetSplitMode(true);
+									resp[0] = 0;
+									bc = 1;
+									break;
+			case FT817_SPLIT_OFF:
+									UiDriver_SetSplitMode(false);
+									resp[0] = 0;
+									bc = 1;
+									break;
+
+			case FT817_A7: /* A7 */
+									resp[0]=0xA7;
+									resp[1]=0x02;
+									resp[2]=0x00;
+									resp[3]=0x04;
+									resp[4]=0x67;
+									resp[5]=0xD8;
+									resp[6]=0xBF;
+									resp[7]=0xD8;
+									resp[8]=0xBF;
+									bc = 9;
+									break;
+
+			case FT817_EEPROM_READ:
+									// with a full simulation, we would return from 0 to 0x1925 two bytes: data@addr + data@(addr+1)
+									// and above 0x1925 only 1 byte. So we call our function and see what it returns.
+								{
+									resp[0] = 0;
+									resp[1] = 0;
+									uint16_t ee_addr = (ft817.req[0] << 8) | ft817.req[1];
+									if (CatDriver_Ft817_EEPROM_Read(ee_addr,&resp[0]) && ee_addr < 0x1925)
+									{
+										// please note: in case of second addr being invalid
+										// we still return success and two bytes, second data byte is 0 in this case
+										CatDriver_Ft817_EEPROM_Read(ee_addr+1,&resp[1]);
+										bc = 2;
+									}
+									// we now check if we are supposed to return config values
+									else if (ee_addr > 0x7FFF)
+									{
+										ConfigStorage_ReadVariable(ee_addr & 0x7FFF, (uint16_t*)&resp[0]);
+										bc = 2;
+									}
+									else
+									{
+										bc = 1;
+									}
+									break;
+								}
+
+			case FT817_EEPROM_WRITE:
+									{
+										// no op in most cases
+										resp[0] = 0;
+										bc = 1;
+										uint16_t ee_addr = (ft817.req[0] << 8) | ft817.req[1];
+										if (ee_addr < 0x1925)
+										{
+											CatDriver_Ft817_EEPROM_Write( ee_addr,   &ft817.req[2]);
+											CatDriver_Ft817_EEPROM_Write( ee_addr+1, &ft817.req[3]);
+										}
+										else if (ee_addr > 0x7FFF)
+										{
+											uint16_t ee_value16 = (ft817.req[3] << 8) | ft817.req[2];
+											ConfigStorage_WriteVariable(ee_addr & 0x7FFF, ee_value16);
+										}
+
+										break;
+									}
+
+
+			case FT817_NOOP: /* FF sent out by HRD */
+								break;
+								// default:
+								// while (1);
+
+			case UHSDR_ID: /* used to identify the UHSDR EXTEND CAT SUPPORT */
+								resp[0] = 'U';
+								resp[1] = 'H';
+								resp[2] = 'S';
+								resp[3] = 'D';
+								resp[4] = 'R';
+								bc      = 5;
+								break;
+
+		   default:            resp[0] = 0xFF;  bc = 1;  // rajoute par NIZZ pour debuger un problem avec Linux et JS8Call
+								// while (1);
+
         }
-        break;
 
-        case FT817_GET_FREQ:
-        {
-            ulong fdelta;
-
-            if(ts.xlat == 0)
-            {
-                fdelta = (ts.tx_audio_source == TX_AUDIO_DIGIQ)?AudioDriver_GetTranslateFreq()*TUNE_MULT:0;
-                // If we are in DIGITAL IQ Output mode, send real tune frequency frequency instead
-                // translated RX frequency
-            }
-            else
-            {
-                fdelta = 0;
-            }
-
-            ulong f = (df.tune_new + fdelta  + (TUNE_MULT*10/2))/ (TUNE_MULT*10);
-            ulong fbcd = 0;
-            int fidx;
-            for (fidx = 0; fidx < 8; fidx++)
-            {
-                fbcd >>= 4;
-                fbcd |= (f % 10) << 28;
-                f = f / 10;
-            }
-
-            resp[0] = (uint8_t)(fbcd >> 24);
-            resp[1] = (uint8_t)(fbcd >> 16);
-            resp[2] = (uint8_t)(fbcd >> 8);
-            resp[3] = (uint8_t)fbcd;
-        }
-        switch(ts.dmod_mode)
-        {
-        case DEMOD_LSB:
-            resp[4] = 0;
-            break;
-        case DEMOD_USB:
-            resp[4] = 1;
-            break;
-        case DEMOD_CW:
-            resp[4] = 2 + (ts.cw_lsb==true?1:0);
-            break;
-            // return 3 if CW in LSB aka CW-R
-        case DEMOD_SAM:
-        case DEMOD_AM:
-            resp[4] = 4;
-            break;
-        case DEMOD_FM:
-            resp[4] = 8;
-            break;
-        default:
-            resp[4] = 1;
-        }
-        bc = 5;
-        break;
-        case FT817_MODE_SET:
-        {
-            resp[0] = 0; // ACK
-            bc = 1;
-
-            uint8_t new_mode = ts.dmod_mode;
-            bool new_cwlsb = ts.cw_lsb;
-            uint32_t new_fmdev5khz = RadioManagement_FmDevIs5khz();
-            switch (ft817.req[0])
-            {
-            case 0: // LSB
-                new_mode = DEMOD_LSB;
-                break;
-            case 1: // USB
-                new_mode = DEMOD_USB;
-                break;
-            case 2: // CW
-                new_cwlsb = false;
-                new_mode = DEMOD_CW;
-                break;
-            case 3: // CW-R
-                new_cwlsb = true;
-                new_mode = DEMOD_CW;
-                break;
-            case 4: // AM
-                new_mode = DEMOD_AM;
-                break;
-            case 8: // FM
-                new_fmdev5khz = true;
-                new_mode = DEMOD_FM;
-                break;
-            case 0x88: // FM-N
-                new_fmdev5khz = false;
-                new_mode = DEMOD_FM;
-                break;
-            case 0x0a: // DIG - SSB, side band controlled by some menu configuration in ft817, we use USB here
-                new_mode = DEMOD_USB;
-                break;
-            case 0x0c: // PKT - FM, 9k6
-                new_mode = DEMOD_FM;
-                break;
-            default:
-                resp[0] = 0xFF; // NACK
-            }
-            if  (new_mode != ts.dmod_mode || new_cwlsb != ts.cw_lsb || new_fmdev5khz != RadioManagement_FmDevIs5khz() )
-            {
-                if(ts.flags1 & FLAGS1_CAT_IN_SANDBOX)           // if running in sandbox store active band
-                {
-                    ts.cat_band_index = ts.band;
-                }
-                RadioManagement_FmDevSet5khz(new_fmdev5khz);
-                ts.cw_lsb = new_cwlsb;
-                RadioManagement_SetDemodMode(new_mode);
-                UiDriver_UpdateDisplayAfterParamChange();
-            }
-        }
-        break;
-        case FT817_PTT_ON:
-            resp[0] = cat_driver.cat_ptt_active?0xF0:0x00;
-            /* 0xF0 if PTT was already on */
-
-            CatDriver_CatEnableTX(true);
-
-            bc = 1;
-            break;
-        case FT817_PWR_ON:
-            resp[0] = 0;
-            bc = 1;
-            break;
-        case FT817_TOGGLE_VFO:
-            UiAction_ToggleVfoAB();
-            resp[0] = 0;
-            bc = 1;
-            break;
-        case FT817_SPLIT_ON:
-            UiDriver_SetSplitMode(true);
-            resp[0] = 0;
-            bc = 1;
-            break;
-        case FT817_SPLIT_OFF:
-            UiDriver_SetSplitMode(false);
-            resp[0] = 0;
-            bc = 1;
-            break;
-        case FT817_PTT_OFF:
-            resp[0] = cat_driver.cat_ptt_active?0x00:0xF0; /* 0xF0 if PTT was already off */
-            bc = 1;
-            CatDriver_CatEnableTX(false);
-            break;
-        case FT817_A7: /* A7 */
-            resp[0]=0xA7;
-            resp[1]=0x02;
-            resp[2]=0x00;
-            resp[3]=0x04;
-            resp[4]=0x67;
-            resp[5]=0xD8;
-            resp[6]=0xBF;
-            resp[7]=0xD8;
-            resp[8]=0xBF;
-            bc = 9;
-            break;
-        case FT817_EEPROM_READ:
-            // with a full simulation, we would return from 0 to 0x1925 two bytes: data@addr + data@(addr+1)
-            // and above 0x1925 only 1 byte. So we call our function and see what it returns.
-        {
-            resp[0] = 0;
-            resp[1] = 0;
-            uint16_t ee_addr = (ft817.req[0] << 8) | ft817.req[1];
-            if (CatDriver_Ft817_EEPROM_Read(ee_addr,&resp[0]) && ee_addr < 0x1925)
-            {
-                // please note: in case of second addr being invalid
-                // we still return success and two bytes, second data byte is 0 in this case
-                CatDriver_Ft817_EEPROM_Read(ee_addr+1,&resp[1]);
-                bc = 2;
-            }
-            // we now check if we are supposed to return config values
-            else if (ee_addr > 0x7FFF)
-            {
-                ConfigStorage_ReadVariable(ee_addr & 0x7FFF, (uint16_t*)&resp[0]);
-                bc = 2;
-            }
-            else
-            {
-                bc = 1;
-            }
-            break;
-        }
-        case FT817_EEPROM_WRITE:
-        {
-            // no op in most cases
-            resp[0] = 0;
-            bc = 1;
-            uint16_t ee_addr = (ft817.req[0] << 8) | ft817.req[1];
-            if (ee_addr < 0x1925)
-            {
-                CatDriver_Ft817_EEPROM_Write(ee_addr,&ft817.req[2]);
-                CatDriver_Ft817_EEPROM_Write(ee_addr+1,&ft817.req[3]);
-            }
-            else if (ee_addr > 0x7FFF)
-            {
-                uint16_t ee_value16 = (ft817.req[3] << 8) | ft817.req[2];
-                ConfigStorage_WriteVariable(ee_addr & 0x7FFF, ee_value16);
-            }
-
-            break;
-        }
-        case FT817_READ_TX_STATE:
-            if(RadioManagement_IsTxDisabled()||(ts.txrx_mode != TRX_MODE_TX))
-            {
-                resp[0] = 0;
-                bc = 1;
-            }
-            else
-            {
-                // PWR / SWR
-                resp[0] =(limit_4bits(roundf(swrm.fwd_pwr))<<4)+limit_4bits(roundf(swrm.vswr_dampened));
-                // ALC / MOD
-                resp[1] = (limit_4bits(0)<<4)+limit_4bits(0);
-                bc = 2;
-            }
-
-            break;
-        case FT817_READ_RX_STATE: /* E7 */
-            resp[0] = (uint8_t)roundf(sm.s_count*0.5);   //S-Meter signal
-            bc = 1;
-            break;
-        case FT817_PTT_STATE:
-            // FT-817 responds 0xFF if not TX and 0x00 if TX
-            // This differs from KA7OEI description but has been verified
-            // with the real thing.
-            resp[0]=ts.txrx_mode == TRX_MODE_TX?0x00:0xFF;
-            if(RadioManagement_IsTxDisabled())
-            {
-                resp[0] =0xFF;
-            }
-            bc = 1;
-            break;
-        case FT817_NOOP: /* FF sent out by HRD */
-            break;
-            // default:
-            // while (1);
-
-        case UHSDR_ID: /* used to identify the UHSDR EXTEND CAT SUPPORT */
-            resp[0] = 'U';
-            resp[1] = 'H';
-            resp[2] = 'S';
-            resp[3] = 'D';
-            resp[4] = 'R';
-            bc = 5;
-            break;
-            // default:
-            // while (1);
-
-        }
         CatDriver_InterfaceBufferPutData(resp,bc);
         /* Return data back */
     }
 }
+
+//*****************************************************************************************************
 
 void CatDriver_HandleProtocol()
 {
@@ -1317,20 +1336,13 @@ void CatDriver_HandleProtocol()
     {
         switch(ft817.state)
         {
-        case CAT_CLONEOUT:
-            CatDriver_HandleCloneOut();
-            break;
-        case CAT_CLONEIN:
-            CatDriver_HandleCloneIn();
-            break;
-        case CAT_INIT:
-            ft817.cloneout_state = CLONEOUT_INIT;
-            ft817.clonein_state = CLONEIN_INIT;
-            ft817.state = CAT_CAT;
-            /* no break */
-        case CAT_CAT:
-            CatDriver_HandleCommands();
-            break;
+			case CAT_CLONEOUT: 	CatDriver_HandleCloneOut();		break;
+			case CAT_CLONEIN:	CatDriver_HandleCloneIn();		break;
+			case CAT_INIT:	    ft817.cloneout_state =  CLONEOUT_INIT;
+								ft817.clonein_state  =  CLONEIN_INIT;
+								ft817.state          =  CAT_CAT;
+								/* no break */
+			case CAT_CAT:		CatDriver_HandleCommands();		break;
         }
     }
 

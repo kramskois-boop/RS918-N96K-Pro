@@ -60,14 +60,13 @@ static void BL_DisplayInit()
     MX_SPI2_Init();
     MX_GPIO_Init();
 
-    // we need to set the touch screen CS signal to high, otherwise SPI displays
-    // will not be detectable
+    // we need to set the touch screen CS signal to high, otherwise SPI displays will not be detectable
     GPIO_InitTypeDef GPIO_InitStructure;
 
     GPIO_InitStructure.Pull     = GPIO_PULLUP;
     GPIO_InitStructure.Speed    = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStructure.Mode     = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStructure.Pin = TP_CS;
+    GPIO_InitStructure.Pin      = TP_CS;
 
     HAL_GPIO_Init(TP_CS_PIO, &GPIO_InitStructure);
 
@@ -216,14 +215,14 @@ void BSP_Init(void)
     // we assume that the clock for all required GPIO Ports has been turn on!!
 
     /* Initialize LEDs and User_Button on mchf --------------------*/
-    mchfBl_ButtonInit(BUTTON_BANDM, BUTTON_MODE_GPIO);
-    mchfBl_ButtonInit(BUTTON_POWER, BUTTON_MODE_GPIO);
-    mchfBl_ButtonInit(BUTTON_BANDP, BUTTON_MODE_GPIO);
+    mchfBl_ButtonInit ( BUTTON_BANDM, BUTTON_MODE_GPIO );
+    mchfBl_ButtonInit ( BUTTON_POWER, BUTTON_MODE_GPIO );
+    mchfBl_ButtonInit ( BUTTON_BANDP, BUTTON_MODE_GPIO );
 
-    mchfBl_LEDInit(LEDGREEN);
-    mchfBl_LEDInit(LEDRED);
-    mchfBl_LEDInit(PWR_HOLD);
-    mchfBl_LEDInit(BACKLIGHT);
+    mchfBl_LEDInit ( LEDGREEN );
+    mchfBl_LEDInit ( LEDRED   );
+    mchfBl_LEDInit ( PWR_HOLD );
+    mchfBl_LEDInit ( BACKLIGHT);
 }
 
 /**
@@ -249,7 +248,7 @@ void mchfBl_JumpToApplication(uint32_t ApplicationAddress)
 
 int bootloader_main()
 {
-    double i,border;
+    double i, border;
 	/* prevention of erratical boot loop */
 	if( *(__IO uint32_t*)(SRAM2_BASE) != 0x55)
 	{
@@ -321,22 +320,13 @@ extern ApplicationTypeDef Appli_state;
 
 void BL_Application()
 {
-    switch(Appli_state)
+    switch ( Appli_state )
     {
-    case APPLICATION_READY:
-      BL_MSC_Application();
-      Appli_state = APPLICATION_IDLE;
-      break;
-    case APPLICATION_DISCONNECT:
-      f_mount(NULL, (TCHAR const*)"", 0);
-      Appli_state = APPLICATION_IDLE;
-      break;
-    case APPLICATION_IDLE:
-    default:
-      break;
-
+		case APPLICATION_READY     :  BL_MSC_Application();	               Appli_state = APPLICATION_IDLE;		  break;
+		case APPLICATION_DISCONNECT:  f_mount(NULL, (TCHAR const*)"", 0);  Appli_state = APPLICATION_IDLE;		  break;
+		case APPLICATION_IDLE:
+			default:																							  break;
     }
-
     BL_Idle_Application();
 }
 
@@ -384,6 +374,6 @@ static uint8_t current_line;
 
 void BL_PrintLine(const char* txt)
 {
-    UiLcdHy28_PrintText(4,4+current_line*16,txt,Yellow,Black,0);
-    current_line++;
+    UiLcdHy28_PrintText ( 4, 4+current_line*16, txt, Yellow, Black, 0);
+    (uint8_t*) current_line++;
 }

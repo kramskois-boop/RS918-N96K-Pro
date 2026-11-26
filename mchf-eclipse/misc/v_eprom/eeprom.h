@@ -86,7 +86,7 @@
 #define PAGE_FULL             ((uint8_t)0x80)
 
 /* Variables' number */
-#define NB_OF_VAR               (0x1ff)
+#define NB_OF_VAR             530        // (0x1ff)
 // to allow memories >
 
 

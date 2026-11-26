@@ -381,9 +381,14 @@ static void UiMenu_DisplayLabel(const char* label,uint32_t clr,uint16_t pos)
 {
     UiLcdHy28_PrintText(ts.Layout->MENU_IND.x, ts.Layout->MENU_IND.y + (12*(pos)),label,clr,Black,0);
 }
+
+
 static void UiMenu_DisplayCursor(const char* label,uint32_t clr,uint16_t pos)
 {
-    UiLcdHy28_PrintText(ts.Layout->MENU_CURSOR_X, ts.Layout->MENU_IND.y + (12*(pos)),label,clr,Black,0);
+    UiLcdHy28_PrintText( ts.Layout->MENU_CURSOR_X, ts.Layout->MENU_IND.y + (12*(pos)),      label, clr, Black, 0 );
+
+    if (label[0]=='<')  {  UiLcdHy28_PrintText( 48, ts.Layout->MENU_IND.y + (12*(pos)), ">>>", clr, Black, 0 ); }
+    else    			{  UiLcdHy28_PrintText( 48, ts.Layout->MENU_IND.y + (12*(pos)), "   ", clr, Black, 0 ); }
 }
 // DISPLAY SPECIFIC CODE END
 
@@ -391,12 +396,12 @@ static void UiMenu_DisplayCursor(const char* label,uint32_t clr,uint16_t pos)
 void UiMenu_MoveCursor(uint32_t newpos)
 {
     static uint32_t oldpos = 999;  // y position of option cursor, previous
-    if(oldpos != 999)         // was the position of a previous cursor stored?
+    if ((oldpos != 999)  && (oldpos < 7) )        // was the position of a previous cursor stored?
     {
         UiMenu_DisplayCursor(" ", Green, oldpos);
     }
     oldpos = newpos;   // save position of new "old" cursor position
-    if (newpos != 999)
+    if ((newpos != 999) && (newpos < 7))
     {
         UiMenu_DisplayCursor("<", Green, newpos);
     }
@@ -418,9 +423,9 @@ static void UiMenu_UpdateHWInfoLines(uchar index, uchar mode, int pos)
  */
 static void UiMenu_UpdateLines(uint16_t select, uint16_t mode, int pos)
 {
-    char options[32];
-    const char* txt_ptr = NULL; // if filled, we use this string for display, otherwise options
-    uint32_t clr = White;       // color used it display of adjusted options
+    char      options[32];
+    const     char* txt_ptr = NULL;  // if filled, we use this string for display, otherwise options
+    uint32_t  clr           = White; // color used it display of adjusted options
 
     int var; // holder for the menu item value change
 
@@ -431,8 +436,8 @@ static void UiMenu_UpdateLines(uint16_t select, uint16_t mode, int pos)
     }
     else                // this is "change" mode
     {
-        var = ts.menu_var;      // change from encoder
-        ts.menu_var = 0;        // clear encoder change detect
+        var        = ts.menu_var;  // change from encoder
+        ts.menu_var = 0;           // clear encoder change detect
     }
 
     strcpy(options, "ERROR");   // pre-load to catch error condition
@@ -486,8 +491,7 @@ void UiMenu_UpdateMenuEntry(const MenuDescriptor* entry, uchar mode, uint8_t pos
             // snprintf(out,34,"%s-%s%s",entry->id,entry->label,(&blank[labellen>33?33:labellen]));
 //#ifdef USE_DISP_480_320
             //snprintf(out,ts.40,"%s%s%s",(&blank[level>5?37-5:37-level]),entry->label,(&blank[labellen>39?39:labellen]));
-            snprintf(out,ts.Layout->MENU_TEXT_SIZE_MAX,"%s%s%s",
-            		(&blank[level>5?ts.Layout->MENU_TEXT_SIZE_MAX-8:ts.Layout->MENU_TEXT_SIZE_MAX-3-level]),
+            snprintf(out,ts.Layout->MENU_TEXT_SIZE_MAX,"%s%s%s", (&blank[level>5?ts.Layout->MENU_TEXT_SIZE_MAX-8:ts.Layout->MENU_TEXT_SIZE_MAX-3-level]),
 					entry->label,(&blank[labellen>ts.Layout->MENU_TEXT_SIZE_MAX-1?ts.Layout->MENU_TEXT_SIZE_MAX-1:labellen]));
 
   //         snprintf(out,34,"%s%s%s",(&blank[level>5?31-5:31-level]),entry->label,(&blank[labellen>33?33:labellen]));
@@ -496,48 +500,46 @@ void UiMenu_UpdateMenuEntry(const MenuDescriptor* entry, uchar mode, uint8_t pos
         }
         switch(entry->kind)
         {
-        case MENU_ITEM:
-            // TODO: Better Handler Selection with need for change in this location to add new handlers
-            UiMenu_UpdateLines(entry->number,mode,pos);
-            break;
-        case MENU_INFO:
-            UiMenu_UpdateHWInfoLines(entry->number,mode,pos);
-            break;
-        case MENU_TEXT:
-            break;
-        case MENU_GROUP:
-            if (mode == MENU_PROCESS_VALUE_CHANGE)
-            {
-                bool old_state = UiMenu_GroupIsUnfolded(entry);
-                if (ts.menu_var < 0 )
-                {
-                	UiMenu_GroupFold(entry, !(ts.flags2 & FLAGS2_UI_INVERSE_SCROLLING));
-                }
-                if (ts.menu_var > 0 )
-                {
-                	UiMenu_GroupFold(entry, ts.flags2 & FLAGS2_UI_INVERSE_SCROLLING);
-                }
-                if (old_state != UiMenu_GroupIsUnfolded(entry))
-                {
-                    int idx;
-                    for (idx = pos+1; idx < ts.Layout->MENUSIZE; idx++)
-                    {
-                        UiMenu_FillSlotWithEntry(&menu[idx],UiMenu_NextMenuEntry(menu[idx-1].entryItem));
-                        UiMenu_UpdateMenuEntry(menu[idx].entryItem, 0, idx);
-                    }
-                }
-                ts.menu_var = 0;
-            }
+			case MENU_ITEM:
+							// TODO: Better Handler Selection with need for change in this location to add new handlers
+							UiMenu_UpdateLines(entry->number,mode,pos);
+							break;
+			case MENU_INFO:
+							UiMenu_UpdateHWInfoLines(entry->number,mode,pos);
+							break;
+			case MENU_TEXT:
+							break;
+			case MENU_GROUP:
+							if (mode == MENU_PROCESS_VALUE_CHANGE)
+							{
+								bool old_state = UiMenu_GroupIsUnfolded(entry);
+								if (ts.menu_var < 0 )
+								{
+									UiMenu_GroupFold(entry, !(ts.flags2 & FLAGS2_UI_INVERSE_SCROLLING));
+								}
+								if (ts.menu_var > 0 )
+								{
+									UiMenu_GroupFold(entry, ts.flags2 & FLAGS2_UI_INVERSE_SCROLLING);
+								}
+								if (old_state != UiMenu_GroupIsUnfolded(entry))
+								{
+									int idx;
+									for (idx = pos+1; idx < ts.Layout->MENUSIZE; idx++)
+									{
+										UiMenu_FillSlotWithEntry ( &menu[idx],  UiMenu_NextMenuEntry(menu[idx-1].entryItem));
+										UiMenu_UpdateMenuEntry ( menu[idx].entryItem,  0, idx );
+									}
+								}
+								ts.menu_var = 0;
+							}
 
-            UiMenu_DisplayValue(
-                    UiMenu_GroupIsUnfolded(entry)?"HIDE":"SHOW",
-                    m_clr,pos);
-            break;
+							UiMenu_DisplayValue(  UiMenu_GroupIsUnfolded(entry) ?"-----HIDE":"  +++SHOW",   m_clr, pos );
+							break;
         }
     }
     else
     {
-        UiMenu_DisplayLabel(blank,m_clr,pos);
+        UiMenu_DisplayLabel ( blank, m_clr, pos );
     }
     if (mode == MENU_PROCESS_VALUE_CHANGE)
     {
@@ -548,7 +550,7 @@ void UiMenu_UpdateMenuEntry(const MenuDescriptor* entry, uchar mode, uint8_t pos
 void UiMenu_DisplayInitSlots(const MenuDescriptor* entry)
 {
     int idx;
-    for (idx=0; idx < ts.Layout->MENUSIZE; idx++)
+    for ( idx=0;  idx < ts.Layout->MENUSIZE; idx++)
     {
         UiMenu_FillSlotWithEntry(&menu[idx],entry);
         entry = UiMenu_NextMenuEntry(entry);
@@ -636,13 +638,13 @@ bool UiMenu_DisplayMoveSlotsForward(int16_t change)
     if (dist != 0)
     {
         retval = true;
-        for (idx = 0; idx < ts.Layout->MENUSIZE-dist; idx++)
+        for ( idx = 0; idx < ts.Layout->MENUSIZE-dist; idx++ )
         {
-            UiMenu_FillSlotWithEntry(&menu[idx],menu[dist+idx].entryItem);
+            UiMenu_FillSlotWithEntry( &menu[idx], menu[dist+idx].entryItem );
         }
-        for (idx = ts.Layout->MENUSIZE-dist; idx < ts.Layout->MENUSIZE; idx++)
+        for ( idx = ts.Layout->MENUSIZE-dist;  idx < ts.Layout->MENUSIZE;  idx++ )
         {
-            UiMenu_FillSlotWithEntry(&menu[idx],UiMenu_NextMenuEntry(menu[idx-1].entryItem));
+            UiMenu_FillSlotWithEntry( &menu[idx], UiMenu_NextMenuEntry(menu[idx-1].entryItem));
         }
     }
     return retval;
@@ -673,7 +675,7 @@ void UiMenu_RenderMenu(uint16_t mode)
         {
             UiMenu_UpdateMenuEntry(menu[idx].entryItem,mode, idx);
         }
-        UiMenu_MoveCursor(ts.menu_item%ts.Layout->MENUSIZE);		//redraw of cursor
+        UiMenu_MoveCursor(ts.menu_item % ts.Layout->MENUSIZE);		//redraw of cursor
     }
     break;
 

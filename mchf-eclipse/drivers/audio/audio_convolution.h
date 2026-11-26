@@ -30,6 +30,7 @@
 
 extern arm_fir_decimate_instance_f32   DECIMATE_RX_I;
 extern arm_fir_decimate_instance_f32   DECIMATE_RX_Q;
+extern arm_fir_decimate_instance_f32   DECIMATE_TX;
 //extern AudioDriverBuffer adb;
 
 #ifdef USE_CONVOLUTION

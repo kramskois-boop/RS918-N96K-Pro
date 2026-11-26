@@ -139,6 +139,7 @@ static const uint8_t fontCount = sizeof(fontList)/sizeof(fontList[0]);
 
 
 #ifdef USE_GFX_ILI932x
+
 static const RegisterValue_t ili9320[] =
 {
         { 0xE5, 0x8000},   // Set the internal vcore voltage
@@ -415,9 +416,59 @@ static const RegisterValueSetInfo_t ili932x_regs =
 {
     ili932x, sizeof(ili932x)/sizeof(RegisterValue_t)
 };
+#endif
 
+#ifdef USE_GFX_ILI9341                           // Nouveau ecran rajouté en sept 2025  320x240
+
+static const RegisterValue_t ili9341[] =
+{
+    { 0x01, 0x0000 },       // Software reset
+    { REGVAL_DELAY, 10 },
+
+    { 0x28, 0x0000 },       // Display OFF
+    { 0xCF, 0x0083 },       // Power control B
+    { 0xED, 0x0063 },       // Power on sequence control
+    { 0xE8, 0x0085 },       // Driver timing control A
+    { 0xCB, 0x0039 },       // Power control A
+    { 0xF7, 0x0020 },       // Pump ratio control
+    { 0xEA, 0x0000 },       // Driver timing control B
+
+    // Power control / VCOM
+    { 0xC0, 0x0026 },       // Power control 1
+    { 0xC1, 0x0001 },       // Power control 2
+    { 0xC5, 0x0035 },       // VCOM control 1
+    { 0xC7, 0x00CF },       // VCOM control 2
+
+    // Memory access control (orientation)
+    { 0x36, 0x28 },         // MADCTL: RGB, paysage
+    { 0x3A, 0x55 },         // Pixel format = 16 bits/pixel
+
+    // Frame rate control
+    { 0xB1, 0x00B0 },       // Frame rate
+    { 0xB6, 0x0A82 },       // Display function control
+
+    // Gamma correction
+    { 0xE0, 0x0F0F },       // Gamma+ (exemple)
+    { 0xE1, 0x0000 },       // Gamma- (exemple)
+
+    // Column / Page address set
+    { 0x2A, 0x0000 },       // Column start
+    { 0x2A, 0x013F },       // Column end (319)
+    { 0x2B, 0x0000 },       // Row start
+    { 0x2B, 0x00EF },       // Row end (239)
+
+    { 0x11, 0x0000 },       // Sleep out
+    { REGVAL_DELAY, 120 },
+    { 0x29, 0x0000 },       // Display on
+};
+
+static const RegisterValueSetInfo_t ili9341_regs =
+{
+    ili9341, sizeof(ili9341)/sizeof(RegisterValue_t)
+};
 
 #endif
+
  
 #ifdef USE_GFX_RA8875
 static const RegisterValue_t ra8875[] =
@@ -472,6 +523,135 @@ static const RegisterValueSetInfo_t ra8875_regs =
 
 
 #endif
+
+#ifdef USE_GFX_ILI7789    // nouveau pour les radio BS188 avec Bouton orange  320x240  en sept 2025
+
+static const RegisterValue_t ili7789[] =
+{
+    { 0x01, 0x0000},       // Software reset
+    { REGVAL_DELAY, 10},
+
+    { 0x36, 0x28},         // MADCTL: RGB order, paysage
+    { 0x3A, 0x55},         // Interface Pixel Format: 16 bits/pixel (RGB565)
+
+    // Power control / VCOM
+    { 0xB2, 0x0C0C0C},     // Porch setting
+    { 0xB7, 0x0000},       // Gate control
+    { 0xBB, 0x1B00},       // VCOM setting
+    { 0xC0, 0x2C25},       // LCM control
+    { 0xC2, 0x0100},       // VDV, VRH
+    { 0xC3, 0x0808},       // VRH set
+    { 0xC4, 0x000F},       // Frame rate
+    { 0xC6, 0x000F},       // Frame inversion
+    { 0xD0, 0xA4A1},       // Power control
+    { REGVAL_DELAY, 10},
+
+    // Gamma settings
+    { 0xE0, 0xD0},         // Gamma+  (exemple)
+    { 0xE1, 0x20},         // Gamma-  (exemple)
+
+    { 0x2A, 0x0000},       // Column address start
+    { 0x2A, 0x013F},       // Column address end (319)
+    { 0x2B, 0x0000},       // Row address start
+    { 0x2B, 0x00DF},       // Row address end (223)
+
+    { 0x11, 0x0000},       // Sleep out
+    { REGVAL_DELAY, 120},
+    { 0x29, 0x0000},       // Display on
+};
+
+static const RegisterValueSetInfo_t ili7789_regs =
+{
+    ili7789, sizeof(ili7789)/sizeof(RegisterValue_t)
+};
+
+#endif
+
+
+
+#ifdef USE_GFX_ST7796                             // Nouveau ecran rajouté en sept 2025  480x320
+
+static const RegisterValue_t st7796[] =
+{
+    {0x01, 0x00},           // Software Reset
+    {REGVAL_DELAY, 120},    // Attente après reset
+
+    {0x11, 0x00},           // Sleep OUT
+    {REGVAL_DELAY, 120},    // Attente après sortie veille
+
+    {0xF0, 0xC3},           // Command Set Control (enable extension command)
+    {0xF0, 0x96},           // Command Set Control
+
+    {0x36, 0x28},           // MADCTL - Memory Data Access Control - PAYSAGE
+                            // 0x28 = MY=0, MX=0, MV=1, RGB=0 (480x320)
+
+    {0x3A, 0x55},           // COLMOD - Interface Pixel Format
+                            // 0x55 = 16 bits/pixel (identique à ILI9486)
+
+    {0xB4, 0x01},           // Display Inversion Control
+    {REGVAL_DATA, 0x00},    // Normal mode
+
+    {0xB6, 0x00},           // Display Function Control
+    {REGVAL_DATA, 0x02},    // Scan direction
+    {REGVAL_DATA, 0x3B},    // LCD Drive lines
+
+    {0xE8, 0x40},           // Display Output Control
+    {REGVAL_DATA, 0x8A},
+    {REGVAL_DATA, 0x00},
+    {REGVAL_DATA, 0x00},
+    {REGVAL_DATA, 0x29},
+    {REGVAL_DATA, 0x19},
+    {REGVAL_DATA, 0xA5},
+    {REGVAL_DATA, 0x33},
+
+    {0xC1, 0x06},           // Power Control 2
+
+    {0xC2, 0xA7},           // Power Control 3
+
+    {0xC5, 0x18},           // VCOM Control
+
+    {0xE0, 0xF0},           // Positive Gamma Correction
+    {REGVAL_DATA, 0x09},
+    {REGVAL_DATA, 0x13},
+    {REGVAL_DATA, 0x12},
+    {REGVAL_DATA, 0x12},
+    {REGVAL_DATA, 0x2B},
+    {REGVAL_DATA, 0x3C},
+    {REGVAL_DATA, 0x44},
+    {REGVAL_DATA, 0x4B},
+    {REGVAL_DATA, 0x1B},
+    {REGVAL_DATA, 0x18},
+    {REGVAL_DATA, 0x17},
+    {REGVAL_DATA, 0x1D},
+
+    {0xE1, 0xF0},           // Negative Gamma Correction
+    {REGVAL_DATA, 0x09},
+    {REGVAL_DATA, 0x13},
+    {REGVAL_DATA, 0x0C},
+    {REGVAL_DATA, 0x0D},
+    {REGVAL_DATA, 0x27},
+    {REGVAL_DATA, 0x3B},
+    {REGVAL_DATA, 0x44},
+    {REGVAL_DATA, 0x4D},
+    {REGVAL_DATA, 0x0B},
+    {REGVAL_DATA, 0x17},
+    {REGVAL_DATA, 0x17},
+    {REGVAL_DATA, 0x1D},
+
+    {0xF0, 0x3C},           // Command Set Control (disable extension command)
+    {0xF0, 0x69},           // Command Set Control
+
+    {0x13, 0x00},           // Normal Display Mode ON
+    {0x29, 0x00},           // Display ON
+    {REGVAL_DELAY, 120},
+};
+
+static const RegisterValueSetInfo_t st7796_regs =
+{
+    st7796, sizeof(st7796)/sizeof(RegisterValue_t)
+};
+#endif
+
 
 #ifdef USE_GFX_ILI9486
 static const RegisterValue_t ili9486[] =
@@ -582,9 +762,9 @@ static void UiLcdHy28_BulkWriteColor(uint16_t Color, uint32_t len);
 
 static inline bool UiLcdHy28_SpiDisplayUsed()
 {
-    bool retval = false;
+    bool   retval  =  false;
 #ifdef USE_SPI_DISPLAY
-    retval = mchf_display.use_spi;
+           retval  = mchf_display.use_spi;
 #endif
     return retval;
 }
@@ -595,25 +775,25 @@ void UiLcdHy28_BacklightInit()
     GPIO_InitTypeDef  GPIO_InitStructure;
 
     // Set as output
-    GPIO_InitStructure.Pin = LCD_BACKLIGHT;
-    GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStructure.Pull = GPIO_NOPULL;
-    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStructure.Pin   =  LCD_BACKLIGHT;
+    GPIO_InitStructure.Mode  =  GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStructure.Pull  =  GPIO_NOPULL;
+    GPIO_InitStructure.Speed =  GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(LCD_BACKLIGHT_PIO, &GPIO_InitStructure);
 
     // Backlight off
-    GPIO_ResetBits(LCD_BACKLIGHT_PIO, LCD_BACKLIGHT);
+    GPIO_ResetBits( LCD_BACKLIGHT_PIO, LCD_BACKLIGHT );
 }
 
 void UiLcdHy28_BacklightEnable(bool on)
 {
     if (on)
     {
-        GPIO_SetBits(LCD_BACKLIGHT_PIO, LCD_BACKLIGHT);
+        GPIO_SetBits( LCD_BACKLIGHT_PIO, LCD_BACKLIGHT );
     }
     else
     {
-        GPIO_ResetBits(LCD_BACKLIGHT_PIO, LCD_BACKLIGHT);
+        GPIO_ResetBits( LCD_BACKLIGHT_PIO, LCD_BACKLIGHT );
     }
 }
 
@@ -636,7 +816,7 @@ void UiLcdHy28_BacklightEnable(bool on)
     // 16 may be a little bit high for some displays but works with the 480x320 display
 #endif
 
-static uint32_t lcd_spi_prescaler = SPI_PRESCALE_LCD_DEFAULT;
+static  uint32_t  lcd_spi_prescaler = SPI_PRESCALE_LCD_DEFAULT;
 
 // static SPI_HandleTypeDef SPI_Handle;
 
@@ -647,9 +827,26 @@ void UiLcdHy28_SpiInit(bool hispeed, mchf_display_types_t display_type)
 #ifdef USE_GFX_ILI9486
     if (display_type == DISPLAY_RPI_SPI)
     {
-        hspiDisplay.Init.CLKPolarity = SPI_POLARITY_LOW;
-        hspiDisplay.Init.CLKPhase = SPI_PHASE_1EDGE;
-        hspiDisplay.Init.NSS = SPI_NSS_SOFT;
+        hspiDisplay.Init.CLKPolarity       =  SPI_POLARITY_LOW;
+        hspiDisplay.Init.CLKPhase          =  SPI_PHASE_1EDGE;
+        hspiDisplay.Init.NSS               =  SPI_NSS_SOFT;
+
+        hspiDisplay.Init.BaudRatePrescaler = lcd_spi_prescaler;
+
+        if (HAL_SPI_Init(&hspiDisplay) != HAL_OK)
+        {
+            Error_Handler();
+        }
+    }
+#endif
+
+
+#ifdef USE_GFX_ST7796                               // Nouveau ecran rajouté en sept 2025  480x320
+    if (display_type == DISPLAY_ST7796_SPI)
+    {
+        hspiDisplay.Init.CLKPolarity       =  SPI_POLARITY_LOW;
+        hspiDisplay.Init.CLKPhase          =  SPI_PHASE_1EDGE;
+        hspiDisplay.Init.NSS               =  SPI_NSS_SOFT;
 
         hspiDisplay.Init.BaudRatePrescaler = lcd_spi_prescaler;
 
@@ -670,9 +867,9 @@ void UiLcdHy28_GpioInit(mchf_display_types_t display_type)
 
     GPIO_InitTypeDef GPIO_InitStructure;
     // Common misc pins settings
-    GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStructure.Mode  = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStructure.Pull = GPIO_NOPULL;
+    GPIO_InitStructure.Pull  = GPIO_NOPULL;
 
 
     if (mchf_display.lcd_cs_pio != NULL)
@@ -692,10 +889,18 @@ void UiLcdHy28_GpioInit(mchf_display_types_t display_type)
 #ifdef USE_GFX_ILI9486
     if (display_type == DISPLAY_RPI_SPI)
     {
-
         // Configure GPIO PIN for RS
         GPIO_InitStructure.Pin = LCD_RS;
-        HAL_GPIO_Init(LCD_RS_PIO, &GPIO_InitStructure);
+        HAL_GPIO_Init( LCD_RS_PIO, &GPIO_InitStructure );
+    }
+#endif
+
+#ifdef USE_GFX_ST7796                                       // TFT ST7796 480x320 rajouté en sept 2025
+    if (display_type == DISPLAY_ST7796_SPI)
+    {
+        // Configure GPIO PIN for RS
+        GPIO_InitStructure.Pin = LCD_RS;
+        HAL_GPIO_Init( LCD_RS_PIO, &GPIO_InitStructure );
     }
 #endif
 
@@ -748,15 +953,15 @@ void UiLcdHy28_SpiDeInit()
     {
         // Deconfigure GPIO PIN for Chip select
         GPIO_InitStructure.Pin		= mchf_display.lcd_cs;
-        HAL_GPIO_Init(mchf_display.lcd_cs_pio, &GPIO_InitStructure);
+        HAL_GPIO_Init( mchf_display.lcd_cs_pio, &GPIO_InitStructure );
     }
 }
 
-inline void UiLcdHy28_SpiLcdCsDisable()
+inline static void UiLcdHy28_SpiLcdCsDisable()
 {
-    GPIO_SetBits(mchf_display.lcd_cs_pio, mchf_display.lcd_cs);
+    GPIO_SetBits( mchf_display.lcd_cs_pio, mchf_display.lcd_cs );
 }
-static inline void UiLcdHy28_SpiLcdCsEnable()
+inline static void UiLcdHy28_SpiLcdCsEnable()
 {
     GPIO_ResetBits(mchf_display.lcd_cs_pio, mchf_display.lcd_cs);
 }
@@ -777,13 +982,13 @@ static void UiLcdHy28_ParallelDeInit()
 static void UiLcdHy28_Reset()
 {
     // Reset
-    GPIO_SetBits(LCD_RESET_PIO, LCD_RESET);
+    GPIO_SetBits (   LCD_RESET_PIO, LCD_RESET );
     HAL_Delay(1);
 
-    GPIO_ResetBits(LCD_RESET_PIO, LCD_RESET);
+    GPIO_ResetBits ( LCD_RESET_PIO, LCD_RESET );
     HAL_Delay(1);
 
-    GPIO_SetBits(LCD_RESET_PIO, LCD_RESET);
+    GPIO_SetBits (   LCD_RESET_PIO, LCD_RESET );
     HAL_Delay(300);
 }
 
@@ -817,7 +1022,7 @@ static inline void UiLcdHy28_SpiFinishTransfer()
 #ifdef STM32H7
     #ifndef USE_SPI_HAL
     // we cannot use this with HAL, the "normal" HAL Transmit does check the flags AND resets them (ARGH)
-    while (__HAL_SPI_GET_FLAG(&hspiDisplay, SPI_SR_EOT) == 0 || __HAL_SPI_GET_FLAG(&hspiDisplay, SPI_SR_EOT) == 0 ) { asm("nop"); }
+    while (__HAL_SPI_GET_FLAG(&hspiDisplay, SPI_SR_EOT    ) == 0 || __HAL_SPI_GET_FLAG(&hspiDisplay, SPI_SR_EOT   ) == 0 ) { asm("nop"); }
     while (__HAL_SPI_GET_FLAG(&hspiDisplay, SPI_FLAG_RXWNE) != 0 || __HAL_SPI_GET_FLAG(&hspiDisplay, SPI_SR_RXPLVL) != 0 )
     {
         spi_dr_dummy = SPI_DISPLAY->RXDR;
@@ -825,8 +1030,8 @@ static inline void UiLcdHy28_SpiFinishTransfer()
     #endif
 #else
     while ((SPI_DISPLAY->SR & (SPI_FLAG_TXE)) == (uint16_t)RESET) {}
-    while (SPI_DISPLAY->SR & SPI_FLAG_BSY) {}
-    if (SPI_DISPLAY->SR & SPI_FLAG_RXNE)
+    while  (SPI_DISPLAY->SR & SPI_FLAG_BSY  )    {}
+    if     (SPI_DISPLAY->SR & SPI_FLAG_RXNE )
     {
         spi_dr_dummy = SPI_DISPLAY->DR;
     }
@@ -836,18 +1041,18 @@ static inline void UiLcdHy28_SpiFinishTransfer()
 static void UiLcdHy28_LcdSpiFinishTransfer()
 {
     UiLcdHy28_SpiFinishTransfer();
-    GPIO_SetBits(mchf_display.lcd_cs_pio, mchf_display.lcd_cs);
+    GPIO_SetBits( mchf_display.lcd_cs_pio,  mchf_display.lcd_cs );
 }
 
-uint8_t UiLcdHy28_SpiReadByte()
+uint8_t  UiLcdHy28_SpiReadByte()
 {
-    uint8_t dummy = 0;
-    uint8_t retval = 0;
+    uint8_t  dummy   =  0;
+    uint8_t  retval  =  0;
 
     /* Send a Transmit a dummy byte and Receive Byte through the SPI peripheral */
-    HAL_SPI_TransmitReceive(&hspi2, &dummy,&retval,1,SPI_TIMEOUT);
+    HAL_SPI_TransmitReceive( &hspi2, &dummy, &retval, 1, SPI_TIMEOUT );
 
-    return retval;
+    return  retval;
 }
 
 uint8_t UiLcdHy28_SpiReadByteFast()
@@ -894,7 +1099,7 @@ static inline void UiLcdHy28_WriteDataSpiStart()
 void UiLcdHy28_WriteDataSpi( unsigned short data)
 {
     UiLcdHy28_WriteDataSpiStart();
-    UiLcdHy28_SpiSendByte((data >>   8));                    /* Write D8..D15                */
+    UiLcdHy28_SpiSendByte( (data >>   8) );                  /* Write D8..D15                */
     UiLcdHy28_SpiSendByte((data & 0xFF));                    /* Write D0..D7   */
     UiLcdHy28_LcdSpiFinishTransfer();
 }
@@ -910,6 +1115,7 @@ static inline void UiLcdHy28_WriteDataOnly( unsigned short data)
     {
 #ifdef USE_DISPLAY_PAR
         LCD_RAM = data;
+   //   __NOP(); __NOP();   /// NIZZ ajoute temps attente apres overclocking
         __DMB();
 #endif
     }
@@ -928,6 +1134,7 @@ static inline void UiLcdHy28_WriteData( unsigned short data)
     {
 #ifdef USE_DISPLAY_PAR
         LCD_RAM = data;
+    //  __NOP();  __NOP();    /// NIZZ ajoute temps attente apres overclocking
         __DMB();
 #endif
     }
@@ -961,7 +1168,7 @@ unsigned short UiLcdHy28_LcdReadDataSpi()
  * @brief writes a controller register in its native width 16 bit or 8bit
  * width is controller dependent (RA8875 uses 8bit, all other 16bit)
  */
-void UiLcdHy28_WriteReg(unsigned short LCD_Reg, unsigned short LCD_RegValue)
+void UiLcdHy28_WriteReg( unsigned short LCD_Reg, unsigned short LCD_RegValue)
 {
 
     // FIXME: Factor out so that it can be used with other controller drivers enabled
@@ -978,8 +1185,11 @@ void UiLcdHy28_WriteReg(unsigned short LCD_Reg, unsigned short LCD_RegValue)
     {
 #ifdef USE_DISPLAY_PAR
         LCD_REG = LCD_Reg;
+       //  __NOP();  __NOP();      // NIZZZ  delay pour overclocking
         __DMB();
+
         LCD_RAM = LCD_RegValue;
+       // __NOP();    __NOP();   // NIZZZ  delay pour overclocking
         __DMB();
 #endif
     }
@@ -1000,6 +1210,7 @@ unsigned short UiLcdHy28_ReadReg( unsigned short LCD_Reg)
 #ifdef USE_DISPLAY_PAR
         // Write 16-bit Index (then Read Reg)
         LCD_REG = LCD_Reg;
+       //   __NOP();  __NOP();  /// NIZZ ajoute temps attente apres overclocking
         // Read 16-bit Reg
         __DMB();
         retval = LCD_RAM;
@@ -1026,6 +1237,7 @@ static void UiLcdHy28_WriteRAM_Prepare_Index(uint16_t wr_prep_reg)
     {
 #ifdef USE_DISPLAY_PAR
         LCD_REG = wr_prep_reg;
+    //  __NOP();  __NOP();   /// NIZZ ajoute temps attente apres overclocking
         __DMB();
 #endif
     }
@@ -1084,8 +1296,8 @@ static void UiLcdHy28_FinishWaitBulkWrite()
 static void UiLcdHy28_OpenBulkWrite(ushort x, ushort width, ushort y, ushort height)
 {
     UiLcdHy28_FinishWaitBulkWrite();
-    UiLcdHy28_SetActiveWindow(x, x + width - 1, y, y + height - 1);
-    UiLcdHy28_SetCursorA(x, y);
+    UiLcdHy28_SetActiveWindow( x, x + width - 1, y, y + height - 1 );
+    UiLcdHy28_SetCursorA ( x, y );
     UiLcdHy28_WriteRAM_Prepare();
 }
 
@@ -1101,17 +1313,17 @@ static void UiLcdHy28_CloseBulkWrite()
 
 
 
-#define PIXELBUFFERSIZE 512
+#define PIXELBUFFERSIZE  512
 #define PIXELBUFFERCOUNT 2
 
 static __UHSDR_DMAMEM uint16_t   pixelbuffer[PIXELBUFFERCOUNT][PIXELBUFFERSIZE];
-static uint16_t pixelcount = 0;
+static uint16_t pixelcount  = 0;
 static uint16_t pixelbufidx = 0;
 
 static inline void UiLcdHy28_BulkPixel_BufferInit()
 {
-    pixelbufidx= (pixelbufidx+1)%PIXELBUFFERCOUNT;
-    pixelcount = 0;
+    pixelbufidx = (pixelbufidx+1)%PIXELBUFFERCOUNT;
+    pixelcount  = 0;
 }
 
 
@@ -1167,8 +1379,8 @@ inline void UiLcdHy28_BulkPixel_CloseWrite()
 
 void UiLcdHy28_LcdClear(ushort Color)
 {
-	uint32_t MAX_X=mchf_display.MAX_X; uint32_t MAX_Y=mchf_display.MAX_Y;
-    UiLcdHy28_OpenBulkWrite(0,MAX_X,0,MAX_Y);
+	uint32_t MAX_X = mchf_display.MAX_X; uint32_t MAX_Y = mchf_display.MAX_Y;
+    UiLcdHy28_OpenBulkWrite( 0, MAX_X, 0, MAX_Y );
 #ifdef USE_SPI_DMA
     if(UiLcdHy28_SpiDisplayUsed())
     {
@@ -1185,7 +1397,7 @@ void UiLcdHy28_LcdClear(ushort Color)
     else
 #endif
     {
-        UiLcdHy28_BulkWriteColor(Color,MAX_X * MAX_Y);
+        UiLcdHy28_BulkWriteColor( Color, MAX_X * MAX_Y );
     }
     UiLcdHy28_CloseBulkWrite();
 }
@@ -1194,18 +1406,18 @@ void UiLcdHy28_LcdClear(ushort Color)
 
 void UiLcdHy28_DrawColorPoint( unsigned short Xpos, unsigned short Ypos, unsigned short point)
 {
-	uint16_t MAX_X=mchf_display.MAX_X; uint16_t MAX_Y=mchf_display.MAX_Y;
+	uint16_t MAX_X = mchf_display.MAX_X;  uint16_t MAX_Y = mchf_display.MAX_Y;
 #ifdef USE_GFX_RA8875
-    if( Xpos < MAX_X && Ypos < MAX_Y )
+    if( Xpos < MAX_X  &&   Ypos < MAX_Y )
     {
-        UiLcdHy28_SetCursorA(Xpos, Ypos);
-        UiLcdHy28_WriteReg(0x02, point);
+        UiLcdHy28_SetCursorA ( Xpos, Ypos );
+        UiLcdHy28_WriteReg   ( 0x02, point);
     }
 #else
-    if( Xpos < MAX_X && Ypos < MAX_Y )
+    if( Xpos < MAX_X   &&   Ypos < MAX_Y )
     {
-        UiLcdHy28_OpenBulkWrite(Xpos,1,Ypos,1);
-        UiLcdHy28_WriteDataOnly(point);
+        UiLcdHy28_OpenBulkWrite ( Xpos, 1, Ypos, 1 );
+        UiLcdHy28_WriteDataOnly ( point );
         UiLcdHy28_CloseBulkWrite();
     }
 #endif
@@ -1213,7 +1425,7 @@ void UiLcdHy28_DrawColorPoint( unsigned short Xpos, unsigned short Ypos, unsigne
 #endif
 
 
-void UiLcdHy28_DrawFullRect(ushort Xpos, ushort Ypos, ushort Height, ushort Width ,ushort color)
+void UiLcdHy28_DrawFullRect( ushort Xpos, ushort Ypos, ushort Height, ushort Width ,ushort color)
 {
 #ifdef USE_GFX_RA8875
     UiLcdRA8875_SetForegroundColor(color);
@@ -1229,8 +1441,8 @@ void UiLcdHy28_DrawFullRect(ushort Xpos, ushort Ypos, ushort Height, ushort Widt
     // Fill rectangle
     UiLcdRa8875_WriteReg_8bit(0x90, 0xB0);
 #else
-    UiLcdHy28_OpenBulkWrite(Xpos, Width, Ypos, Height);
-    UiLcdHy28_BulkWriteColor(color,(uint32_t)Height * (uint32_t)Width);
+    UiLcdHy28_OpenBulkWrite ( Xpos,  Width, Ypos, Height );
+    UiLcdHy28_BulkWriteColor( color, (uint32_t) Height * (uint32_t) Width);
     UiLcdHy28_CloseBulkWrite();
 #endif
 
@@ -1278,23 +1490,26 @@ void UiLcdRA8875_setScrollMode(uint8_t mode)
 
     uint8_t temp = UiLcdHy28_ReadReg(RA8875_LTPR0);
     temp &= 0x3F;            // Clear bits 6 and 7 to zero
-    switch(mode){           // bit 7,6 of LTPR0
+    switch(mode)
+    {            // bit 7,6 of LTPR0
         case 0:  // 00b : Layer 1/2 scroll simultaneously.
-            // Do nothing
-        break;
+            	 // Do nothing
+        		break;
         case 1:        // 01b : Only Layer 1 scroll.
-            temp |= 0x40;
-        break;
+            	temp |= 0x40;
+            	break;
         case 2:        // 10b : Only Layer 2 scroll.
-            temp |= 0x80;
-        break;
+            	temp |= 0x80;
+            	break;
         case 3:          // 11b: Buffer scroll (using Layer 2 as scroll buffer)
-            temp |= 0xC0;
-        break;
+            	temp |= 0xC0;
+            	break;
         default:
-            return;             //do nothing
+            	return;             //do nothing
     }
+
     LCD_RAM=temp;
+ // __NOP();  __NOP();     /// NIZZ ajoute attente de communication apres overclocking
     __DMB();
 
 }
@@ -1349,21 +1564,15 @@ void UiLcdRA8875_scroll(int16_t x,int16_t y)
 #endif
 
 
-void UiLcdHy28_DrawStraightLineWidth(ushort x, ushort y, ushort Length, uint16_t Width, uchar Direction,ushort color)
+void  UiLcdHy28_DrawStraightLineWidth ( ushort x, ushort y, ushort Length, uint16_t Width, uchar Direction, ushort color )
 {
-    if(Direction == LCD_DIR_VERTICAL)
-    {
-        UiLcdHy28_DrawFullRect(x,y,Length,Width,color);
-    }
-    else
-    {
-        UiLcdHy28_DrawFullRect(x,y,Width,Length,color);
-    }
+    if   ( Direction == LCD_DIR_VERTICAL)   {  UiLcdHy28_DrawFullRect ( x, y, Length, Width, color ); }
+    else    								{  UiLcdHy28_DrawFullRect ( x, y, Width, Length, color ); }
 }
 
 
-void UiLcdHy28_DrawStraightLine(ushort x, ushort y, ushort Length, uchar Direction,
-        ushort color) {
+void UiLcdHy28_DrawStraightLine ( ushort x,  ushort y,  ushort Length,  uchar Direction,  ushort color)
+{
 #ifdef  USE_GFX_RA8875
     /* Drawing Control Registers */
     #define LCD_DCR     (0x90)      /* Draw Line/Circle/Square Control Register */
@@ -1401,40 +1610,43 @@ void UiLcdHy28_DrawStraightLine(ushort x, ushort y, ushort Length, uchar Directi
 
     UiLcdRa8875_WriteReg_8bit(LCD_DCR, 0x80);
 #else
-    UiLcdHy28_DrawStraightLineWidth(x, y, Length, 1, Direction, color);
+    UiLcdHy28_DrawStraightLineWidth( x, y, Length, 1, Direction, color);
 #endif
 }
 
 
-void UiLcdHy28_DrawStraightLineDouble(ushort x, ushort y, ushort Length, uchar Direction,ushort color)
+void UiLcdHy28_DrawStraightLineDouble( ushort x, ushort y, ushort Length, uchar Direction,ushort color)
 {
-    UiLcdHy28_DrawStraightLineWidth(x, y, Length, 2, Direction, color);
+    UiLcdHy28_DrawStraightLineWidth ( x, y, Length, 2, Direction, color);
 }
 
-void UiLcdHy28_DrawStraightLineTriple(ushort x, ushort y, ushort Length, uchar Direction,ushort color)
+void UiLcdHy28_DrawStraightLineTriple ( ushort x, ushort y, ushort Length, uchar Direction,ushort color )
 {
-    UiLcdHy28_DrawStraightLineWidth(x, y, Length, 3, Direction, color);
+    UiLcdHy28_DrawStraightLineWidth ( x, y, Length, 3, Direction, color);
 }
 
-
-void UiLcdHy28_DrawHorizLineWithGrad(ushort x, ushort y, ushort Length,ushort gradient_start)
+/*
+void UiLcdHy28_DrawStraightLineQuadriple ( ushort x, ushort y, ushort Length, uchar Direction,ushort color )
 {
-    uint32_t i = 0,j = 0;
+    UiLcdHy28_DrawStraightLineWidth ( x, y, Length, 6, Direction, color );
+}
+*/
+
+void UiLcdHy28_DrawHorizLineWithGrad ( ushort x, ushort y, ushort Length, ushort gradient_start )
+{
+    uint32_t   i = 0,  j = 0;
     ushort     k = gradient_start;
 
-    UiLcdHy28_OpenBulkWrite(x,Length,y,1);
+    UiLcdHy28_OpenBulkWrite ( x, Length, y, 1 );
     UiLcdHy28_BulkPixel_BufferInit();
     for(i = 0; i < Length; i++)
     {
-        UiLcdHy28_BulkPixel_Put(RGB(k,k,k));
+        UiLcdHy28_BulkPixel_Put( RGB(k,k,k) );
         j++;
-        if(j == GRADIENT_STEP)
+        if( j == GRADIENT_STEP )
         {
-            if(i < (Length/2))
-                k += (GRADIENT_STEP/2);
-            else
-                k -= (GRADIENT_STEP/2);
-
+            if( i < (Length/2))     k += (GRADIENT_STEP/2);
+            else                    k -= (GRADIENT_STEP/2);
             j = 0;
         }
     }
@@ -1442,25 +1654,25 @@ void UiLcdHy28_DrawHorizLineWithGrad(ushort x, ushort y, ushort Length,ushort gr
     UiLcdHy28_CloseBulkWrite();
 }
 
-void UiLcdHy28_DrawEmptyRect(ushort Xpos, ushort Ypos, ushort Height, ushort Width,ushort color)
+void UiLcdHy28_DrawEmptyRect( ushort Xpos, ushort Ypos, ushort Height, ushort Width, ushort color)
 {
 
-    UiLcdHy28_DrawStraightLine(Xpos, (Ypos),          Width,        LCD_DIR_HORIZONTAL,color);
-    UiLcdHy28_DrawStraightLine(Xpos, Ypos,            Height,       LCD_DIR_VERTICAL,color);
-    UiLcdHy28_DrawStraightLine((Xpos + Width), Ypos,  (Height + 1), LCD_DIR_VERTICAL,color);
-    UiLcdHy28_DrawStraightLine(Xpos, (Ypos + Height), Width,        LCD_DIR_HORIZONTAL,color);
+    UiLcdHy28_DrawStraightLine ( Xpos, (Ypos),          Width,        LCD_DIR_HORIZONTAL,color);
+    UiLcdHy28_DrawStraightLine ( Xpos, Ypos,            Height,       LCD_DIR_VERTICAL,  color);
+    UiLcdHy28_DrawStraightLine ( (Xpos + Width), Ypos,  (Height + 1), LCD_DIR_VERTICAL,  color);
+    UiLcdHy28_DrawStraightLine ( Xpos, (Ypos + Height), Width,        LCD_DIR_HORIZONTAL,color);
 
 }
 
-void UiLcdHy28_DrawBottomButton(ushort Xpos, ushort Ypos, ushort Height, ushort Width,ushort color)
+void  UiLcdHy28_DrawBottomButton( ushort Xpos, ushort Ypos, ushort Height, ushort Width, ushort color)
 {
-    UiLcdHy28_DrawStraightLine(Xpos, (Ypos),        Width, LCD_DIR_HORIZONTAL,color);
-    UiLcdHy28_DrawStraightLine(Xpos, Ypos,          Height,LCD_DIR_VERTICAL,  color);
-    UiLcdHy28_DrawStraightLine((Xpos + Width), Ypos,Height,LCD_DIR_VERTICAL,  color);
+    UiLcdHy28_DrawStraightLine ( Xpos, (Ypos),        Width,  LCD_DIR_HORIZONTAL, color );
+    UiLcdHy28_DrawStraightLine ( Xpos, Ypos,          Height, LCD_DIR_VERTICAL,   color );
+    UiLcdHy28_DrawStraightLine ((Xpos + Width), Ypos, Height, LCD_DIR_VERTICAL,   color );
 }
 
 
-static void UiLcdHy28_BulkWriteColor(uint16_t Color, uint32_t len)
+static void UiLcdHy28_BulkWriteColor( uint16_t  Color,  uint32_t  len)
 {
 
 #ifdef USE_SPI_DMA
@@ -1489,13 +1701,13 @@ static void UiLcdHy28_BulkWriteColor(uint16_t Color, uint32_t len)
 
 
 #ifdef USE_8bit_FONT
-static void UiLcdHy28_DrawChar_8bit(ushort x, ushort y, char symb,ushort Color, ushort bkColor,const sFONT *cf)
+static void UiLcdHy28_DrawChar_8bit( ushort x, ushort y, char symb, ushort Color, ushort bkColor, const sFONT *cf)
 {
-    uint8_t cntrX, cntrY;
-    uint8_t FontDefaultSize,Font_W,Font_H;
+    uint8_t  cntrX, cntrY;
+    uint8_t  FontDefaultSize, Font_W, Font_H;
     uint8_t *FontData;
 
-    FontDefaultSize=cf->Width;
+    FontDefaultSize = cf->Width;
     if(symb==0x20)
     {
         Font_W=cf->Width;
@@ -1512,21 +1724,21 @@ static void UiLcdHy28_DrawChar_8bit(ushort x, ushort y, char symb,ushort Color, 
     const uint16_t charSpacing = 1;
 
     //gray shaded font type
-    uint32_t pixel;
-    uint8_t FontD;
-    uint16_t ColBG_R=(bkColor>>11)&0x1f;
-    int32_t ColBG_G=(bkColor>>5)&0x3f;
-    int32_t ColBG_B=bkColor&0x1f;
+    uint32_t  pixel;
+    uint8_t   FontD;
+    uint16_t  ColBG_R = ( bkColor >> 11) & 0x1f;
+    int32_t   ColBG_G = ( bkColor >> 5 ) & 0x3f;
+    int32_t   ColBG_B =   bkColor        & 0x1f;
 
-    int32_t ColFG_R=((Color>>11)&0x1f) - ColBG_R; //decomposition of 16 bit color data into channels
-    int32_t ColFG_G=((Color>>5)&0x3f)  - ColBG_G;
-    int32_t ColFG_B=(Color&0x1f) - ColBG_B;
+    int32_t   ColFG_R = ( (Color >> 11) & 0x1f)  - ColBG_R; //decomposition of 16 bit color data into channels
+    int32_t   ColFG_G = ( (Color >> 5 ) & 0x3f)  - ColBG_G;
+    int32_t   ColFG_B = (  Color        & 0x1f)  - ColBG_B;
 
-    int32_t ColFG_Ro,ColFG_Go,ColFG_Bo;
+    int32_t  ColFG_Ro,  ColFG_Go, ColFG_Bo;
 
-    UiLcdHy28_BulkPixel_OpenWrite(x, FontDefaultSize+charSpacing, y, Font_H);
+    UiLcdHy28_BulkPixel_OpenWrite ( x, FontDefaultSize+charSpacing, y, Font_H );
 
-    if(symb==0x20)
+    if( symb==0x20 )
     {
         Font_W=4;
         for(cntrY=0;cntrY<Font_H;cntrY++)
@@ -1564,14 +1776,14 @@ static void UiLcdHy28_DrawChar_8bit(ushort x, ushort y, char symb,ushort Color, 
                 else
                 {
                     //shading the foreground colour
-                    ColFG_Ro=(ColFG_R*FontD)>>8;
-                    ColFG_Go=(ColFG_G*FontD)>>8;
-                    ColFG_Bo=(ColFG_B*FontD)>>8;
-                    ColFG_Ro+=ColBG_R;
-                    ColFG_Go+=ColBG_G;
-                    ColFG_Bo+=ColBG_B;
+                    ColFG_Ro  = ((ColFG_R * FontD) >> 8);
+                    ColFG_Go  = ((ColFG_G * FontD) >> 8);
+                    ColFG_Bo  = ((ColFG_B * FontD) >> 8);
+                    ColFG_Ro +=  ColBG_R;
+                    ColFG_Go +=  ColBG_G;
+                    ColFG_Bo +=  ColBG_B;
 
-                    pixel=(ColFG_Ro<<11)|(ColFG_Go<<5)|ColFG_Bo;    //assembly of destination colour
+                    pixel = (ColFG_Ro << 11) | (ColFG_Go << 5) | ColFG_Bo;    //assembly of destination colour
                 }
                 UiLcdHy28_BulkPixel_Put(pixel);
 
@@ -1601,27 +1813,25 @@ static void UiLcdHy28_DrawChar_8bit(ushort x, ushort y, char symb,ushort Color, 
 }
 #endif
 
-static void UiLcdHy28_DrawChar_1bit(ushort x, ushort y, char symb,ushort Color, ushort bkColor,const sFONT *cf)
+static void UiLcdHy28_DrawChar_1bit( ushort x, ushort y, char symb,ushort Color, ushort bkColor, const sFONT *cf)
 {
-    ulong       i,j;
-    ushort      a,b,d;
+    ulong            i, j;
+    ushort           a, b, d;
     const uchar      fw = cf->Width;
 
-    uint8_t   *ch = (uint8_t *)cf->table;
-    if(cf->Width>8)
-        ch+=(symb - 32) * cf->Height*2;
-    else
-        ch+=(symb - 32) * cf->Height;
+    uint8_t                *ch = (uint8_t *)   cf->table;
+    if  ( cf->Width >8 )   ch += (symb - 32) * cf->Height * 2;
+    else                   ch += (symb - 32) * cf->Height;
 
 
-    UiLcdHy28_OpenBulkWrite(x,cf->Width,y,cf->Height);
+    UiLcdHy28_OpenBulkWrite( x, cf->Width, y, cf->Height );
     UiLcdHy28_BulkPixel_BufferInit();
-    for(i = 0; i < cf->Height; i++)
+    for( i = 0; i < cf->Height; i++)
     {
         if(cf->Width>8)
         {
-            d=ch[i*2+1]<<8;
-            d|=ch[i*2];
+            d  = ch[ i*2 + 1] << 8;
+            d |= ch[ i*2    ];
         }
         else
         {
@@ -1634,7 +1844,7 @@ static void UiLcdHy28_DrawChar_1bit(ushort x, ushort y, char symb,ushort Color, 
             a = (d & ((0x80 << ((fw / 12 ) * 8)) >> j));
             b = (d &  (0x01 << j));
             //
-            UiLcdHy28_BulkPixel_Put(((!a && (fw <= 12)) || (!b && (fw > 12)))?bkColor:Color);
+            UiLcdHy28_BulkPixel_Put (((!a && (fw <= 12)) || (!b && (fw > 12)))?bkColor:Color);
         }
     }
     UiLcdHy28_BulkPixel_BufferFlush();
@@ -1642,6 +1852,7 @@ static void UiLcdHy28_DrawChar_1bit(ushort x, ushort y, char symb,ushort Color, 
     UiLcdHy28_CloseBulkWrite();
 }
 //volatile int debtxt=0;
+//*************************************************************************************************
 
 void UiLcdHy28_DrawChar(ushort x, ushort y, char symb,ushort Color, ushort bkColor,const sFONT *cf)
 {
@@ -1724,7 +1935,7 @@ static const char * UiLcdHy28_StringGetLine(const char* str)
 uint16_t UiLcdHy28_PrintText(uint16_t XposStart, uint16_t YposStart, const char *str,const uint32_t clr_fg, const uint32_t clr_bg,uchar font)
 {
     const sFONT   *cf = UiLcdHy28_Font(font);
-    int8_t Yshift =  cf->Height;
+    int8_t     Yshift =  cf->Height;
 
     uint16_t YposCurrent = YposStart;
 
@@ -1732,7 +1943,7 @@ uint16_t UiLcdHy28_PrintText(uint16_t XposStart, uint16_t YposStart, const char 
     {
         const char* str_start = str;
 
-        for (const char* str_end = UiLcdHy28_StringGetLine(str_start); str_start != str_end; str_end = UiLcdHy28_StringGetLine(str_start))
+        for (const char* str_end = UiLcdHy28_StringGetLine(str_start);  str_start != str_end; str_end = UiLcdHy28_StringGetLine(str_start))
         {
             UiLcdHy28_PrintTextLen(XposStart, YposCurrent, str_start, str_end - str_start, clr_fg, clr_bg, font);
             YposCurrent += Yshift;
@@ -1806,7 +2017,7 @@ static void UiLcdHy28_PrintTextRightLen(uint16_t Xpos, uint16_t Ypos, const char
     {
         Xpos -= Xwidth;
     }
-    UiLcdHy28_PrintTextLen(Xpos, Ypos, str, len, clr_fg, clr_bg, font);
+    UiLcdHy28_PrintTextLen( Xpos, Ypos, str, len, clr_fg, clr_bg, font );
 }
 
 /**
@@ -1846,9 +2057,9 @@ uint16_t UiLcdHy28_PrintTextRight(uint16_t XposStart, uint16_t YposStart, const 
 
 static void UiLcdHy28_PrintTextCenteredLen(const uint16_t XposStart,const uint16_t YposStart,const uint16_t bbW,const char* str, uint16_t len ,uint32_t clr_fg,uint32_t clr_bg,uint8_t font)
 {
-    const uint16_t bbH = UiLcdHy28_TextHeight(font);
-    const uint16_t txtW = UiLcdHy28_TextWidthLen(str, len, font);
-    const uint16_t bbOffset = txtW>bbW?0:((bbW - txtW)+1)/2;
+    const uint16_t  bbH      = UiLcdHy28_TextHeight(font);
+    const uint16_t  txtW     = UiLcdHy28_TextWidthLen(str, len, font);
+    const uint16_t  bbOffset = txtW>bbW?0:((bbW - txtW)+1)/2;
 
     // we draw the part of the box not used by text.
     if (bbOffset)
@@ -1944,29 +2155,32 @@ static void UiLcdHy28_SetActiveWindow_RA8875(uint16_t XLeft, uint16_t XRight, ui
 }
 #endif
 
+
+
+
+
 #ifdef USE_GFX_ILI9486
 
 static uint16_t UiLcdHy28_ReadDisplayId_ILI9486()
 {
-    uint16_t retval = 0x9486;
+    uint16_t retval = 0;        //  0x9486;
 
     // we can't read the id from SPI if it is the dumb RPi SPI
     if (mchf_display.use_spi == false)
     {
-        retval = UiLcdHy28_ReadReg(0xd3);
-        retval = LCD_RAM;    //first dummy read
-        retval = (LCD_RAM&0xff)<<8;
-        retval |=LCD_RAM&0xff;
+        retval  = UiLcdHy28_ReadReg(0xd3);
+        retval  = LCD_RAM;    //first dummy read
+        retval  = (LCD_RAM&0xff)<<8;
+        retval |= LCD_RAM&0xff;
     }
 
     switch (retval)
     {
-    case 0x9486:
-    case 0x9488: // ILI9486 - Parallel & Serial interface
-        mchf_display.reg_info  = &ili9486_regs;
-        break;
-    default:
-        retval = 0;
+		case 0x9486:
+		case 0x9488: // ILI9486 - Parallel & Serial interface
+					 mchf_display.reg_info  = &ili9486_regs;
+					 break;
+		default:	 retval = 0;
     }
     return retval;
 }
@@ -1975,6 +2189,7 @@ static inline void UiLcdHy28_WriteDataSpiStart_Prepare_ILI9486()
 {
     GPIO_SetBits(LCD_RS_PIO, LCD_RS);
 }
+
 void UiLcdHy28_WriteIndexSpi_Prepare_ILI9486()
 {
     GPIO_ResetBits(LCD_RS_PIO, LCD_RS);
@@ -1989,20 +2204,85 @@ static void UiLcdHy28_WriteRAM_Prepare_ILI9486()
     UiLcdHy28_WriteRAM_Prepare_Index(0x2c);
 }
 
-static void UiLcdHy28_SetActiveWindow_ILI9486(uint16_t XLeft, uint16_t XRight, uint16_t YTop,
-        uint16_t YBottom)
+static void UiLcdHy28_SetActiveWindow_ILI9486(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom)
 {
-    UiLcdHy28_WriteReg(0x2a,XLeft>>8);
-    UiLcdHy28_WriteData(XLeft&0xff);
-    UiLcdHy28_WriteData((XRight)>>8);
-    UiLcdHy28_WriteData((XRight)&0xff);
+    UiLcdHy28_WriteReg (0x2a, (XLeft   >> 8));    UiLcdHy28_WriteData( XLeft   & 0xff);
+    UiLcdHy28_WriteData(      (XRight) >> 8);     UiLcdHy28_WriteData((XRight) & 0xff);
 
-    UiLcdHy28_WriteReg(0x2b,YTop>>8);
-    UiLcdHy28_WriteData(YTop&0xff);
-    UiLcdHy28_WriteData((YBottom)>>8);
-    UiLcdHy28_WriteData((YBottom)&0xff);
+    UiLcdHy28_WriteReg (0x2b, (YTop     >> 8));    UiLcdHy28_WriteData(     YTop & 0xff);
+    UiLcdHy28_WriteData(     ((YBottom) >> 8));    UiLcdHy28_WriteData((YBottom) & 0xff);
 }
 #endif
+
+
+#ifdef USE_GFX_ST7796                 // Nouveau ecran rajouté en sept 2025  480x320
+
+
+static  uint16_t  UiLcdHy28_ReadDisplayId_ST7796(void)
+{
+    uint16_t retval = 0;    //  0x7796;
+
+    // On ne peut pas lire l'ID en SPI "simple" (cas RPi SPI)
+    if (mchf_display.use_spi == false)
+    {
+        retval  = UiLcdHy28_ReadReg(0xD3);
+        retval  = LCD_RAM;                 // premier dummy read
+        retval  = (LCD_RAM & 0xFF) << 8;   // MSB
+        retval |= (LCD_RAM & 0xFF);        // LSB
+    }
+
+    switch (retval)
+    {
+        case 0x7796:   // ST7796 - Parallel & Serial interface
+					mchf_display.reg_info = &st7796_regs;
+					break;
+        default:    retval = 0; // inconnu
+    }
+    return retval;
+}
+
+static inline void UiLcdHy28_WriteDataSpiStart_Prepare_ST7796(void)
+{
+    GPIO_SetBits(LCD_RS_PIO, LCD_RS);   // RS = 1 → préparation envoi de données
+}
+
+
+void UiLcdHy28_WriteIndexSpi_Prepare_ST7796()
+{
+    GPIO_ResetBits(LCD_RS_PIO, LCD_RS);
+}
+
+static void UiLcdHy28_SetCursorA_ST7796( unsigned short Xpos, unsigned short Ypos )
+{
+}
+
+static void UiLcdHy28_WriteRAM_Prepare_ST7796()
+{
+    UiLcdHy28_WriteRAM_Prepare_Index(0x2C);
+}
+
+static void UiLcdHy28_SetActiveWindow_ST7796(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom)
+{
+    // Set column address (0-479)
+    UiLcdHy28_WriteReg(0x2A, 0);
+    UiLcdHy28_WriteData(XLeft >> 8);
+    UiLcdHy28_WriteData(XLeft & 0xFF);
+    UiLcdHy28_WriteData(XRight >> 8);
+    UiLcdHy28_WriteData(XRight & 0xFF);
+
+    // Set row address (0-319)
+    UiLcdHy28_WriteReg(0x2B, 0);
+    UiLcdHy28_WriteData(YTop >> 8);
+    UiLcdHy28_WriteData(YTop & 0xFF);
+    UiLcdHy28_WriteData(YBottom >> 8);
+    UiLcdHy28_WriteData(YBottom & 0xFF);
+
+    // Start memory write
+    UiLcdHy28_WriteReg(0x2C, 0);
+}
+#endif
+
+
 
 #ifdef USE_GFX_ILI932x
 
@@ -2012,18 +2292,18 @@ static uint16_t UiLcdHy28_ReadDisplayId_ILI932x()
     uint16_t retval = UiLcdHy28_ReadReg(0x00);
     switch (retval)
     {
-    case 0x9320: // HY28A - SPI interface only (ILI9320 controller)
-        mchf_display.reg_info = &ili9320_regs;
-        break;
-    case 0x5408: // HY28A - Parallel interface only (SPFD5408B controller)
-        mchf_display.reg_info = &spdfd5408b_regs;
-        break;
-    case 0x9325:
-    case 0x9328: // HY28B - Parallel & Serial interface - latest model (ILI9325 & ILI9328 controller)
-        mchf_display.reg_info = &ili932x_regs;
-        break;
-    default:
-        retval = 0;
+		case 0x9320: // HY28A - SPI interface only (ILI9320 controller)
+					mchf_display.reg_info = &ili9320_regs;
+					break;
+		case 0x5408: // HY28A - Parallel interface only (SPFD5408B controller)
+					mchf_display.reg_info = &spdfd5408b_regs;
+					break;
+		case 0x9325:
+		case 0x9328: // HY28B - Parallel & Serial interface - latest model (ILI9325 & ILI9328 controller)
+					mchf_display.reg_info = &ili932x_regs;
+					break;
+		default:
+					retval = 0;
     }
     return retval;
 }
@@ -2060,6 +2340,179 @@ static void UiLcdHy28_SetActiveWindow_ILI932x(uint16_t XLeft, uint16_t XRight, u
 }
 #endif
 
+#ifdef USE_GFX_ILI9341                                         // Nouveau ecran rajouté en sept 2025  320x240
+
+static  uint16_t  UiLcdHy28_ReadDisplayId_ILI9341(void)
+{
+    uint16_t retval = 0;  // 0x9341;
+
+    // Lecture réelle via registre 0xD3 (ou 0x04 selon le module)
+    if (mchf_display.use_spi == false) // ou true si SPI bidirectionnel
+    {
+        UiLcdHy28_WriteIndexSpi_Prepare_ILI9341();
+        retval  = UiLcdHy28_ReadReg(0xD3);
+        retval  = LCD_RAM;                 // premier dummy read
+        retval  = (LCD_RAM & 0xFF) << 8;   // MSB
+        retval |= (LCD_RAM & 0xFF);        // LSB
+    }
+
+    switch (retval)
+    {
+        case 0x9341:   // ILI9341 standard
+					mchf_display.reg_info = &ili9341_regs;
+					break;
+        default:
+            		retval = 0; // inconnu
+    }
+    return retval;
+}
+
+// Préparer SPI pour envoyer des données (RS = 1)
+static inline void UiLcdHy28_WriteDataSpiStart_Prepare_ILI9341(void)
+{
+    UiLcdHy28_SpiSendByte(SPI_START | SPI_WR | SPI_DATA);  // RS = 1, RW = 0
+}
+
+// Préparer SPI pour envoyer une commande (RS = 0)
+void UiLcdHy28_WriteIndexSpi_Prepare_ILI9341(void)
+{
+    UiLcdHy28_SpiSendByte(SPI_START | SPI_WR | SPI_INDEX); // RS = 0, RW = 0
+}
+
+// Placer le curseur en (Xpos, Ypos)
+static void UiLcdHy28_SetCursorA_ILI9341(uint16_t Xpos, uint16_t Ypos)
+{
+    // Colonne (X)
+    UiLcdHy28_WriteReg(0x2A, 0);
+    UiLcdHy28_WriteData(Xpos >> 8);
+    UiLcdHy28_WriteData(Xpos & 0xFF);
+
+    // Ligne (Y)
+    UiLcdHy28_WriteReg(0x2B, 0);
+    UiLcdHy28_WriteData(Ypos >> 8);
+    UiLcdHy28_WriteData(Ypos & 0xFF);
+
+    // Préparer l’écriture RAM
+    UiLcdHy28_WriteReg(0x2C, 0);
+}
+
+// Préparer l’écriture en RAM (après avoir défini curseur ou fenêtre)
+static void UiLcdHy28_WriteRAM_Prepare_ILI9341(void)
+{
+    UiLcdHy28_WriteRAM_Prepare_Index(0x2C);
+}
+
+static void UiLcdHy28_SetActiveWindow_ILI9341(uint16_t XLeft, uint16_t XRight,
+                                              uint16_t YTop, uint16_t YBottom)
+{
+    // Définir les colonnes (X)
+    UiLcdHy28_WriteReg(0x2A, 0);
+    UiLcdHy28_WriteData(XLeft >> 8);
+    UiLcdHy28_WriteData(XLeft & 0xFF);
+    UiLcdHy28_WriteData(XRight >> 8);
+    UiLcdHy28_WriteData(XRight & 0xFF);
+
+    // Définir les lignes (Y)
+    UiLcdHy28_WriteReg(0x2B, 0);
+    UiLcdHy28_WriteData(YTop >> 8);
+    UiLcdHy28_WriteData(YTop & 0xFF);
+    UiLcdHy28_WriteData(YBottom >> 8);
+    UiLcdHy28_WriteData(YBottom & 0xFF);
+
+    // Préparer l'écriture RAM
+    UiLcdHy28_WriteReg(0x2C, 0);
+}
+
+#endif
+
+
+#ifdef USE_GFX_ILI7789                // Nouveau ecran rajouté en sept 2025  320x240
+
+
+static uint16_t UiLcdHy28_ReadDisplayId_ILI7789(void)
+{
+    uint16_t retval = 0;  // 0x7789;
+
+    // Lecture réelle via registre 0xD3 (Read Display ID)
+    if (mchf_display.use_spi == false) // ou true si SPI bidirectionnel
+    {
+        UiLcdHy28_WriteIndexSpi_Prepare_ILI7789();
+        retval  = UiLcdHy28_ReadReg(0xD3);
+        retval  = LCD_RAM;                 // premier dummy read
+        retval  = (LCD_RAM & 0xFF) << 8;   // MSB
+        retval |= (LCD_RAM & 0xFF);        // LSB
+    }
+
+    switch (retval)
+    {
+        case 0x7789:   // ILI7789 standard
+					mchf_display.reg_info = &ili7789_regs;
+					break;
+
+        default:    retval = 0; // inconnu
+    }
+    return retval;
+}
+
+
+static inline void UiLcdHy28_WriteDataSpiStart_Prepare_ILI7789(void)
+{
+    UiLcdHy28_SpiSendByte(SPI_START | SPI_WR | SPI_DATA);   // RS = 1, prochaine transmission = donnée
+}
+
+
+
+void UiLcdHy28_WriteIndexSpi_Prepare_ILI7789(void)
+{
+    UiLcdHy28_SpiSendByte(SPI_START | SPI_WR | SPI_INDEX);  // RS = 0, prochaine transmission = commande
+}
+
+
+static void UiLcdHy28_SetCursorA_ILI7789(uint16_t Xpos, uint16_t Ypos)
+{
+    // Définir la colonne (X)
+    UiLcdHy28_WriteReg(0x2A, 0);
+    UiLcdHy28_WriteData(Xpos >> 8);
+    UiLcdHy28_WriteData(Xpos & 0xFF);
+
+    // Définir la ligne (Y)
+    UiLcdHy28_WriteReg(0x2B, 0);
+    UiLcdHy28_WriteData(Ypos >> 8);
+    UiLcdHy28_WriteData(Ypos & 0xFF);
+
+    // Préparer l’écriture RAM
+    UiLcdHy28_WriteReg(0x2C, 0);
+}
+
+
+static void UiLcdHy28_WriteRAM_Prepare_ILI7789(void)
+{
+    UiLcdHy28_WriteRAM_Prepare_Index(0x2C);
+}
+
+
+
+static  void  UiLcdHy28_SetActiveWindow_ILI7789(uint16_t XLeft, uint16_t XRight, uint16_t YTop, uint16_t YBottom)
+{
+    // Définir la zone en X (colonnes)
+    UiLcdHy28_WriteReg(0x2A, 0);
+    UiLcdHy28_WriteData(XLeft >> 8);
+    UiLcdHy28_WriteData(XLeft & 0xFF);
+    UiLcdHy28_WriteData(XRight >> 8);
+    UiLcdHy28_WriteData(XRight & 0xFF);
+
+    // Définir la zone en Y (lignes)
+    UiLcdHy28_WriteReg(0x2B, 0);
+    UiLcdHy28_WriteData(YTop >> 8);
+    UiLcdHy28_WriteData(YTop & 0xFF);
+    UiLcdHy28_WriteData(YBottom >> 8);
+    UiLcdHy28_WriteData(YBottom & 0xFF);
+
+    // Préparer l'écriture en RAM
+    UiLcdHy28_WriteReg(0x2C, 0);
+}
+
+#endif
 
 
 
@@ -2069,16 +2522,12 @@ static void UiLcdHy28_SendRegisters(const RegisterValueSetInfo_t* reg_info)
     {
         switch(reg_info->addr[idx].reg)
         {
-        case REGVAL_DELAY:
-            HAL_Delay(reg_info->addr[idx].val);
-            break;
-        case REGVAL_DATA:
-            UiLcdHy28_WriteData(reg_info->addr[idx].val);
-            break;
-        default:
+        case REGVAL_DELAY:     HAL_Delay( reg_info->addr[idx].val );            break;
+        case REGVAL_DATA :     UiLcdHy28_WriteData(reg_info->addr[idx].val);    break;
+        default			 :
             // TODO: Decide how we handle 16 vs. 8 bit writes here
             // I would propose either per register setting or per register set setting
-            UiLcdHy28_WriteReg(reg_info->addr[idx].reg, reg_info->addr[idx].val);
+            				UiLcdHy28_WriteReg( reg_info->addr[idx].reg, reg_info->addr[idx].val );
         }
     }
 }
@@ -2089,13 +2538,13 @@ static void UiLcdHy28_SendRegisters(const RegisterValueSetInfo_t* reg_info)
 static uint16_t UiLcdHy28_ReadDisplayId_SSD1289()
 {
     uint16_t retval = UiLcdHy28_ReadReg(0x00);
-    switch (retval)
+    switch  (retval)
     {
-    case 0x8989: // HY28A - SPI interface only (ILI9320 controller)
-        mchf_display.reg_info = &ssd1289_regs;
-        break;
-    default:
-        retval = 0;
+		case 0x8989: // HY28A - SPI interface only (ILI9320 controller)
+						mchf_display.reg_info = &ssd1289_regs;
+						break;
+
+		default: 		retval = 0;
     }
     return retval;
 }
@@ -2138,72 +2587,120 @@ const uhsdr_display_info_t display_infos[] = {
 #ifdef USE_DISPLAY_PAR
 #ifdef USE_GFX_ILI9486
         {
-                DISPLAY_ILI9486_PARALLEL, "ILI9486 Para.",
-                .ReadDisplayId = UiLcdHy28_ReadDisplayId_ILI9486,
-                .SetActiveWindow = UiLcdHy28_SetActiveWindow_ILI9486,
-                .SetCursorA = UiLcdHy28_SetCursorA_ILI9486,
+                 DISPLAY_ILI9486_PARALLEL, "ILI9486 Para.",
+                .ReadDisplayId    = UiLcdHy28_ReadDisplayId_ILI9486,
+                .SetActiveWindow  = UiLcdHy28_SetActiveWindow_ILI9486,
+                .SetCursorA       = UiLcdHy28_SetCursorA_ILI9486,
                 .WriteRAM_Prepare = UiLcdHy28_WriteRAM_Prepare_ILI9486,
         },
 #endif
 #ifdef USE_GFX_ILI932x
         {
                 DISPLAY_HY28B_PARALLEL, "HY28A/B Para.",
-                .ReadDisplayId = UiLcdHy28_ReadDisplayId_ILI932x,
-                .SetActiveWindow = UiLcdHy28_SetActiveWindow_ILI932x,
-                .SetCursorA = UiLcdHy28_SetCursorA_ILI932x,
+                .ReadDisplayId    = UiLcdHy28_ReadDisplayId_ILI932x,
+                .SetActiveWindow  = UiLcdHy28_SetActiveWindow_ILI932x,
+                .SetCursorA       = UiLcdHy28_SetCursorA_ILI932x,
                 .WriteRAM_Prepare = UiLcdHy28_WriteRAM_Prepare_ILI932x,
         },
 #ifdef USE_GFX_SSD1289
         {
                 DISPLAY_HY32D_PARALLEL_SSD1289, "HY32D Para. SSD1289",
-                .ReadDisplayId = UiLcdHy28_ReadDisplayId_SSD1289,
-                .SetActiveWindow = UiLcdHy28_SetActiveWindow_SSD1289,
-                .SetCursorA = UiLcdHy28_SetCursorA_SSD1289,
-                .WriteRAM_Prepare = UiLcdHy28_WriteRAM_Prepare_ILI932x,
+                .ReadDisplayId    =  UiLcdHy28_ReadDisplayId_SSD1289,
+                .SetActiveWindow  =  UiLcdHy28_SetActiveWindow_SSD1289,
+                .SetCursorA       =  UiLcdHy28_SetCursorA_SSD1289,
+                .WriteRAM_Prepare =  UiLcdHy28_WriteRAM_Prepare_ILI932x,
         },
 #endif
 #endif
 #ifdef UI_BRD_MCHF
         {
-                DISPLAY_HY28A_SPI, "HY28A SPI",
-                .ReadDisplayId = UiLcdHy28_ReadDisplayId_ILI932x,
-                .SetActiveWindow = UiLcdHy28_SetActiveWindow_ILI932x,
-                .SetCursorA = UiLcdHy28_SetCursorA_ILI932x,
-                .WriteRAM_Prepare = UiLcdHy28_WriteRAM_Prepare_ILI932x,
+                DISPLAY_HY28A_SPI,         "HY28A SPI",
+                .ReadDisplayId             = UiLcdHy28_ReadDisplayId_ILI932x,
+                .SetActiveWindow           = UiLcdHy28_SetActiveWindow_ILI932x,
+                .SetCursorA                = UiLcdHy28_SetCursorA_ILI932x,
+                .WriteRAM_Prepare          = UiLcdHy28_WriteRAM_Prepare_ILI932x,
                 .WriteDataSpiStart_Prepare = UiLcdHy28_WriteDataSpiStart_Prepare_ILI932x,
-                .WriteIndexSpi_Prepare = UiLcdHy28_WriteIndexSpi_Prepare_ILI932x,
+                .WriteIndexSpi_Prepare     = UiLcdHy28_WriteIndexSpi_Prepare_ILI932x,
                 LCD_D11_PIO, LCD_D11, true, false
         },
 #endif
 #ifdef USE_SPI_DISPLAY
         {
-                DISPLAY_HY28B_SPI, "HY28B SPI",
-                .ReadDisplayId = UiLcdHy28_ReadDisplayId_ILI932x,
-                .SetActiveWindow = UiLcdHy28_SetActiveWindow_ILI932x,
-                .SetCursorA = UiLcdHy28_SetCursorA_ILI932x,
-                .WriteRAM_Prepare = UiLcdHy28_WriteRAM_Prepare_ILI932x,
+                DISPLAY_HY28B_SPI,         "HY28B SPI",
+                .ReadDisplayId             = UiLcdHy28_ReadDisplayId_ILI932x,
+                .SetActiveWindow           = UiLcdHy28_SetActiveWindow_ILI932x,
+                .SetCursorA                = UiLcdHy28_SetCursorA_ILI932x,
+                .WriteRAM_Prepare          = UiLcdHy28_WriteRAM_Prepare_ILI932x,
                 .WriteDataSpiStart_Prepare = UiLcdHy28_WriteDataSpiStart_Prepare_ILI932x,
-                .WriteIndexSpi_Prepare = UiLcdHy28_WriteIndexSpi_Prepare_ILI932x,
-                .spi_cs_port = LCD_CSA_PIO,
-                .spi_cs_pin = LCD_CSA,
+                .WriteIndexSpi_Prepare     = UiLcdHy28_WriteIndexSpi_Prepare_ILI932x,
+                .spi_cs_port               = LCD_CSA_PIO,
+                .spi_cs_pin                = LCD_CSA,
                 true, false
         },
+
+#ifdef USE_GFX_ILI7789    // nouveau pour les radio BS188 avec Bouton orange SPI  320x240  en sept 2025
+		{
+				DISPLAY_ILI7789_SPI,       "HY28B SPI",
+				.ReadDisplayId             = UiLcdHy28_ReadDisplayId_ILI7789,
+				.SetActiveWindow           = UiLcdHy28_SetActiveWindow_ILI7789,
+				.SetCursorA                = UiLcdHy28_SetCursorA_ILI7789,
+				.WriteRAM_Prepare          = UiLcdHy28_WriteRAM_Prepare_ILI7789,
+				.WriteDataSpiStart_Prepare = UiLcdHy28_WriteDataSpiStart_Prepare_ILI7789,
+				.WriteIndexSpi_Prepare     = UiLcdHy28_WriteIndexSpi_Prepare_ILI7789,
+				.spi_cs_port               = LCD_CSA_PIO,
+				.spi_cs_pin                = LCD_CSA,
+				true, false
+		},
+#endif
+
+#ifdef USE_GFX_ILI9341                                  // Nouveau ecran rajouté en sept 2025 SPI  320x240
+		{
+				DISPLAY_ILI9341_SPI,       "HY28B SPI",
+				.ReadDisplayId             = UiLcdHy28_ReadDisplayId_ILI9341,
+				.SetActiveWindow           = UiLcdHy28_SetActiveWindow_ILI9341,
+				.SetCursorA                = UiLcdHy28_SetCursorA_ILI9341,
+				.WriteRAM_Prepare          = UiLcdHy28_WriteRAM_Prepare_ILI9341,
+				.WriteDataSpiStart_Prepare = UiLcdHy28_WriteDataSpiStart_Prepare_ILI9341,
+				.WriteIndexSpi_Prepare     = UiLcdHy28_WriteIndexSpi_Prepare_ILI9341,
+				.spi_cs_port               = LCD_CSA_PIO,
+				.spi_cs_pin                = LCD_CSA,
+				true, false
+		},
+#endif
 #endif
 #endif
 #if defined(USE_GFX_ILI9486) && defined(USE_SPI_DISPLAY)
-        {       DISPLAY_RPI_SPI, "RPi 3.5 SPI",
-                .ReadDisplayId = UiLcdHy28_ReadDisplayId_ILI9486,
-                .SetActiveWindow = UiLcdHy28_SetActiveWindow_ILI9486,
-                .SetCursorA = UiLcdHy28_SetCursorA_ILI9486,
-                .WriteRAM_Prepare = UiLcdHy28_WriteRAM_Prepare_ILI9486,
+        {       DISPLAY_RPI_SPI,           "RPi 3.5 SPI",
+                .ReadDisplayId             = UiLcdHy28_ReadDisplayId_ILI9486,
+                .SetActiveWindow           = UiLcdHy28_SetActiveWindow_ILI9486,
+                .SetCursorA                = UiLcdHy28_SetCursorA_ILI9486,
+                .WriteRAM_Prepare          = UiLcdHy28_WriteRAM_Prepare_ILI9486,
                 .WriteDataSpiStart_Prepare = UiLcdHy28_WriteDataSpiStart_Prepare_ILI9486,
-                .WriteIndexSpi_Prepare = UiLcdHy28_WriteIndexSpi_Prepare_ILI9486,
-                .spi_cs_port = LCD_CSA_PIO,
-                .spi_cs_pin = LCD_CSA,
+                .WriteIndexSpi_Prepare     = UiLcdHy28_WriteIndexSpi_Prepare_ILI9486,
+                .spi_cs_port               = LCD_CSA_PIO,
+                .spi_cs_pin                = LCD_CSA,
                 true, true
         },
         // RPI_SPI NEEDS TO BE LAST IN LIST!!!
 #endif
+
+#if defined(USE_GFX_ST7796) && defined(USE_SPI_DISPLAY)          // Nouveau ecran rajouté en sept 2025 SPI 480x320
+        {       DISPLAY_ST7796_SPI,        "RPi 3.9 SPI",
+                .ReadDisplayId             = UiLcdHy28_ReadDisplayId_ST7796,
+                .SetActiveWindow           = UiLcdHy28_SetActiveWindow_ST7796,
+                .SetCursorA                = UiLcdHy28_SetCursorA_ST7796,
+                .WriteRAM_Prepare          = UiLcdHy28_WriteRAM_Prepare_ST7796,
+                .WriteDataSpiStart_Prepare = UiLcdHy28_WriteDataSpiStart_Prepare_ST7796,
+                .WriteIndexSpi_Prepare     = UiLcdHy28_WriteIndexSpi_Prepare_ST7796,
+                .spi_cs_port               = LCD_CSA_PIO,
+                .spi_cs_pin                = LCD_CSA,
+                true, true
+        },
+        // RPI_SPI NEEDS TO BE LAST IN LIST!!!
+#endif
+
+        // RPI_SPI NEEDS TO BE LAST IN LIST!!!
+
 #ifdef USE_GFX_RA8875
         // Due to currently missing detection algorithm the first RA8875 is
         // always "detected", i.e. the code will never check if the other RA8875
@@ -2237,28 +2734,28 @@ const uhsdr_display_info_t display_infos[] = {
 /* Controller Specific Functions End *********************************/
 
 
-static uint16_t UiLcdHy28_DetectController(const uhsdr_display_info_t* disp_info_ptr)
+static uint16_t UiLcdHy28_DetectController( const  uhsdr_display_info_t*  disp_info_ptr )
 {
 
     uint16_t retval = 0;
 
-    if (disp_info_ptr != NULL)
+    if ( disp_info_ptr != NULL )
     {
-        mchf_display.use_spi = disp_info_ptr->is_spi;
-        mchf_display.lcd_cs = disp_info_ptr->spi_cs_pin;
-        mchf_display.lcd_cs_pio = disp_info_ptr->spi_cs_port;
-        mchf_display.SetActiveWindow = disp_info_ptr->SetActiveWindow;
-        mchf_display.SetCursorA = disp_info_ptr->SetCursorA;
-        mchf_display.WriteRAM_Prepare = disp_info_ptr->WriteRAM_Prepare;
+        mchf_display.use_spi                   = disp_info_ptr->is_spi;
+        mchf_display.lcd_cs                    = disp_info_ptr->spi_cs_pin;
+        mchf_display.lcd_cs_pio                = disp_info_ptr->spi_cs_port;
+        mchf_display.SetActiveWindow           = disp_info_ptr->SetActiveWindow;
+        mchf_display.SetCursorA                = disp_info_ptr->SetCursorA;
+        mchf_display.WriteRAM_Prepare          = disp_info_ptr->WriteRAM_Prepare;
         mchf_display.WriteDataSpiStart_Prepare = disp_info_ptr->WriteDataSpiStart_Prepare;
-        mchf_display.WriteIndexSpi_Prepare = disp_info_ptr->WriteIndexSpi_Prepare;
-        mchf_display.reg_info = NULL;
-        UiLcdHy28_GpioInit(disp_info_ptr->display_type);
+        mchf_display.WriteIndexSpi_Prepare     = disp_info_ptr->WriteIndexSpi_Prepare;
+        mchf_display.reg_info                  = NULL;
+        UiLcdHy28_GpioInit( disp_info_ptr->display_type );
 
         if (mchf_display.use_spi == true)
         {
 #ifdef USE_SPI_DISPLAY
-            UiLcdHy28_SpiInit(disp_info_ptr->spi_speed, disp_info_ptr->display_type);
+            UiLcdHy28_SpiInit( disp_info_ptr->spi_speed, disp_info_ptr->display_type );
 #endif
         }
         else
@@ -2289,13 +2786,13 @@ static uint16_t UiLcdHy28_DetectController(const uhsdr_display_info_t* disp_info
         // for next try
         if (retval == 0)
         {
-            mchf_display.SetActiveWindow = NULL;
-            mchf_display.SetCursorA = NULL;
-            mchf_display.WriteRAM_Prepare = NULL;
+            mchf_display.SetActiveWindow           = NULL;
+            mchf_display.SetCursorA                = NULL;
+            mchf_display.WriteRAM_Prepare          = NULL;
             mchf_display.WriteDataSpiStart_Prepare = NULL;
-            mchf_display.WriteIndexSpi_Prepare = NULL;
-            mchf_display.lcd_cs = 0;
-            mchf_display.lcd_cs_pio = NULL;
+            mchf_display.WriteIndexSpi_Prepare     = NULL;
+            mchf_display.lcd_cs                    = 0;
+            mchf_display.lcd_cs_pio                = NULL;
 
             if (mchf_display.use_spi == true)
             {
@@ -2326,7 +2823,7 @@ static uint16_t UiLcdHy28_DetectController(const uhsdr_display_info_t* disp_info
 
 uint8_t UiLcdHy28_Init()
 {
-    uint8_t retval = DISPLAY_NONE;
+    uint8_t retval          = DISPLAY_NONE;
     mchf_display.DeviceCode = 0x0000;
     UiLcdHy28_BacklightInit();
 
@@ -2345,31 +2842,34 @@ uint8_t UiLcdHy28_Init()
 #ifndef BOOTLOADER_BUILD
     switch(mchf_display.DeviceCode)
     {
-    case 0x9486:
-    case 0x9488:
-    	ts.Layout=&LcdLayouts[LcdLayout_480x320];
-    	disp_resolution=RESOLUTION_480_320;
-    	break;
-    default:
-    	ts.Layout=&LcdLayouts[LcdLayout_320x240];
-    	disp_resolution=RESOLUTION_320_240;
-    	break;
+    	case 0x7796:                     // Rajouté par nizar le 29 sept 2025
+ 		case 0x9486:
+		case 0x9488:
+					ts.Layout=&LcdLayouts[LcdLayout_480x320];
+					disp_resolution = RESOLUTION_480_320;
+					break;
+		default:
+					ts.Layout=&LcdLayouts[LcdLayout_320x240];
+					disp_resolution = RESOLUTION_320_240;
+					break;
     }
     mchf_display.MAX_X=ts.Layout->Size.x;
     mchf_display.MAX_Y=ts.Layout->Size.y;
 #else
     switch(mchf_display.DeviceCode)
     {
-    case 0x9486:
-    case 0x9488:
-    	mchf_display.MAX_X=480;
-    	mchf_display.MAX_Y=320;
-    	break;
-    default:
-    	mchf_display.MAX_X=320;
-    	mchf_display.MAX_Y=240;
-    	break;
+		case 0x7796:                     // Rajouté par nizar le 29 sept 2025
+		case 0x9486:
+		case 0x9488:
+					mchf_display.MAX_X=480;
+					mchf_display.MAX_Y=320;
+					break;
+		default:
+					mchf_display.MAX_X=320;
+					mchf_display.MAX_Y=240;
+					break;
     }
+
 #endif
 
     return retval;
@@ -2388,52 +2888,63 @@ static inline void UiLcdHy28_SetSpiPrescaler(uint32_t baudrate_prescaler)
 #endif
 
     /* Get the SPIx SPI_BR_REG value */
-    uint32_t tmpreg = SPI_DISPLAY->SPI_BR_REG;
-    tmpreg &= ~SPI_BAUDRATEPRESCALER_256;
-    tmpreg |= baudrate_prescaler;
+    uint32_t tmpreg  =  SPI_DISPLAY->SPI_BR_REG;
+             tmpreg &= ~SPI_BAUDRATEPRESCALER_256;
+             tmpreg |=  baudrate_prescaler;
 
     /* Write to SPIx CR1 */
     SPI_DISPLAY->SPI_BR_REG = tmpreg;
 }
 
-mchf_touchscreen_t mchf_touchscreen;
+mchf_touchscreen_t   mchf_touchscreen;
 
-/*
- * @brief Called to run the touch detection state machine, results are stored in ts structure
- */
-void UiLcdHy28_TouchscreenDetectPress()
+///************************************************************************************************
+//brief Called to run the touch detection state machine, results are stored in ts structure
+
+// TP_DATASETS_NONE       0x00   :  no touchscreen TP_IRQ down_press action detected
+// TP_DATASETS_WAIT       0x01   :  // le WAIT permet d'attendre au moins une boucle du main_mcu après que le niveau
+									// TP_IRQ soit bas et ce avant d'aller chercher les coordonées x,y du TP
+// TP_DATASETS_VALID      0x04   :  valid coordinates available
+// TP_DATASETS_PROCESSED  0xff   :  coordinates was already processed by calling function.
+								 // etat PROCESSED  est  nécessaire pour pouvoir attendre que le niveau TP_IRQ soit
+                                 // retourne a l'etat haut  et ce avant de repasser à l'etat NONE
+
+void        UiLcdHy28_Touchscreen_DetectPress_Read_and_Filter_Coordinates()
 {
-    if (mchf_touchscreen.present)
-    {
-        if(!HAL_GPIO_ReadPin(TP_IRQ_PIO,TP_IRQ) && mchf_touchscreen.state != TP_DATASETS_PROCESSED)    // fetch touchscreen data if not already processed
-            UiLcdHy28_TouchscreenReadCoordinates();
+	bool  High_value = HAL_GPIO_ReadPin( TP_IRQ_PIO, TP_IRQ );   // lire l etat du TP_IRQ  GPIO  PIN
 
-        if(HAL_GPIO_ReadPin(TP_IRQ_PIO,TP_IRQ) && mchf_touchscreen.state == TP_DATASETS_PROCESSED)     // clear statemachine when data is processed
-        {
-            mchf_touchscreen.state = TP_DATASETS_NONE;
+	if ( (!High_value)  && ( mchf_touchscreen.state < TP_DATASETS_VALID )  )    // si les coordonnées touchscreen ne sont pas encore valide
+	{
+		UiLcdHy28_Touchscreen_Read_and_Filter_Coordinates();    // essayer de lire et de valider les coordonnées du press touchscreen
+	}
 
-            mchf_touchscreen.hr_x = mchf_touchscreen.hr_y = 0x7fff;
-        }
-    }
+	else if ( High_value && mchf_touchscreen.state == TP_DATASETS_PROCESSED )   // clear statemachine when data is processed
+	{
+		mchf_touchscreen.state  =  TP_DATASETS_NONE;
+	}
 }
+
+///*************************************************************************************************
 /*
  * @brief tells you that touchscreen coordinates are ready for processing and marks them as processed
  * @returns true if coordinates for processing are available and have been marked as processed, false otherwise
  */
 bool UiLcdHy28_TouchscreenHasProcessableCoordinates()
 {
-	bool retval = false;
-    UiLcdHy28_TouchscreenReadCoordinates();
+	bool   retval = false;
 
-    if(mchf_touchscreen.state >= TP_DATASETS_VALID && mchf_touchscreen.state != TP_DATASETS_PROCESSED)
-    //if(mchf_touchscreen.state >= TP_DATASETS_WAIT && mchf_touchscreen.state != TP_DATASETS_PROCESSED)
+	UiLcdHy28_Touchscreen_Read_and_Filter_Coordinates();
+
+    if ( mchf_touchscreen.state == TP_DATASETS_VALID )
     {
-        mchf_touchscreen.state = TP_DATASETS_NONE;     // tp data processed
-         retval = true;
+        mchf_touchscreen.state = TP_DATASETS_WAIT;   // sans passer par TP_DATASETS_NONE pour reduire un passage inutile
+        retval = true;
     }
     return retval;
 }
 
+///**********************************************************************************************
+///
 
 static inline void UiLcdHy28_TouchscreenStartSpiTransfer()
 {
@@ -2446,6 +2957,9 @@ static inline void UiLcdHy28_TouchscreenStartSpiTransfer()
     UiLcdHy28_SetSpiPrescaler(SPI_PRESCALE_TS_DEFAULT);
     GPIO_ResetBits(TP_CS_PIO, TP_CS);
 }
+
+///************************************************************************************************
+///
 
 static inline void UiLcdHy28_TouchscreenFinishSpiTransfer()
 {
@@ -2498,124 +3012,90 @@ static void UiLcdHy28_TouchscreenReadData(uint16_t* x_p,uint16_t* y_p)
 
     UiLcdHy28_TouchscreenFinishSpiTransfer();
 
-    *x_p = (xpt_response[5] << 8 | xpt_response[6]) >> 3;
-    *y_p = (xpt_response[3] << 8 | xpt_response[4]) >> 3;
+    *x_p = ((xpt_response[5] << 8 ) | xpt_response[6]) >> 3;
+    *y_p = ((xpt_response[3] << 8 ) | xpt_response[4]) >> 3;
 
 }
-#define HIRES_TOUCH_MaxDelta 2
-#define HIRES_TOUCH_MaxFocus 4
 
-void UiLcdHy28_TouchscreenReadCoordinates()
+
+
+///**********************************************************************************************
+///
+// TP_DATASETS_NONE       0x00   :  no touchscreen TP_IRQ down_press action detected
+// TP_DATASETS_WAIT       0x01   : // le WAIT permet d'attendre au moins une boucle du main_mcu après que le niveau
+                                   // TP_IRQ soit bas et ce avant d'aller chercher les coordonées x,y du TP
+
+// TP_DATASETS_VALID      0x04   :  valid coordinates available mais pas encore traités
+// TP_DATASETS_PROCESSED  0xff   :  coordinates was already processed by calling function.
+								  // etat PROCESSED  est  nécessaire pour pouvoir attendre que le niveau TP_IRQ soit
+                                  // retourne a l'etat haut  et ce avant de repasser à l'etat NONE
+
+void     UiLcdHy28_Touchscreen_Read_and_Filter_Coordinates()
 {
-
-    /*
-    statemachine stati:
-    TP_DATASETS_NONE = no touchscreen action detected
-    TP_DATASETS_WAIT 1 = first touchscreen press
-    >1 = x times valid data available
-    TP_DATASETS_PROCESSED 0xff = data was already processed by calling function
-     */
-
-
-	if(mchf_touchscreen.state < TP_DATASETS_VALID)	// no valid data ready or data ready to process
+	if( mchf_touchscreen.state == TP_DATASETS_WAIT  )	// first pass finished, get data
 	{
-		if(mchf_touchscreen.state > TP_DATASETS_NONE && mchf_touchscreen.state < TP_DATASETS_VALID)	// first pass finished, get data
+		UiLcdHy28_TouchscreenReadData( &mchf_touchscreen.x_actuel, &mchf_touchscreen.y_actuel );
+
+									// on filtre les 4 coordonnées mesurés succesivement identique à 1 près
+
+		int32_t  NewDeltaX =(mchf_touchscreen.x_last << 1) - mchf_touchscreen.x_last_last_last - mchf_touchscreen.x_last_last - mchf_touchscreen.x_actuel + mchf_touchscreen.x_last;
+		int32_t  NewDeltaY =(mchf_touchscreen.y_last << 1) - mchf_touchscreen.y_last_last_last - mchf_touchscreen.y_last_last - mchf_touchscreen.y_actuel + mchf_touchscreen.y_last;
+
+		if ( NewDeltaX < 0 )  NewDeltaX = - NewDeltaX;   // calcul valeur absolue
+		if ( NewDeltaY < 0 )  NewDeltaY = - NewDeltaY;   // calcul valeur absolue
+
+
+
+		if ( ( NewDeltaX <= 2 ) && ( NewDeltaY <= 3 ) )          // filtrage de la bonne mesure des coordonnées
 		{
+			int32_t   x = mchf_touchscreen.x_last;  // if ( NewDeltaX == 3 )  x = mchf_touchscreen.x_actuel;
+			int32_t   y = mchf_touchscreen.y_last;
 
-			UiLcdHy28_TouchscreenReadData(&mchf_touchscreen.xraw,&mchf_touchscreen.yraw);
+			///*********************************************************************************************
+			///******************  Correction par calibration  *********************************************
+			///*********************************************************************************************
+			//  xn = A * x  +  B * y   +  C                  //all coefficients are in format 16.16
+			//  yn = D * x  +  E * y   +  F
 
-			//delta/focus algorithm for filtering the noise from touch panel data
-			//based on LM8300/LM8500 datasheet
+			int32_t  xn = mchf_touchscreen.cal [0] * x  +  mchf_touchscreen.cal [1] * y  +  mchf_touchscreen.cal [2];
+			int32_t  yn = mchf_touchscreen.cal [3] * x  +  mchf_touchscreen.cal [4] * y  +  mchf_touchscreen.cal [5];
 
-			//first calculating the delta algorithm
+			xn >>= 16;
+			yn >>= 16;
 
-			int16_t TS_dx,TS_dy, TS_predicted_x, TS_predicted_y, NewDeltaX, NewDeltaY;
-			TS_dx=mchf_touchscreen.xraw_m1-mchf_touchscreen.xraw_m2;
-			TS_dy=mchf_touchscreen.yraw_m1-mchf_touchscreen.yraw_m2;
-			TS_predicted_x=mchf_touchscreen.yraw_m1+TS_dx;
-			TS_predicted_y=mchf_touchscreen.yraw_m1+TS_dy;
+			mchf_touchscreen.hr_x   =  (int16_t) xn;
+			mchf_touchscreen.hr_y   =  (int16_t) yn;
 
-			NewDeltaX=TS_predicted_x-mchf_touchscreen.xraw;
-			NewDeltaY=TS_predicted_y-mchf_touchscreen.yraw;
-
-			if(NewDeltaX<0)
-				NewDeltaX=-NewDeltaX;
-
-			if(NewDeltaY<0)
-				NewDeltaX=-NewDeltaY;
-
-			if((NewDeltaX<=HIRES_TOUCH_MaxDelta) && (NewDeltaY<=HIRES_TOUCH_MaxDelta))
-			{
-
-				//ok, the delta algorithm filtered out spikes and the bigger noise
-				//now we perform focus algorithm
-
-				NewDeltaX=mchf_touchscreen.focus_xprev-mchf_touchscreen.xraw;
-				NewDeltaY=mchf_touchscreen.focus_yprev-mchf_touchscreen.yraw;
-
-				if(NewDeltaX<0)
-					NewDeltaX=-NewDeltaX;
-
-				if(NewDeltaY<0)
-					NewDeltaX=-NewDeltaY;
-
-				if((NewDeltaX<=HIRES_TOUCH_MaxFocus) && (NewDeltaY<=HIRES_TOUCH_MaxFocus))
-				{
-					mchf_touchscreen.xraw=mchf_touchscreen.focus_xprev;
-					mchf_touchscreen.yraw=mchf_touchscreen.focus_yprev;
-				}
-				else
-				{
-					mchf_touchscreen.focus_xprev=mchf_touchscreen.xraw;
-					mchf_touchscreen.focus_yprev=mchf_touchscreen.yraw;
-				}
-
-
-				mchf_touchscreen.state=TP_DATASETS_VALID;
-
-				int32_t x,y;
-
-				x=mchf_touchscreen.xraw;
-				y=mchf_touchscreen.yraw;
-
-				int32_t xn,yn;
-				//transforming the coordinates by calibration coefficients calculated in touchscreen calibration
-				//see the UiDriver_TouchscreenCalibration
-				//xn=Ax+By+C
-				//yn=Dx+Ey+F
-				//all coefficients are in format 16.16
-				xn=mchf_touchscreen.cal[0]*x+mchf_touchscreen.cal[1]*y+mchf_touchscreen.cal[2];
-				yn=mchf_touchscreen.cal[3]*x+mchf_touchscreen.cal[4]*y+mchf_touchscreen.cal[5];
-
-				xn>>=16;
-				yn>>=16;
-
-				mchf_touchscreen.hr_x=(int16_t)xn;
-				mchf_touchscreen.hr_y=(int16_t)yn;
-
-
-			}
-			else
-			{
-				mchf_touchscreen.xraw_m2=mchf_touchscreen.xraw_m1;
-				mchf_touchscreen.yraw_m2=mchf_touchscreen.yraw_m1;
-				mchf_touchscreen.xraw_m1=mchf_touchscreen.xraw;
-				mchf_touchscreen.yraw_m1=mchf_touchscreen.yraw;
-				mchf_touchscreen.state = TP_DATASETS_WAIT;
-			}
-        }
-        else
-        {
-        	mchf_touchscreen.state = TP_DATASETS_WAIT;		// restart machine
-        }
-    }
+			mchf_touchscreen.x_last_last = 0x1fff;             // pour eviter un faux filtrage aux prochains 3 coups
+			mchf_touchscreen.state       = TP_DATASETS_VALID;
+		}
+		else                       // on mémorise les anciens coordonnées successives
+		{
+			mchf_touchscreen.x_last_last_last = mchf_touchscreen.x_last_last;
+			mchf_touchscreen.y_last_last_last = mchf_touchscreen.y_last_last;
+			mchf_touchscreen.x_last_last      = mchf_touchscreen.x_last;
+			mchf_touchscreen.y_last_last      = mchf_touchscreen.y_last;
+			mchf_touchscreen.x_last           = mchf_touchscreen.x_actuel;
+			mchf_touchscreen.y_last           = mchf_touchscreen.y_actuel;
+		}
+	}
+	else
+	{
+		mchf_touchscreen.state       =  TP_DATASETS_WAIT;		 // restart machine
+	    mchf_touchscreen.x_last_last =  0x1fff;                   // pour eviter un faux filtrage aux prochains 3 coups
+                                                                 // nécessaire en cas de presse non valide à courte pulse < 50 ms
+	}
 
 }
+
+///***********************************************************************************
+///
 
 bool UiLcdHy28_TouchscreenPresenceDetection()
 {
-    bool retval = false;
-    uint16_t x = 0xffff, y = 0xffff;
+    bool      retval = false;
+    uint16_t  x      = 0xffff,
+    		  y      = 0xffff;
 
     UiLcdHy28_TouchscreenReadData(&x,&y);
     UiLcdHy28_TouchscreenReadData(&x,&y);
@@ -2629,12 +3109,16 @@ bool UiLcdHy28_TouchscreenPresenceDetection()
     return retval;
 }
 
+///*************************************************************************************
+///
+
 void UiLcdHy28_TouchscreenInit(uint8_t mirror)
 {
-    mchf_touchscreen.xraw = 0;
-    mchf_touchscreen.yraw = 0;
+    mchf_touchscreen.x_actuel    = 0;
+    mchf_touchscreen.y_actuel    = 0;
 
-    mchf_touchscreen.hr_x = 0x7FFF;                        // invalid position
-    mchf_touchscreen.hr_y = 0x7FFF;                        // invalid position
+    mchf_touchscreen.hr_x    = 0x7FFF;                        // invalid position
+    mchf_touchscreen.hr_y    = 0x7FFF;                        // invalid position
     mchf_touchscreen.present = UiLcdHy28_TouchscreenPresenceDetection();
+  //mchf_touchscreen.present = true;
 }

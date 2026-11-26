@@ -35,6 +35,7 @@ enum UpdateFrequencyMode_t
 #define 	STARTUP_FREQ					56000000
 
 #define 	T_STEP_1HZ						1
+#define 	T_STEP_5HZ						5
 #define 	T_STEP_10HZ						10
 #define 	T_STEP_100HZ					100
 #define 	T_STEP_500HZ					500
@@ -49,6 +50,7 @@ enum UpdateFrequencyMode_t
 enum
 {
     T_STEP_1HZ_IDX = 0,
+	T_STEP_5HZ_IDX,
     T_STEP_10HZ_IDX,
     T_STEP_100HZ_IDX,
     T_STEP_500HZ_IDX,
@@ -75,10 +77,12 @@ enum
 
 // Button Definitions
 #define 	BUTTON_NONE						0
-#define		BUTTON_PRESS_DEBOUNCE			75		// time to debounce normal button press
+#define		BUTTON_PRESS_DEBOUNCE			73		// NIZZZ  time to debounce normal button press
 #define 	BUTTON_HOLD_TIME				1000	// time of press-and-hold
 #define 	AUTO_BLINK_TIME					200000
 #define		DEBOUNCE_TIME_MAX				50000	// ceiling time of debounce counter to prevent overflow
+
+
 
 typedef struct KeypadState
 {
@@ -92,25 +96,26 @@ typedef struct KeypadState
     bool	button_pressed;
 
     // Flag to indicate release event
-    bool	button_released;
+    // bool	button_released;
 
     // Flag to indicate under process
-    bool	button_processed;
+    // bool	button_processed;
+    bool   button_Wait_execution;
 
     // Flag to indicate that the button had been continued to be pressed during debounce
-    bool	button_just_pressed;
+    // bool	button_just_pressed;
 
     // Flag to indicate that debounce check was complete
     bool	debounce_check_complete;
 
     // Flag to indicate a "press-and-hold" condition
-    bool	press_hold;
+    bool	press_holded;
 
     uchar	dummy;
 
 } KeypadState;
 
-#define	PRESS_HOLD_RELEASE_DELAY_TIME	10		// time after button being released before resetting press-and-hold flag
+#define	PRESS_HOLD_RELEASE_DELAY_TIME	30		// time after button being released before resetting press-and-hold flag
 
 #define S_METER_MAX						34
 
@@ -124,7 +129,7 @@ typedef struct KeypadState
 
 
 
-#define	PWR_DAMPENING_FACTOR				0.10		// dampening/averaging factor (e.g. amount of "new" reading each time) - for numerical power reading ONLY
+#define	PWR_DAMPENING_FACTOR				0.1   ///0.10		// dampening/averaging factor (e.g. amount of "new" reading each time) - for numerical power reading ONLY
 //
 // Coupling adjustment limits
 //
@@ -143,7 +148,7 @@ typedef struct KeypadState
 //
 // Volt (DC power) meter
 //
-#define POWER_SAMPLES_CNT					32
+#define POWER_SAMPLES_CNT					16  // 32 NIZZ pour lire plus rapidement la tension Alim
 //
 
 //
@@ -163,10 +168,10 @@ typedef struct PowerMeter
 
 typedef enum
 {
-    SPECTRUM_BLANK = 0,
+    SPECTRUM_BLANK     = 0,
     SPECTRUM_WATERFALL = 1,
-    SPECTRUM_SCOPE = 2,
-    SPECTRUM_DUAL = 3
+    SPECTRUM_SCOPE     = 2,
+    SPECTRUM_DUAL      = 3
 } SpectrumMode_t;
 
 typedef struct
@@ -229,14 +234,25 @@ void UiAction_ChangeFrequencyToNextKhz();
 void UiAction_ChangeDemodMode();
 void UiAction_ChangePowerLevel();
 void UiAction_ChangeAudioSource();
+
+void UiAction_Activate_DSP_pad();
+void UiAction_Activate_AGC_pad(); /// NIZZ
+void UiAction_Activate_decay_pad();     /// NIZZ
+void UiAction_Debug_switch() ;          /// NIZZ
+
 void UiAction_ChangeBandDownOrUp();
 void UiAction_ChangeBandUpOrDown();
 void UiAction_ChangeDigitalMode();
 void UiAction_ChangeDynamicTuning();
+void UiAction_toggle_Zoom_Magnify();
 void UiAction_ChangeDebugInfoDisplay();
 void UiAction_ChangeRfModPresence();
 void UiAction_ChangeVhfUhfModPresence();
 void UiAction_ChangeFrequencyByTouch();
+void UiAction_Skeep48KhzUpByTouch();
+void UiAction_Skeep48KhzDownByTouch();
+void UiAction_ChangeFrequency_Sub500Hz();
+void UiAction_ChangeFrequency_Add500Hz();
 void Codec_RestartI2S();
 uint32_t UiDriver_GetActiveDSPFunctions();
 void UiDriver_UpdateDSPmode();
@@ -244,10 +260,19 @@ bool UiDriver_CheckTouchRegion(const UiArea_t* tr_p);
 
 void UiDriver_InitBandSet();
 void UiDriver_UpdateBand(uint16_t vfo_sel, uint8_t curr_band_index, uint8_t new_band_index);
+
+void UiDriver_Display_spectrum_ZOOM();   /// NIZZZ  affichage de la valeur du ZOOM
+
+void UiAction_ChangeFilterBW_CALL();
+void UiAction_RAZ_RIT_And_Display();
+
+void     NIZZ_UpdateLcdFreq(ulong dial_freq,ushort color,ushort mode);
+void  Gett_Tune_ordre_integer(ulong stepp);
+// void  UiAction_Change_AGC_popup_Mode();
 //
 // Items that are timed using ts.sysclock (operates at 100 Hz)
 //
-#define	DSP_STARTUP_DELAY					350		// Delay, in 100ths of seconds, after startup, before allowing DSP NR or Notch to be enabled.
+#define	DSP_STARTUP_DELAY					350		// 350 Delay, in 100ths of seconds, after startup, before allowing DSP NR or Notch to be enabled.
 #define	DSP_REENABLE_DELAY					13		// Delay, in 100ths of seconds, after return to RX before allowing DSP NR or Notch to be re-enabled
 #define	DSP_BAND_CHANGE_DELAY				100		// Delay, in 100ths of a second, after changing bands before restoring DSP NR
 //
@@ -255,10 +280,10 @@ void UiDriver_UpdateBand(uint16_t vfo_sel, uint8_t curr_band_index, uint8_t new_
 #define TUNING_LARGE_STEP_MUTING_TIME_DSP_OFF	3	// Delay, in 100ths of a second, for audio to be muted after a "large" frequency step (to avoid audio "POP") when DSP on
 #define	RX_MUTE_START_DELAY					(DSP_STARTUP_DELAY + TUNING_LARGE_STEP_MUTING_TIME_DSP_ON)	// establish earliest time after system start before audio muting will work
 //
-#define	THREAD_TIMING_DELAY					1				// Delay, in 100ths of a second, between thread tasks
+#define	THREAD_TIMING_DELAY					     1		    // Delay, in 100ths of a second, between thread tasks
 //
 #define TXRX_SWITCH_AUDIO_MUTE_DELAY_DEFAULT     1          // Default, in 100ths of a second, that audio will be muted after PTT (key-up/key-down) to prevent "clicks" and "clunks"
-#define	TXRX_SWITCH_AUDIO_MUTE_DELAY_MAX	25			// Maximum delay, in 100ths of a second, that audio will be muted after PTT (key-up/key-down) to prevent "clicks" and "clunks"
+#define	TXRX_SWITCH_AUDIO_MUTE_DELAY_MAX	    25			// Maximum delay, in 100ths of a second, that audio will be muted after PTT (key-up/key-down) to prevent "clicks" and "clunks"
 
 
 // UI Driver State machine definitions
@@ -294,5 +319,11 @@ extern PowerMeter				pwmt;
 // ------------------------------------------------
 
 extern const ulong tune_steps[T_STEP_MAX_STEPS];
+
+#endif
+
+#ifdef ATTENUATOR_6DB
+
+void UiAction_Attenuator_switch();  /// NIZZ
 
 #endif

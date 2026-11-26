@@ -15,8 +15,10 @@
 #ifndef __MCHF_HW_I2S_H
 #define __MCHF_HW_I2S_H
 
-// #define BUFF_LEN (2*(32*2)) // == 128
-#define BUFF_LEN 128
+// #define BUFF_LEN (2*(32*2)) // == 128     // le buffer dma en boucle  est le double du buffer a traiter
+#define BUFF_LEN      128
+
+#define BUFF_LEN_96K  256    // NIZ96 128x2 pour la bande d'echantiollnnage de 96Khz au lieu de 48Khz
 
 /*
  * BUFF_LEN is derived from 2* 32 LR Samples per Audio-Interrupt (== 64 * int16_t )
@@ -25,9 +27,10 @@
 
 typedef struct
 {
-    int16_t out[BUFF_LEN];
-    int16_t in[BUFF_LEN];
-} dma_audio_buffer_t;
+    int32_t out[BUFF_LEN_96K];       // 256  NIZ96  int16_t    le bufer DMA stereo est le double du buffer a traiter
+    int32_t in [BUFF_LEN_96K];       // 256  NIZ96
+
+}   dma_audio_buffer_t;
 
 
 #if defined(UI_BRD_MCHF)
@@ -38,7 +41,6 @@ typedef struct
 
 void UhsdrHwI2s_Codec_StartDMA();
 void UhsdrHwI2s_Codec_StopDMA();
-
 void UhsdrHwI2s_Codec_ClearTxDmaBuffer();
 
 #endif

@@ -82,7 +82,7 @@
 /*---------- -----------*/
 #define USBD_SELF_POWERED     1
 /*---------- -----------*/
-#define USBD_AUDIO_FREQ     48000
+#define USBD_AUDIO_FREQ     96000u     // NIZ96 lecture de vitesse de lecture Cable USB vers driver PC carte son mchf // 48000
 
 /****************************************/
 /* #define for FS and HS identification */

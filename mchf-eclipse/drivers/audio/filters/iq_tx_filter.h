@@ -25,5 +25,6 @@
 
 extern const IQ_FilterDescriptor iq_tx_narrow;
 extern const IQ_FilterDescriptor iq_tx_wide;
+extern const IQ_FilterDescriptor iq_tx_wide_decim;
 
 #endif

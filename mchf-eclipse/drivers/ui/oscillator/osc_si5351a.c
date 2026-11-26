@@ -25,13 +25,13 @@
 #define TEST_QUADRATURE
 
 // reference oscillator xtal frequency
-#define SI5351_XTAL_FREQ		27000000			// Crystal frequency
-#define SI5351_MIN_PLL			405000000			// Min PLL frequency, officially it is 600 Mhz, but 405 seems to work just fine.
-#define SI5351_MAX_PLL		    900000000			// Max PLL frequency, officially it is 900 Mhz, tested with ~1168 Mhz
+#define SI5351_XTAL_FREQ		 27000000			// Crystal frequency
+#define SI5351_MIN_PLL			500000000           // 405000000	  Min PLL frequency, officially it is 600 Mhz, but 405 seems to work just fine.
+#define SI5351_MAX_PLL		   1110000000			// Max PLL frequency, officially it is 900 Mhz, tested with ~1168 Mhz
 
 #define SI5351_MAX_DIVIDER				900
 
-#define SI5351_MAX_DIVIDER_PHASE90		126
+#define SI5351_MAX_DIVIDER_PHASE90		900
 // Max value for a divider if we want 90 degree phased clock, must be even and <=127
 #define SI5351_MIN_FREQ_PHASE90		((SI5351_MIN_PLL/SI5351_MAX_DIVIDER_PHASE90)+1)
 // Min PLL frequency / Max Divider for Phase 90 -> minimal frequency we can have 90 degree phase shift
@@ -49,7 +49,7 @@
 #define SI5351_CLK0_PHASE_OFFSET 165
 #define SI5351_CLK1_PHASE_OFFSET 166
 #define SI5351_CLK2_PHASE_OFFSET 167
-#define SI5351_PLL_RESET		177
+#define SI5351_PLL_RESET		 177
 
 // R-division ratio definitions
 #define SI5351_R_DIV_1			0b00000000
@@ -81,36 +81,36 @@
 #define MAX_UINT20 1048575
 
 
-static uint16_t Si5351a_WriteRegister(uint8_t reg, uint8_t val)
+static uint16_t Si5351a_WriteRegister(  uint8_t reg,  uint8_t val )
 {
-	return mchf_hw_i2c1_WriteRegister(SI5351_I2C_WRITE, reg, val);
+	return mchf_hw_i2c1_WriteRegister(  SI5351_I2C_WRITE, reg,  val );
 }
 
-static uint16_t Si5351a_WriteRegisters(uint8_t reg, uint8_t* val_p, uint32_t size)
+static uint16_t Si5351a_WriteRegisters( uint8_t reg,  uint8_t* val_p,  uint32_t size )
 {
-	return 	MCHF_I2C_WriteBlock(SI5351A_I2C,SI5351_I2C_WRITE, reg, 1, val_p, size);
+	return 	MCHF_I2C_WriteBlock( SI5351A_I2C,  SI5351_I2C_WRITE, reg,  1, val_p, size );
 }
 
 
 typedef struct
 {
-	uint32_t frequency;
-	uint32_t pll_num;
-	uint32_t pll_denom;
-	uint32_t multisynth_divider;
-	uint8_t  multisynth_rdiv;
-	uint32_t pll_mult;
-	bool phasedOutput;
-	bool pllreset;
+	uint32_t  frequency;
+	uint32_t  pll_num;
+	uint32_t  pll_denom;
+	uint32_t  multisynth_divider;
+	uint8_t   multisynth_rdiv;
+	uint32_t  pll_mult;
+	bool      phasedOutput;
+	bool      pllreset;
 
 } Si5351a_Config_t;
 
 typedef struct
 {
-	bool is_present;
-	Si5351a_Config_t current;
-	Si5351a_Config_t next;
-	uint32_t xtal_freq;
+	bool              is_present;
+	Si5351a_Config_t  current;
+	Si5351a_Config_t  next;
+	uint32_t          xtal_freq;
 } Si5351a_State_t;
 
 Si5351a_State_t si5351a_state;
@@ -137,13 +137,13 @@ static bool Si5351a_SetupPLL(uint8_t pll, uint8_t mult, uint32_t num, uint32_t d
 	uint8_t pll_data[8] =
 	{
 			(P3 & 0x0000FF00) >> 8,
-			P3 & 0x000000FF,
+			 P3 & 0x000000FF,
 			(P1 & 0x00030000) >> 16,
 			(P1 & 0x0000FF00) >> 8,
-			P1 & 0x000000FF,
-			((P3 & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16),
+			 P1 & 0x000000FF,
+		   ((P3 & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16),
 			(P2 & 0x0000FF00) >> 8,
-			P2 & 0x000000FF
+			 P2 & 0x000000FF
 	};
 
 	return Si5351a_WriteRegisters(pll, pll_data, 8) == HAL_OK;
@@ -176,7 +176,9 @@ static bool Si5351a_SetupMultisynthInteger(uint8_t synth, uint32_t divider, uint
 	return Si5351a_WriteRegisters(synth, synth_data, 8) == HAL_OK;
 }
 
-static bool Si5351a_ValidateConfig(Si5351a_Config_t* config)
+//***********************************************************************************************************
+
+static  bool  Si5351a_ValidateConfig( Si5351a_Config_t* config )
 {
 	// we check against the data sheet and known limitations.
 	bool retval =  (config->multisynth_divider == 4 || config->multisynth_divider == 6 || (config->multisynth_divider >= 8 && config->multisynth_divider <= SI5351_MAX_DIVIDER ));
@@ -185,7 +187,6 @@ static bool Si5351a_ValidateConfig(Si5351a_Config_t* config)
 	if (retval == true && config->phasedOutput == true)
 	{
 		retval = config->multisynth_divider <= SI5351_MAX_DIVIDER_PHASE90 ;
-
 	}
 
 	// we check that only the relevant bits are set and no others, this will ensure no problems when setting the register using or.
@@ -194,16 +195,19 @@ static bool Si5351a_ValidateConfig(Si5351a_Config_t* config)
 	if (retval == true)
 	{
 		retval = (config->multisynth_rdiv & ~SI5351_R_DIV_MASK ) == 0;
-
 	}
+
 
 	if (retval == true)
 	{
-		retval = ((config->pll_mult >= 15 && config->pll_mult <= 90) && (config->pll_num <= MAX_UINT20) && (config->pll_denom <= MAX_UINT20));
+		retval = ((config->pll_mult >= 15 && config->pll_mult <= 70) && (config->pll_num <= MAX_UINT20) && (config->pll_denom <= MAX_UINT20));
 	}
 
 	return retval;
 }
+
+//************************************************************************************************************
+uint8_t   R_Diviseur_final = SI5351_R_DIV_1;
 
 static bool Si5351a_CalculateConfigForDivider(Si5351a_Config_t* new_config, uint32_t divider)
 {
@@ -211,41 +215,38 @@ static bool Si5351a_CalculateConfigForDivider(Si5351a_Config_t* new_config, uint
 	uint32_t pllFreq = divider * new_config->frequency;		// Calculate the pllFrequency: the multisynth_divider * desired output frequency
 
 
-	uint32_t l = pllFreq % si5351a_state.xtal_freq;							// It has three parts:
-	float32_t f = l;											// mult is an integer that must be in the range 15...90
-	f *= MAX_UINT20;								// num and denom are the fractional parts, the numerator and denominator
-	f /= si5351a_state.xtal_freq;									// each is 20 bits (range 0...1048575)
+	uint32_t l  = pllFreq % si5351a_state.xtal_freq;		// It has three parts:
+	float32_t f = l;										// mult is an integer that must be in the range 15...90
+	f          *= MAX_UINT20;								// num and denom are the fractional parts, the numerator and denominator
+	f          /= si5351a_state.xtal_freq;					// each is 20 bits (range 0...1048575)
 
-	new_config->pll_mult = pllFreq / si5351a_state.xtal_freq;			// Determine the multiplier to get to the required pllFrequency
-	new_config->pll_num = f;							// the actual multiplier is  pll_mult + pll_num / denom
-	new_config->pll_denom = MAX_UINT20;					// For simplicity we set the denominator to the maximum 1048575
+	new_config->pll_mult           = pllFreq / si5351a_state.xtal_freq;			// Determine the multiplier to get to the required pllFrequency
+	new_config->pll_num            = f;							// the actual multiplier is  pll_mult + pll_num / denom
+	new_config->pll_denom          = MAX_UINT20;					// For simplicity we set the denominator to the maximum 1048575
 	new_config->multisynth_divider = divider;
-	new_config->multisynth_rdiv = SI5351_R_DIV_1;		// TODO: For lower frequencies we need to use R_DIV
+	new_config->multisynth_rdiv    = R_Diviseur_final;  // SI5351_R_DIV_1;		// TODO: For lower frequencies we need to use R_DIV
 	return Si5351a_ValidateConfig(new_config);
 }
 
-static bool Si5351a_CalculateConfig(uint32_t frequency, Si5351a_Config_t* new_config, Si5351a_Config_t* cur_config)
+static bool Si5351a_CalculateConfig ( uint32_t frequency, Si5351a_Config_t* new_config, Si5351a_Config_t* cur_config)
 {
-	bool retval = false;
+	bool   retval         = false;
 	new_config->frequency = frequency;
 
-	uint32_t divider_max = SI5351_MAX_PLL / frequency;			// Calculate the division ratio
+	uint32_t  divider_max = SI5351_MAX_PLL / frequency;			// Calculate the division ratio
 
-	if ((new_config->phasedOutput == true || divider_max < 8) && divider_max % 2)
-	{
-		divider_max--;						// Ensure an even integer division ratio
-	}
+	//if ((new_config->phasedOutput == true || divider_max < 8) && divider_max % 2)
+
+	if (divider_max % 2) { divider_max--; }		// si impaire a rendre paire par defaut	// Ensure an even integer division ratio
+
 
 	uint32_t divider_min = SI5351_MIN_PLL / frequency;			// Calculate the division ratio
-	if (SI5351_MIN_PLL % frequency)
-	{
-		divider_min++;
-	}
+	if (SI5351_MIN_PLL % frequency) { divider_min++;	}       // arrondire par excé
 
-	if ( (new_config->phasedOutput == true || divider_min < 8) && divider_min % 2)
-	{
-		divider_min++;						// Ensure an even integer division ratio
-	}
+	// if ( (new_config->phasedOutput == true || divider_min < 8) && divider_min % 2)
+
+	if ( divider_min % 2) {	divider_min++; }     // si impaire a rendre paire par excé	// Ensure an even integer division ratio
+
 
 
 	// In quadrature mode we cannot have dividers higher than SI5351_MAX_PHASE90_DIVIDER == 126
@@ -253,10 +254,15 @@ static bool Si5351a_CalculateConfig(uint32_t frequency, Si5351a_Config_t* new_co
 
 	// reuse current divider if possible, theory is that we can get away without PLLRESET in this case
 	// TODO: Validate theory and validate need for skipping PLLRESET
-	if (cur_config->phasedOutput == new_config->phasedOutput && cur_config->multisynth_divider >= divider_min && cur_config->multisynth_divider <= divider_max)
+
+	// on a masqué ci dessou cette tentative de reusage du meme diviseur exterieur apres PLL, on va plutôt jouer sur la freq de la PLL ( marge 405Mhz .. 1000 Mhz)
+	// elle sera peut etre utile en cas de deux sorties dephase de 90 degres, mais pas le cas du RS928p
+
+/*	if (cur_config->phasedOutput == new_config->phasedOutput && cur_config->multisynth_divider >= divider_min && cur_config->multisynth_divider <= divider_max)
 	{
 		retval = Si5351a_CalculateConfigForDivider(new_config, cur_config->multisynth_divider);
-	}
+	} */
+
 
 	if ( retval == false && divider_max <= divider_limit)
 	{
@@ -273,49 +279,56 @@ static bool Si5351a_CalculateConfig(uint32_t frequency, Si5351a_Config_t* new_co
 		new_config->multisynth_divider = 0;
 	}
 
-	switch(ts.debug_si5351a_pllreset)
+	switch ( ts.debug_si5351a_pllreset )
 	{
-	case 0:
-		new_config->pllreset = true;
-		break;
-	case 1:
-		new_config->pllreset = cur_config->multisynth_divider != new_config->multisynth_divider;
-		break;
-	case 2:
-		if (new_config->phasedOutput)
-		{
-			new_config->pllreset = cur_config->multisynth_divider != new_config->multisynth_divider;
-		}
-		break;
-	case 3:
-		new_config->pllreset = false;
+		case 0: 	new_config->pllreset = true;		                                                     break;
+		case 1:		new_config->pllreset = cur_config->multisynth_divider != new_config->multisynth_divider; break;
+		case 2:
+					if (new_config->phasedOutput)
+					{
+						new_config->pllreset = cur_config->multisynth_divider != new_config->multisynth_divider;
+					}
+					break;
+
+		case 3:		new_config->pllreset = false;
 	}
 
 	return retval;
 }
 
-static bool Si5351a_ApplyConfig(Si5351a_Config_t* config)
+
+//***********************************************************************************************************
+
+static  bool  Si5351a_ApplyConfig( Si5351a_Config_t* config)
 {
 
 	// Set up PLL A with the calculated multiplication ratio
-	bool result = Si5351a_SetupPLL(SI5351_SYNTH_PLL_A, config->pll_mult, config->pll_num, config->pll_denom);
+
+	bool   result = Si5351a_SetupPLL( SI5351_SYNTH_PLL_A, config->pll_mult, config->pll_num, config->pll_denom );
 
 	// Set up MultiSynth divider 0, with the calculated divider.
 	// The final R division stage can divide by a power of two, from 1...128
 	// represented by constants SI5351_R_DIV1 to SI5351_R_DIV128 (see si5351a.h header file)
 	// If you want to output frequencies below 1MHz, you have to use the
 	// final R division stage
-	if (result == true)
+
+
+	if ( result == true )
 	{
-	    if (config->phasedOutput)
+	   // if ( config->phasedOutput )
 	    {
-	        result = Si5351a_SetupMultisynthInteger(SI5351_SYNTH_MS_0, config->multisynth_divider, config->multisynth_rdiv);
-	        result &= Si5351a_SetupMultisynthInteger(SI5351_SYNTH_MS_1, config->multisynth_divider, config->multisynth_rdiv);
+	        result  = Si5351a_SetupMultisynthInteger(SI5351_SYNTH_MS_0, config->multisynth_divider, config->multisynth_rdiv);  // nizou RS928
+
+#ifndef    ATTENUATOR_6DB
+
+	        result &= Si5351a_SetupMultisynthInteger(SI5351_SYNTH_MS_2, config->multisynth_divider, config->multisynth_rdiv);  // nizou RS978
+#endif
 	    }
-	    else
+
+	/*    else
 	    {
 	        result = Si5351a_SetupMultisynthInteger(SI5351_SYNTH_MS_2, config->multisynth_divider, config->multisynth_rdiv);
-	    }
+	    } */
 
 	}
 
@@ -323,13 +336,16 @@ static bool Si5351a_ApplyConfig(Si5351a_Config_t* config)
 	// the parameters, you don't need to reset the PLL, and there is no glitch
 	// Finally switch on the CLK0 output (0x4F)
 	// and set the MultiSynth0 input to be PLL A
-	if (result == true)
+/*	if (result == true)
 	{
 	    // only if phased output is active, we need to care about phase offset of CLK1
+
 	    if (config->phasedOutput)
 	    {
 	        Si5351a_WriteRegister(SI5351_CLK1_PHASE_OFFSET, config->multisynth_divider);
 	    }
+    */
+
 #ifdef IQ_CLOCK_DIV4_SIG
 	    if (config->phasedOutput)
 	    {
@@ -341,17 +357,18 @@ static bool Si5351a_ApplyConfig(Si5351a_Config_t* config)
 	    }
 #endif
 
-		// Phase of CLK0 and CLK2 are never changed after startup, so we don't set it.
+				// Phase of CLK0 and CLK2 are never changed after startup, so we don't set it.
+	    		// le RS928+ ne nécessite qu'une seule sortie du SI5351A c'est la clock 0
 
-		Si5351a_WriteRegister( SI5351_CLK0_CONTROL, config->phasedOutput==true?SI5351_OUTPUT_ON:SI5351_OUTPUT_OFF);
-		Si5351a_WriteRegister( SI5351_CLK1_CONTROL, config->phasedOutput==true?SI5351_OUTPUT_ON:SI5351_OUTPUT_OFF);
+	/*	Si5351a_WriteRegister( SI5351_CLK0_CONTROL, config->phasedOutput==true? SI5351_OUTPUT_ON:SI5351_OUTPUT_OFF);
+		Si5351a_WriteRegister( SI5351_CLK1_CONTROL, config->phasedOutput==true? SI5351_OUTPUT_ON:SI5351_OUTPUT_OFF);
         Si5351a_WriteRegister( SI5351_CLK2_CONTROL, config->phasedOutput==false?SI5351_OUTPUT_ON:SI5351_OUTPUT_OFF);
 
-		if (config->pllreset)
+		if  ( config->pllreset )
 		{
-			Si5351a_WriteRegister( SI5351_PLL_RESET, SI5351_PLLA_RESET);
+			Si5351a_WriteRegister( SI5351_PLL_RESET, SI5351_PLLA_RESET );
 		}
-	}
+	}*/
 
 	return result;
 }
@@ -361,74 +378,137 @@ bool Si5351a_IsPresent()
 {
 	return si5351a_state.is_present;
 }
-static void Si5351a_SetPPM(float32_t ppm)
+
+
+
+static  void  Si5351a_SetPPM ( float32_t  ppm )
 {
 	si5351a_state.xtal_freq = ((float64_t)SI5351_XTAL_FREQ) + (((float64_t)SI5351_XTAL_FREQ)*(float64_t)ppm/1000000.0);
 }
 
-static Oscillator_ResultCodes_t Si5351a_PrepareNextFrequency(uint32_t freq, int temp_factor)
+
+//****************************************************************************************************
+
+
+static  Oscillator_ResultCodes_t   Si5351a_PrepareNextFrequency(uint32_t freq, int temp_factor)
 {
+
 #ifdef TEST_QUADRATURE
 	// TODO: Replace this with a proper configurable switch point, the current limit is the minimum frequency we can do 90 degree phase
-	si5351a_state.next.phasedOutput = freq > SI5351_MIN_FREQ_PHASE90;
-	if (si5351a_state.next.phasedOutput == false)
+	si5351a_state.next.phasedOutput = true ;  //  freq > SI5351_MIN_FREQ_PHASE90;
+/*	if (si5351a_state.next.phasedOutput == false)
 	{
-		freq *= 4;
+		// freq *= 4;
 		// we are going to drive a johnson counter with 4x desired frequency
 		// to get two 1/4 clock aka 90 degrees phase shifted clocks with frequency freq
+	} */
+
+//	if ( freq < 73001000 ) { freq *= 4;}  else { if ( freq > 290000000 ) { freq /= 2;}};
+
+	if (freq < 300000)  freq = 300000;
+
+	if             ( freq <  750000 )   { freq *= 16; R_Diviseur_final = SI5351_R_DIV_16;  }
+	else
+	{
+		if         ( freq < 1250000 )   { freq *= 8;  R_Diviseur_final = SI5351_R_DIV_8;   }
+		else
+		{
+			if     ( freq < 2500000 )   { freq *= 4;  R_Diviseur_final = SI5351_R_DIV_4;   }
+			else
+			{
+				// Attention le diviseur final R ne peut pas recevoir des frequences input > 150Mhz
+				// Le diviseur R est plutôt fait pour les très basse fréquence aux alentours de qq Khz
+
+				uint32_t  f_max = 18500000;   // if (ts.show_debug_info) f_max = 18500000;
+				if ( freq < f_max )  { freq *= 2;  R_Diviseur_final = SI5351_R_DIV_2;   }
+				else                 {             R_Diviseur_final = SI5351_R_DIV_1;   }
+			}
+		}
 	}
+
+/*	if (si5351a_state.next.phasedOutput == true )
+	{
+		freq *= 4;
+	} */
+
+  	freq *= 4;
+
 #endif
-	return Si5351a_CalculateConfig(freq, &si5351a_state.next, &si5351a_state.current) == true?OSC_OK:OSC_TUNE_IMPOSSIBLE;
+	return Si5351a_CalculateConfig( freq, &si5351a_state.next, &si5351a_state.current) == true?OSC_OK:OSC_TUNE_IMPOSSIBLE;
 }
 
-static Oscillator_ResultCodes_t Si5351a_ChangeToNextFrequency()
+
+//*************************************************************************************************************
+
+
+
+static  Oscillator_ResultCodes_t  Si5351a_ChangeToNextFrequency()
 {
-	Oscillator_ResultCodes_t retval = OSC_COMM_ERROR;
-	if (Si5351a_ApplyConfig(&si5351a_state.next) == true)
+	Oscillator_ResultCodes_t   retval  =  OSC_COMM_ERROR;
+
+	if ( Si5351a_ApplyConfig( &si5351a_state.next ) == true )
 	{
-		memcpy(&si5351a_state.current, &si5351a_state.next, sizeof(si5351a_state.next));
+		memcpy( &si5351a_state.current,  &si5351a_state.next,  sizeof(si5351a_state.next ));
+
 		retval = OSC_OK;
 	}
 	return retval;
 }
+
+
+//*************************************************************************************************************
+
 
 static bool              Si5351a_IsNextStepLarge()
 {
 	return false;
 }
 
-const OscillatorInterface_t osc_si5351a =
+
+
+//*************************************************************************************************************
+
+const   OscillatorInterface_t   osc_si5351a   =
 {
-		.init = Si5351a_Init,
-		.isPresent = Si5351a_IsPresent,
-		.setPPM = Si5351a_SetPPM,
-		.prepareNextFrequency = Si5351a_PrepareNextFrequency,
+		.init                  = Si5351a_Init,
+		.isPresent             = Si5351a_IsPresent,
+		.setPPM                = Si5351a_SetPPM,
+		.prepareNextFrequency  = Si5351a_PrepareNextFrequency,
 		.changeToNextFrequency = Si5351a_ChangeToNextFrequency,
-		.isNextStepLarge = Si5351a_IsNextStepLarge
+		.isNextStepLarge       = Si5351a_IsNextStepLarge
 };
 
 void Si5351a_Init()
 {
-	si5351a_state.current.frequency = 0;
-	si5351a_state.next.frequency = 0;
+	si5351a_state.current.frequency          = 0;
+	si5351a_state.next.frequency             = 0;
 	si5351a_state.current.multisynth_divider = 0;
-	si5351a_state.next.multisynth_divider = 0;
+	si5351a_state.next.multisynth_divider    = 0;
 
-	si5351a_state.is_present = MCHF_I2C_DeviceReady(SI5351A_I2C,SI5351_I2C_WRITE) == HAL_OK;
+	si5351a_state.is_present                 = MCHF_I2C_DeviceReady(SI5351A_I2C,SI5351_I2C_WRITE) == HAL_OK;
 
 	if (si5351a_state.is_present)
 	{
+		Si5351a_WriteRegister( SI5351_CLK0_CONTROL, SI5351_OUTPUT_OFF);  // ON  NIZZ
+		Si5351a_WriteRegister( SI5351_CLK1_CONTROL, SI5351_OUTPUT_OFF);
+		Si5351a_WriteRegister( SI5351_CLK2_CONTROL, SI5351_OUTPUT_OFF);
+
+	    Si5351a_WriteRegister( 149                    , 0);  // inhiber le mode spread
+
 	    Si5351a_WriteRegister(SI5351_CLK0_PHASE_OFFSET, 0);
         Si5351a_WriteRegister(SI5351_CLK1_PHASE_OFFSET, 0);
 	    Si5351a_WriteRegister(SI5351_CLK2_PHASE_OFFSET, 0);
-        Si5351a_WriteRegister( SI5351_CLK0_CONTROL, SI5351_OUTPUT_OFF);
-        Si5351a_WriteRegister( SI5351_CLK1_CONTROL, SI5351_OUTPUT_OFF);
-        Si5351a_WriteRegister( SI5351_CLK2_CONTROL, SI5351_OUTPUT_OFF);
-	}
 
+ 	    Si5351a_WriteRegister( SI5351_CLK0_CONTROL, SI5351_OUTPUT_ON );  // ON  NIZZ  nizou necessaire pour le hardware du RS928
+
+#ifndef    ATTENUATOR_6DB
+
+	    Si5351a_WriteRegister( SI5351_CLK2_CONTROL, SI5351_OUTPUT_ON );  // ON  NIZZ  nizou necessaire pour le hardware du RS978 a la sortie Clock2
+#endif
+
+	    // il parait en RS978 qui utilise le SI55351a , on se sert de la sortie clock_2   au lieu du clock_0 du RS928 ....
+ 	}
 
 	osc = Si5351a_IsPresent()?&osc_si5351a:NULL;
-
-
 }
 #endif

@@ -70,11 +70,7 @@
  * @return none.        
  */
 
-void arm_add_f32(
-  float32_t * pSrcA,
-  float32_t * pSrcB,
-  float32_t * pDst,
-  uint32_t blockSize)
+void arm_add_f32 (   float32_t * pSrcA,  float32_t * pSrcB,  float32_t * pDst,  uint32_t blockSize )
 {
   uint32_t blkCnt;                               /* loop counter */
 
@@ -85,7 +81,7 @@ void arm_add_f32(
   float32_t inB1, inB2, inB3, inB4;              /* temporary input variables */
 
   /*loop Unrolling */
-  blkCnt = blockSize >> 2u;
+  blkCnt = (blockSize >> 2u);
 
   /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.        
    ** a second loop below computes the remaining 1 to 3 samples. */
@@ -106,7 +102,7 @@ void arm_add_f32(
 
     /* C = A + B */
     /* add and store result to destination */
-    *pDst = inA1 + inB1;
+    *pDst       = inA1 + inB1;
     *(pDst + 1) = inA2 + inB2;
     *(pDst + 2) = inA3 + inB3;
     *(pDst + 3) = inA4 + inB4;
@@ -114,7 +110,7 @@ void arm_add_f32(
     /* update pointers to process next samples */
     pSrcA += 4u;
     pSrcB += 4u;
-    pDst += 4u;
+    pDst  += 4u;
 
 
     /* Decrement the loop counter */
@@ -123,7 +119,7 @@ void arm_add_f32(
 
   /* If the blockSize is not a multiple of 4, compute any remaining output samples here.        
    ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4u;
+  blkCnt = blockSize & 0x3u;  // Reste Division par 4
 
 #else
 
@@ -144,6 +140,8 @@ void arm_add_f32(
     blkCnt--;
   }
 }
+
+
 
 /**        
  * @} end of BasicAdd group        

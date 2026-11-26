@@ -77,6 +77,7 @@ void arm_bitreversal_q31(
 * @return none.  
 */
 
+/*
 void arm_cfft_radix2_q31(
 const arm_cfft_radix2_instance_q31 * S,
 q31_t * pSrc)
@@ -96,10 +97,14 @@ q31_t * pSrc)
    arm_bitreversal_q31(pSrc, S->fftLen, S->bitRevFactor, S->pBitRevTable);
 }
 
+*/
+
 /**   
 * @} end of ComplexFFT group   
 */
 
+
+/*
 void arm_radix2_butterfly_q31(
 q31_t * pSrc,
 uint32_t fftLen,
@@ -349,3 +354,4 @@ uint16_t twidCoefModifier)
    }                             // butterfly loop end 
 
 }
+*/

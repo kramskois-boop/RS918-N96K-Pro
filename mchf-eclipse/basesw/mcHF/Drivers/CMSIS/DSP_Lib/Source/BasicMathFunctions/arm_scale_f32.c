@@ -86,84 +86,253 @@
  */
 
 
-void arm_scale_f32(
-  float32_t * pSrc,
-  float32_t scale,
-  float32_t * pDst,
-  uint32_t blockSize)
+void arm_scale_f32( float32_t * pSrc,  float32_t scale,  float32_t * pDst,  uint32_t blockSize )
 {
-  uint32_t blkCnt;                               /* loop counter */
-#ifndef ARM_MATH_CM0_FAMILY
+  uint32_t   blkCnt;                          // loop counter
+#ifndef ARM_MATH_CM0_FAMILY                   // Run the below code for Cortex-M4 and Cortex-M3
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-  float32_t in1, in2, in3, in4;                  /* temporary variabels */
 
-  /*loop Unrolling */
-  blkCnt = blockSize >> 2u;
+  float32_t   in1, in2, in3, in4;               // temporary variabels
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.        
-   ** a second loop below computes the remaining 1 to 3 samples. */
-  while(blkCnt > 0u)
+  //loop Unrolling
+  blkCnt = (blockSize >> 2u);
+
+  // First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+  // a second loop below computes the remaining 1 to 3 samples.
+
+  while ( blkCnt > 0u )
   {
-    /* C = A * scale */
-    /* Scale the input and then store the results in the destination buffer. */
-    /* read input samples from source */
+
     in1 = *pSrc;
     in2 = *(pSrc + 1);
+    in1 = in1 * scale;		// multiply with scaling factor
+    in3 = *(pSrc + 2);      // read input sample from source
+    in2 = in2 * scale; 		// multiply with scaling factor
 
-    /* multiply with scaling factor */
-    in1 = in1 * scale;
+    in4 = *(pSrc + 3);		// read input sample from source
 
-    /* read input sample from source */
-    in3 = *(pSrc + 2);
-
-    /* multiply with scaling factor */
-    in2 = in2 * scale;
-
-    /* read input sample from source */
-    in4 = *(pSrc + 3);
-
-    /* multiply with scaling factor */
-    in3 = in3 * scale;
+    in3 = in3 * scale;		// multiply with scaling factor
     in4 = in4 * scale;
-    /* store the result to destination */
-    *pDst = in1;
+
+    *pDst       = in1;		// store the result to destination
     *(pDst + 1) = in2;
     *(pDst + 2) = in3;
     *(pDst + 3) = in4;
 
-    /* update pointers to process next samples */
+    pSrc += 4u;				// update pointers to process next samples
+    pDst += 4u;
+
+    blkCnt--;				// Decrement the loop counter
+  }
+
+  // If the blockSize is not a multiple of 4, compute any remaining output samples here.
+  // No loop unrolling is used.
+
+  blkCnt = blockSize & 0x3u;    // Reste division par 4
+
+
+#else
+
+  // Run the below code for Cortex-M0
+
+  // Initialize blkCnt with number of samples
+  blkCnt = blockSize;
+
+#endif // #ifndef ARM_MATH_CM0_FAMILY
+
+  while(blkCnt > 0u)               // C = A * scale
+  {
+   *pDst++ = (*pSrc++) * scale;    // Scale the input and then store the result in the destination buffer.
+    blkCnt--;		               // Decrement the loop counter
+  }
+}
+
+
+//*************************************************************************************************************************
+
+
+
+void arm_scale_interpolate_2x_f32_Nizar( float32_t * pSrc,  float32_t scale,  float32_t * pDst,  uint32_t blockSize )
+{
+  uint32_t    blkCnt;                          // loop counter
+  float32_t   in1,  in2, in3, in4;               // temporary variabels
+
+  blkCnt = (blockSize >> 2u);
+
+  while ( blkCnt > 0u )
+  {
+	in1 = *pSrc;
+    in2 = *(pSrc + 1);
+    in1 = in1 * scale;		// multiply with scaling factor
+    in3 = *(pSrc + 2);     // read input sample from source
+    in2 = in2 * scale; 		// multiply with scaling factor
+
+    in4 = *(pSrc + 3);		// read input sample from source
+
+    in3 = in3 * scale;		// multiply with scaling factor
+
+
+    *pDst       = in1;		// store the result to destination
+    *(pDst + 1) = in1;
+     in4        = in4 * scale;
+    *(pDst + 2) = in2;
+    *(pDst + 3) = in2;
+    *(pDst + 4) = in3;
+    *(pDst + 5) = in3;
+    *(pDst + 6) = in4;
+    *(pDst + 7) = in4;
+    pSrc += 4u;				// update pointers to process next samples
+    pDst += 8u;
+
+    blkCnt--;				// Decrement the loop counter
+  }
+
+  // If the blockSize is not a multiple of 4, compute any remaining output samples here.
+  // No loop unrolling is used.
+/*
+  blkCnt = blockSize & 0x3u;    // Reste division par 4
+
+  while ( blkCnt > 0u )         // C = A * scale
+  {
+	in1     =  (*pSrc++);
+	in1     =  in1 * scale;
+   *pDst++  =  in1;            // Scale the input and then store the result in the destination buffer.
+   *pDst++  =  in1;
+    blkCnt--;		           // Decrement the loop counter
+  }
+  */
+
+}
+
+
+
+
+
+
+
+
+
+
+/*
+void arm_scale_int32( int32_t * pSrc,  int32_t  scale,  int32_t * pDst,  uint32_t blockSize )
+{
+  uint32_t blkCnt;                  // loop counter //
+#ifndef ARM_MATH_CM0_FAMILY			// Run the below code for Cortex-M4 and Cortex-M3
+
+
+  int32_t in1, in2, in3, in4;       // temporary variabels
+
+
+  blkCnt = blockSize >> 2u;			// loop Unrolling
+
+  while(blkCnt > 0u)
+  {
+
+    in1 = *pSrc;
+    in2 = *(pSrc + 1u);
+    in1 =  in1 * scale;
+    in3 = *(pSrc + 2u);
+    in2 =  in2 * scale;
+    in4 = *(pSrc + 3u);
+    in3 =  in3 * scale;
+    in4 =  in4 * scale;
+
+    *pDst       = in1;
+    *(pDst + 1u) = in2;
+    *(pDst + 2u) = in3;
+    *(pDst + 3u) = in4;
+
     pSrc += 4u;
     pDst += 4u;
 
-    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.        
-   ** No loop unrolling is used. */
+  // If the blockSize is not a multiple of 4, compute any remaining output samples here.
+  // ** No loop unrolling is used.//
   blkCnt = blockSize % 0x4u;
 
 #else
 
-  /* Run the below code for Cortex-M0 */
+  // Run the below code for Cortex-M0 //
 
-  /* Initialize blkCnt with number of samples */
+  // Initialize blkCnt with number of samples //
   blkCnt = blockSize;
 
-#endif /* #ifndef ARM_MATH_CM0_FAMILY */
+#endif // #ifndef ARM_MATH_CM0_FAMILY //
 
   while(blkCnt > 0u)
   {
-    /* C = A * scale */
-    /* Scale the input and then store the result in the destination buffer. */
+    // C = A * scale //
+    // Scale the input and then store the result in the destination buffer. //
+    // *
+    // //
     *pDst++ = (*pSrc++) * scale;
 
-    /* Decrement the loop counter */
+    // Decrement the loop counter //
     blkCnt--;
   }
 }
 
+*/
+
+
+
+
+//*************************************************************************************************************************
+
+//#define   CC_Max   29500*65536
+//#define   CC_Min  -29500*65536
+
+///***************************************************************************************
+
+void arm_scale_f32_saturation_30000 ( float32_t * pSrc,  float32_t  scale,  float32_t * pDst,  uint32_t blockSize )
+{
+  float32_t  C_Max = ( 29500*65536);
+  float32_t  C_Min = (-29500*65536);
+
+  uint32_t    blkCnt;
+  float32_t   in1, in2, in3, in4;
+
+  blkCnt = blockSize >> 2u;
+
+  while ( blkCnt > 0u )
+  {
+    in1 = * pSrc;
+    in2 = *(pSrc + 1);
+    in1 =  in1 * scale;
+    in3 = *(pSrc + 2);
+    in2 =  in2 * scale;
+    in4 = *(pSrc + 3);
+
+
+    in3 = in3 * scale;
+    in4 = in4 * scale;
+
+
+    if (in1 > C_Max) { in1 = C_Max; } else if  (in1 < C_Min) { in1 = C_Min; }
+    if (in2 > C_Max) { in2 = C_Max; } else if  (in2 < C_Min) { in2 = C_Min; }
+    *pDst       = in1;
+    if (in3 > C_Max) { in3 = C_Max; } else if  (in3 < C_Min) { in3 = C_Min; }
+    *(pDst + 1) = in2;
+    if (in4 > C_Max) { in4 = C_Max; } else if  (in4 < C_Min) { in4 = C_Min; }
+    *(pDst + 2) = in3;
+    *(pDst + 3) = in4;
+
+    pSrc += 4u;
+    pDst += 4u;
+
+    blkCnt--;
+  }
+
+  blkCnt = blockSize & 0x3u;  // Reste division par 4
+
+  while( blkCnt > 0u )
+  {
+    *pDst++ = (*pSrc++) * scale;
+    blkCnt--;
+  }
+}
 /**        
  * @} end of scale group        
  */

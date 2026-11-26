@@ -71,12 +71,9 @@
  * @return none.        
  */
 
-void arm_negate_f32(
-  float32_t * pSrc,
-  float32_t * pDst,
-  uint32_t blockSize)
+void arm_negate_f32 (   float32_t * pSrc,  float32_t * pDst,  uint32_t blockSize )
 {
-  uint32_t blkCnt;                               /* loop counter */
+  uint32_t   blkCnt;                               /* loop counter */
 
 
 #ifndef ARM_MATH_CM0_FAMILY
@@ -93,9 +90,9 @@ void arm_negate_f32(
   {
     /* read inputs from source */
     in1 = *pSrc;
-    in2 = *(pSrc + 1);
-    in3 = *(pSrc + 2);
-    in4 = *(pSrc + 3);
+    in2 = *(pSrc + 1u);
+    in3 = *(pSrc + 2u);
+    in4 = *(pSrc + 3u);
 
     /* negate the input */
     in1 = -in1;
@@ -105,9 +102,9 @@ void arm_negate_f32(
 
     /* store the result to destination */
     *pDst = in1;
-    *(pDst + 1) = in2;
-    *(pDst + 2) = in3;
-    *(pDst + 3) = in4;
+    *(pDst + 1u) = in2;
+    *(pDst + 2u) = in3;
+    *(pDst + 3u) = in4;
 
     /* update pointers to process next samples */
     pSrc += 4u;

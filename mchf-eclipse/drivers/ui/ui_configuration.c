@@ -37,7 +37,7 @@ static uint16_t dummy_val16; // we need this to be able to read config values wi
 
 #define UI_C_EEPROM_BAND_5W_PF(bandNo,bandName1,bandName2) { ConfigEntry_UInt8, EEPROM_BAND##bandNo##_5W,&ts.pwr_adj[ADJ_5W][BAND_MODE_##bandName1],TX_POWER_FACTOR_##bandName1##_DEFAULT,0,TX_POWER_FACTOR_MAX },
 #define UI_C_EEPROM_BAND_FULL_PF(bandNo,bandName1,bandName2) { ConfigEntry_UInt8, EEPROM_BAND##bandNo##_FULL,&ts.pwr_adj[ADJ_FULL_POWER][BAND_MODE_##bandName1],TX_POWER_FACTOR_##bandName1##_DEFAULT,0,TX_POWER_FACTOR_MAX },
-
+///  TX_POWER_FACTOR_MAX
 // here all simple configuration values are defined
 // in order to have a new configuration value being stored in nonvolatile memory
 // just add an entry. It is important to specify the addres of a ram location from  where to read/write  the
@@ -50,158 +50,159 @@ static uint16_t dummy_value16;
 
 const ConfigEntryDescriptor ConfigEntryInfo[] =
 {
-    { ConfigEntry_UInt16, EEPROM_ZERO_LOC,&dummy_value16,0,0,0xffff},
-    { ConfigEntry_UInt16, EEPROM_FLAGS2,&ts.flags2,0,0,0xff},
-    { ConfigEntry_UInt8, EEPROM_SPEC_SCOPE_SPEED,&ts.scope_speed,SPECTRUM_SCOPE_SPEED_DEFAULT,0,SPECTRUM_SCOPE_SPEED_MAX},
-    { ConfigEntry_UInt32_16, EEPROM_FREQ_STEP,&df.selected_idx,3,0,T_STEP_MAX_STEPS-2},
-    { ConfigEntry_UInt8, EEPROM_TX_AUDIO_SRC,&ts.tx_audio_source,0,0,TX_AUDIO_MAX_ITEMS},
-    { ConfigEntry_UInt8, EEPROM_TCXO_STATE,&df.temp_enabled,TCXO_ON,0,255},
-    { ConfigEntry_UInt8, EEPROM_AUDIO_GAIN,&ts.rx_gain[RX_AUDIO_SPKR].value,AUDIO_GAIN_DEFAULT,0,AUDIO_GAIN_MAX},
-    { ConfigEntry_UInt8, EEPROM_RX_CODEC_GAIN,&ts.rf_codec_gain,DEFAULT_RF_CODEC_GAIN_VAL,0,MAX_RF_CODEC_GAIN_VAL},
-//    { ConfigEntry_Int32_16, EEPROM_RX_GAIN,&ts.rf_gain,DEFAULT_RF_GAIN,0,MAX_RF_GAIN},
-    { ConfigEntry_UInt8, EEPROM_NB_SETTING,&ts.nb_setting,0,0,MAX_NB_SETTING},
-    { ConfigEntry_UInt8, EEPROM_TX_POWER_LEVEL,&ts.power_level,PA_LEVEL_DEFAULT,0,PA_LEVEL_TUNE_KEEP_CURRENT},
-    { ConfigEntry_UInt8, EEPROM_CW_KEYER_SPEED,&ts.cw_keyer_speed,CW_KEYER_SPEED_DEFAULT,CW_KEYER_SPEED_MIN, CW_KEYER_SPEED_MAX},
-    { ConfigEntry_UInt8, EEPROM_CW_KEYER_MODE,&ts.cw_keyer_mode,CW_KEYER_MODE_IAM_B, 0, CW_KEYER_MAX_MODE},
-    { ConfigEntry_UInt8, EEPROM_CW_KEYER_WEIGHT,&ts.cw_keyer_weight,CW_KEYER_WEIGHT_DEFAULT, CW_KEYER_WEIGHT_MIN, CW_KEYER_WEIGHT_MAX},
-    { ConfigEntry_UInt8, EEPROM_CW_SIDETONE_GAIN,&ts.cw_sidetone_gain,DEFAULT_SIDETONE_GAIN,0, SIDETONE_MAX_GAIN},
-    { ConfigEntry_Int32_16, EEPROM_FREQ_CAL,&ts.freq_cal,0,MIN_FREQ_CAL,MAX_FREQ_CAL},
-    { ConfigEntry_UInt8, EEPROM_AGC_WDSP_MODE,&ts.agc_wdsp_mode, 2,0,5},
-    { ConfigEntry_UInt8, EEPROM_AGC_WDSP_HANG,&ts.agc_wdsp_hang_enable, 0,0,1},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_THRESH,&ts.agc_wdsp_thresh, 20,-20,120},
-    { ConfigEntry_UInt8, EEPROM_AGC_WDSP_SLOPE,&ts.agc_wdsp_slope, 70,0,200},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_0,&ts.agc_wdsp_tau_decay[0], 4000,100,5000},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_1,&ts.agc_wdsp_tau_decay[1], 2000,100,5000},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_2,&ts.agc_wdsp_tau_decay[2], 500,100,5000},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_3,&ts.agc_wdsp_tau_decay[3], 250,100,5000},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_4,&ts.agc_wdsp_tau_decay[4], 50,100,5000},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_HANG_DECAY,&ts.agc_wdsp_tau_hang_decay, 500,100,5000},
-    { ConfigEntry_UInt8, EEPROM_MIC_GAIN,&ts.tx_gain[TX_AUDIO_MIC],MIC_GAIN_DEFAULT,MIC_GAIN_MIN,MIC_GAIN_MAX},
-    { ConfigEntry_UInt8, EEPROM_LINE_GAIN,&ts.tx_gain[TX_AUDIO_LINEIN_L],LINE_GAIN_DEFAULT,LINE_GAIN_MIN,LINE_GAIN_MAX},
-    { ConfigEntry_UInt32_16, EEPROM_SIDETONE_FREQ,&ts.cw_sidetone_freq,CW_SIDETONE_FREQ_DEFAULT,CW_SIDETONE_FREQ_MIN,CW_SIDETONE_FREQ_MAX},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_FILTER,&ts.spectrum_filter,SPECTRUM_FILTER_DEFAULT,SPECTRUM_FILTER_MIN,SPECTRUM_FILTER_MAX},
- //   { ConfigEntry_UInt8, EEPROM_AGC_CUSTOM_DECAY,&ts.agc_custom_decay,AGC_CUSTOM_DEFAULT,0,AGC_CUSTOM_MAX},
-    { ConfigEntry_UInt8, EEPROM_METER_COLOUR_UP,&ts.meter_colour_up,SPEC_BLUE, 0, SPEC_MAX_COLOUR},
-    { ConfigEntry_UInt8, EEPROM_METER_COLOUR_DOWN,&ts.meter_colour_down,SPEC_CYAN, 0, SPEC_MAX_COLOUR},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_TRACE_COLOUR,&ts.scope_trace_colour,SPEC_COLOUR_TRACE_DEFAULT, 0, SPEC_MAX_COLOUR},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_GRID_COLOUR,&ts.scope_grid_colour,SPEC_COLOUR_GRID_DEFAULT, 0, SPEC_MAX_COLOUR},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_CENTRE_LINE_COLOUR,&ts.spectrum_centre_line_colour,SPEC_COLOUR_GRID_DEFAULT, 0, SPEC_MAX_COLOUR},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_SCALE_COLOUR,&ts.spectrum_freqscale_colour,SPEC_COLOUR_SCALE_DEFAULT, 0, SPEC_MAX_COLOUR},
-    { ConfigEntry_UInt8, EEPROM_PADDLE_REVERSE,&ts.cw_paddle_reverse,0,0,1},
-    { ConfigEntry_UInt8, EEPROM_CW_RX_DELAY,&ts.cw_rx_delay,CW_TX2RX_DELAY_DEFAULT,0,CW_RX_DELAY_MAX},
-    { ConfigEntry_UInt8, EEPROM_MAX_VOLUME,&ts.rx_gain[RX_AUDIO_SPKR].max,MAX_VOLUME_DEFAULT,MAX_VOLUME_MIN,MAX_VOLUME_MAX},
-    { ConfigEntry_UInt8, EEPROM_PA_BIAS,&ts.pa_bias,PA_BIAS_DEFAULT,0,PA_BIAS_MAX},
-    { ConfigEntry_UInt8, EEPROM_PA_CW_BIAS,&ts.pa_cw_bias,PA_BIAS_DEFAULT,0,PA_BIAS_MAX},
+    { ConfigEntry_UInt16  , EEPROM_ZERO_LOC               ,&dummy_value16,0,0,0xffff},
+ // { ConfigEntry_UInt16  , EEPROM_FLAGS2                 ,&ts.flags2, 0, 0, 0xff },    // double
+    { ConfigEntry_UInt8   , EEPROM_SPEC_SCOPE_SPEED       ,&ts.scope_speed,SPECTRUM_SCOPE_SPEED_DEFAULT,SPECTRUM_SCOPE_SPEED_MIN,SPECTRUM_SCOPE_SPEED_MAX},
+    { ConfigEntry_UInt32_16, EEPROM_FREQ_STEP             ,&df.selected_idx,3,0,T_STEP_MAX_STEPS-2},
+    { ConfigEntry_UInt8   , EEPROM_TX_AUDIO_SRC           ,&ts.tx_audio_source,0,0,TX_AUDIO_MAX_ITEMS},
+    { ConfigEntry_UInt8   , EEPROM_TCXO_STATE             ,&df.temp_enabled,TCXO_ON,0,255},
+    { ConfigEntry_UInt8   , EEPROM_AUDIO_GAIN             ,&ts.rx_gain[RX_AUDIO_SPKR].value, AUDIO_GAIN_DEFAULT, 0, AUDIO_GAIN_MAX},
+    { ConfigEntry_UInt8   , EEPROM_RX_CODEC_GAIN          ,&ts.rf_codec_gain,DEFAULT_RF_CODEC_GAIN_VAL,0,MAX_RF_CODEC_GAIN_VAL},
+//  { ConfigEntry_Int32_16, EEPROM_RX_GAIN                ,&ts.rf_gain,DEFAULT_RF_GAIN,0,MAX_RF_GAIN},
+    { ConfigEntry_UInt8   , EEPROM_NB_SETTING             ,&ts.nb_setting,0,0,MAX_NB_SETTING},
+    { ConfigEntry_UInt8   , EEPROM_TX_POWER_LEVEL         ,&ts.power_level,PA_LEVEL_DEFAULT,0,PA_LEVEL_TUNE_KEEP_CURRENT},
+    { ConfigEntry_UInt8   , EEPROM_CW_KEYER_SPEED         ,&ts.cw_keyer_speed,CW_KEYER_SPEED_DEFAULT,CW_KEYER_SPEED_MIN, CW_KEYER_SPEED_MAX},
+    { ConfigEntry_UInt8   , EEPROM_CW_KEYER_MODE          ,&ts.cw_keyer_mode,CW_KEYER_MODE_IAM_B, 0, CW_KEYER_MAX_MODE},
+    { ConfigEntry_UInt8   , EEPROM_CW_KEYER_WEIGHT        ,&ts.cw_keyer_weight,CW_KEYER_WEIGHT_DEFAULT, CW_KEYER_WEIGHT_MIN, CW_KEYER_WEIGHT_MAX},
+    { ConfigEntry_UInt8   , EEPROM_CW_SIDETONE_GAIN       ,&ts.cw_sidetone_gain,DEFAULT_SIDETONE_GAIN,0, SIDETONE_MAX_GAIN},
+    { ConfigEntry_Int32_16, EEPROM_FREQ_CAL               ,&ts.freq_cal,0,MIN_FREQ_CAL,MAX_FREQ_CAL},
+    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_MODE          ,&ts.agc_wdsp_mode,             2,  0,   4},
+    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_HANG          ,&ts.agc_wdsp_hang_enable,      5,  0,  123},
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_THRESH        ,&ts.agc_wdsp_thresh,          32, 1 , 120},
+    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_SLOPE         ,&ts.agc_wdsp_slope,           80,  0, 250},
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_0   ,&ts.agc_wdsp_tau_decay[0],   700,350,5000},  // very long
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_1   ,&ts.agc_wdsp_tau_decay[1],   700,350,5000},  // Long
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_2   ,&ts.agc_wdsp_tau_decay[2],   700,350,5000},  // Slow
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_3   ,&ts.agc_wdsp_tau_decay[3],   700,350,5000},  // Mid
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_4   ,&ts.agc_wdsp_tau_decay[4],   700,350,5000},  // Fast
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_HANG_DECAY,&ts.agc_wdsp_tau_hang_decay, 500, 60,5000},
+    { ConfigEntry_UInt8   , EEPROM_MIC_GAIN               ,&ts.tx_gain[TX_AUDIO_MIC],MIC_GAIN_DEFAULT,MIC_GAIN_MIN,MIC_GAIN_MAX},
+    { ConfigEntry_UInt8   , EEPROM_LINE_GAIN              ,&ts.tx_gain[TX_AUDIO_LINEIN_L],LINE_GAIN_DEFAULT,LINE_GAIN_MIN,LINE_GAIN_MAX},
+    { ConfigEntry_UInt32_16, EEPROM_SIDETONE_FREQ         ,&ts.cw_sidetone_freq,CW_SIDETONE_FREQ_DEFAULT,CW_SIDETONE_FREQ_MIN,CW_SIDETONE_FREQ_MAX},
+    { ConfigEntry_UInt8   , EEPROM_SPECTRUM_FILTER        ,&ts.spectrum_filter,SPECTRUM_FILTER_DEFAULT,SPECTRUM_FILTER_MIN,SPECTRUM_FILTER_MAX},
+ // { ConfigEntry_UInt8   , EEPROM_AGC_CUSTOM_DECAY       ,&ts.agc_custom_decay,AGC_CUSTOM_DEFAULT,0,AGC_CUSTOM_MAX},
+    { ConfigEntry_UInt8   , EEPROM_METER_COLOUR_UP        ,&ts.meter_colour_up,SPEC_ORANGE, 0, SPEC_MAX_COLOUR},
+    { ConfigEntry_UInt8   , EEPROM_METER_COLOUR_DOWN      ,&ts.meter_colour_down,SPEC_YELLOW, 0, SPEC_MAX_COLOUR},
+    { ConfigEntry_UInt8   , EEPROM_SPECTRUM_TRACE_COLOUR  ,&ts.scope_trace_colour,SPEC_COLOUR_TRACE_DEFAULT, 0, SPEC_MAX_COLOUR},
+    { ConfigEntry_UInt8   , EEPROM_SPECTRUM_GRID_COLOUR   ,&ts.scope_grid_colour,SPEC_COLOUR_GRID_DEFAULT, 0, SPEC_MAX_COLOUR},
+    { ConfigEntry_UInt8   , EEPROM_SPECTRUM_CENTRE_LINE_COLOUR,&ts.spectrum_centre_line_colour,SPEC_COLOUR_GRID_DEFAULT, 0, SPEC_MAX_COLOUR},
+    { ConfigEntry_UInt8   , EEPROM_SPECTRUM_SCALE_COLOUR  ,&ts.spectrum_freqscale_colour,SPEC_COLOUR_SCALE_DEFAULT, 0, SPEC_MAX_COLOUR},
+    { ConfigEntry_UInt8   , EEPROM_PADDLE_REVERSE         ,&ts.cw_paddle_reverse,0,0,1},
+    { ConfigEntry_UInt8   , EEPROM_CW_RX_DELAY            ,&ts.cw_rx_delay,CW_TX2RX_DELAY_DEFAULT,5,CW_RX_DELAY_MAX},
+    { ConfigEntry_UInt8   , EEPROM_MAX_VOLUME             ,&ts.rx_gain[RX_AUDIO_SPKR].max,MAX_VOLUME_DEFAULT,MAX_VOLUME_MIN,MAX_VOLUME_MAX},
+    { ConfigEntry_UInt8   , EEPROM_PA_BIAS                ,&ts.pa_bias,PA_BIAS_DEFAULT,0,PA_BIAS_MAX},
+	{ ConfigEntry_UInt8   , EEPROM_PA_CW_BIAS             ,&ts.pa_cw_bias,PA_BIAS_DEFAULT,0,PA_BIAS_MAX},
 
-    { ConfigEntry_UInt8, EEPROM_IQ_AUTO_CORRECTION,&ts.iq_auto_correction,0,0, 1},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_GAIN_BALANCE,&ts.tx_iq_gain_balance[IQ_80M].value[IQ_TRANS_ON],IQ_BALANCE_OFF, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_10M_GAIN_BALANCE,&ts.tx_iq_gain_balance[IQ_10M].value[IQ_TRANS_ON],IQ_BALANCE_OFF, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_PHASE_BALANCE,&ts.tx_iq_phase_balance[IQ_80M].value[IQ_TRANS_ON],IQ_BALANCE_OFF, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_10M_PHASE_BALANCE,&ts.tx_iq_phase_balance[IQ_10M].value[IQ_TRANS_ON],IQ_BALANCE_OFF, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_RX_IQ_80M_GAIN_BALANCE,&ts.rx_iq_gain_balance[IQ_80M].value[IQ_TRANS_ON],IQ_BALANCE_OFF, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_RX_IQ_10M_GAIN_BALANCE,&ts.rx_iq_gain_balance[IQ_10M].value[IQ_TRANS_ON],IQ_BALANCE_OFF,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_RX_IQ_80M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_80M].value[IQ_TRANS_ON],IQ_BALANCE_OFF,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_RX_IQ_10M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_10M].value[IQ_TRANS_ON],IQ_BALANCE_OFF,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_GAIN_BALANCE_TRANS_OFF,&ts.tx_iq_gain_balance[IQ_80M].value[IQ_TRANS_OFF],IQ_BALANCE_OFF,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_80M].value[IQ_TRANS_OFF],IQ_BALANCE_OFF,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+    { ConfigEntry_UInt8   , EEPROM_IQ_AUTO_CORRECTION,&ts.iq_auto_correction,0,0, 1},
+    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_GAIN_BALANCE,&ts.tx_iq_gain_balance[IQ_80M].value[IQ_TRANS_ON],0, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_TX_IQ_10M_GAIN_BALANCE,&ts.tx_iq_gain_balance[IQ_10M].value[IQ_TRANS_ON],0, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_PHASE_BALANCE,&ts.tx_iq_phase_balance[IQ_80M].value[IQ_TRANS_ON],0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_TX_IQ_10M_PHASE_BALANCE,&ts.tx_iq_phase_balance[IQ_10M].value[IQ_TRANS_ON],0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_RX_IQ_80M_GAIN_BALANCE,&ts.rx_iq_gain_balance[IQ_80M].value[IQ_TRANS_ON],0, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_RX_IQ_10M_GAIN_BALANCE,&ts.rx_iq_gain_balance[IQ_10M].value[IQ_TRANS_ON],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_RX_IQ_80M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_80M].value[IQ_TRANS_ON],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_RX_IQ_10M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_10M].value[IQ_TRANS_ON],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_GAIN_BALANCE_TRANS_OFF,&ts.tx_iq_gain_balance[IQ_80M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_TX_IQ_80M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_80M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
     // FIXME: Change index of the fm balance entry to symbolic name!
-    { ConfigEntry_Int32_16, EEPROM_RX_IQ_FM_GAIN_BALANCE,&ts.rx_iq_gain_balance[3],IQ_BALANCE_OFF,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_10M_GAIN_BALANCE_TRANS_OFF,&ts.tx_iq_gain_balance[IQ_10M].value[IQ_TRANS_OFF],IQ_BALANCE_OFF, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
-    { ConfigEntry_Int32_16, EEPROM_TX_IQ_10_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_10M].value[IQ_TRANS_OFF],IQ_BALANCE_OFF, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
-    { ConfigEntry_UInt8, EEPROM_SENSOR_NULL,&swrm.sensor_null,SENSOR_NULL_DEFAULT,SENSOR_NULL_MIN,SENSOR_NULL_MAX},
-    { ConfigEntry_UInt8, EEPROM_XVERTER_DISP,&ts.xverter_mode,0,0,XVERTER_MULT_MAX},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_MAGNIFY,&sd.magnify,MAGNIFY_DEFAULT,MAGNIFY_MIN,MAGNIFY_MAX},
-    { ConfigEntry_UInt8, EEPROM_WIDE_FILT_CW_DISABLE,&ts.filter_cw_wide_disable,1,0,1},
-    { ConfigEntry_UInt8, EEPROM_NARROW_FILT_SSB_DISABLE,&ts.filter_ssb_narrow_disable,1,0,1},
-    { ConfigEntry_UInt16, EEPROM_AM_MODE_DISABLE,&ts.demod_mode_disable,1,0,7},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_DB_DIV,&ts.spectrum_db_scale,DB_DIV_ADJUST_DEFAULT,DB_DIV_ADJUST_MIN, DB_DIV_ADJUST_MAX},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_AGC_RATE,&ts.spectrum_agc_rate,SPECTRUM_SCOPE_AGC_DEFAULT,SPECTRUM_SCOPE_AGC_MIN, SPECTRUM_SCOPE_AGC_MAX},
-    { ConfigEntry_UInt8, EEPROM_METER_MODE,&ts.tx_meter_mode,METER_SWR,0,METER_MAX},
-    { ConfigEntry_UInt32_16, EEPROM_ALC_DECAY_TIME,&ts.alc_decay,ALC_DECAY_DEFAULT,0,ALC_DECAY_MAX },
-    { ConfigEntry_UInt32_16, EEPROM_ALC_POSTFILT_TX_GAIN,&ts.alc_tx_postfilt_gain,ALC_POSTFILT_GAIN_DEFAULT, ALC_POSTFILT_GAIN_MIN, ALC_POSTFILT_GAIN_MAX},
-    { ConfigEntry_UInt16, EEPROM_STEP_SIZE_CONFIG,&ts.freq_step_config,0,0,255},
-    { ConfigEntry_UInt8, EEPROM_DSP_MODE,&ts.dsp_active,0,0,255},
-	{ ConfigEntry_UInt8, EEPROM_DSP_NR_STRENGTH,&ts.dsp_nr_strength,DSP_NR_STRENGTH_DEFAULT,0, DSP_NR_STRENGTH_MAX},
+    { ConfigEntry_Int32_16 , EEPROM_RX_IQ_FM_GAIN_BALANCE,&ts.rx_iq_gain_balance[3],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16 , EEPROM_TX_IQ_10M_GAIN_BALANCE_TRANS_OFF,&ts.tx_iq_gain_balance[IQ_10M].value[IQ_TRANS_OFF],0, MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16 , EEPROM_TX_IQ_10_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_10M].value[IQ_TRANS_OFF],0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+    { ConfigEntry_UInt8    , EEPROM_SENSOR_NULL,&swrm.sensor_null,SENSOR_NULL_DEFAULT,SENSOR_NULL_MIN,SENSOR_NULL_MAX},
+    { ConfigEntry_UInt8    , EEPROM_XVERTER_DISP,&ts.xverter_mode,0,0,XVERTER_MULT_MAX},
+    { ConfigEntry_UInt8    , EEPROM_SPECTRUM_MAGNIFY,&sd.magnify,MAGNIFY_DEFAULT,MAGNIFY_MIN, 2 },
+    { ConfigEntry_UInt8    , EEPROM_WIDE_FILT_CW_DISABLE,&ts.filter_cw_wide_disable,1,0,1},
+    { ConfigEntry_UInt8    , EEPROM_NARROW_FILT_SSB_DISABLE,&ts.filter_ssb_narrow_disable,1,0,1},
+    { ConfigEntry_UInt16   , EEPROM_AM_MODE_DISABLE,&ts.demod_mode_disable,1,0,7},
+    { ConfigEntry_UInt8    , EEPROM_SPECTRUM_DB_DIV,&ts.spectrum_db_scale,DB_DIV_ADJUST_DEFAULT,DB_DIV_ADJUST_MIN, DB_DIV_ADJUST_MAX},
+    { ConfigEntry_UInt8    , EEPROM_SPECTRUM_AGC_RATE,&ts.spectrum_agc_rate,SPECTRUM_SCOPE_AGC_DEFAULT,SPECTRUM_SCOPE_AGC_MIN, SPECTRUM_SCOPE_AGC_MAX},
+    { ConfigEntry_UInt8    , EEPROM_METER_MODE,&ts.tx_meter_mode,METER_SWR,0,METER_MAX},
+    { ConfigEntry_UInt32_16, EEPROM_ALC_DECAY_TIME,&ts.alc_tx_custom_comp_decay,0,0,0},   // ALC_DECAY_MAX
+    { ConfigEntry_UInt32_16, EEPROM_ALC_POSTFILT_TX_GAIN,&ts.alc_tx_custom_comp_gain,ALC_POSTFILT_GAIN_DEFAULT, ALC_POSTFILT_GAIN_MIN, ALC_POSTFILT_GAIN_MAX},
+    { ConfigEntry_UInt16   , EEPROM_STEP_SIZE_CONFIG,&ts.freq_step_config,0,0,255},
+    { ConfigEntry_UInt8    , EEPROM_DSP_MODE,&ts.dsp_active,0,0,255},
+	{ ConfigEntry_UInt8    , EEPROM_DSP_NR_STRENGTH,&ts.dsp_nr_strength,16,0, 250}, //  DSP_NR_STRENGTH_MAX},
 
 #ifdef OBSOLETE_NR
 	{ ConfigEntry_UInt32_16, EEPROM_DSP_NR_DECOR_BUFLEN,&ts.dsp_nr_delaybuf_len,DSP_NR_BUFLEN_DEFAULT, DSP_NR_BUFLEN_MIN, DSP_NR_BUFLEN_MAX},
-    { ConfigEntry_UInt8, EEPROM_DSP_NR_FFT_NUMTAPS,&ts.dsp_nr_numtaps,DSP_NR_NUMTAPS_DEFAULT, DSP_NR_NUMTAPS_MIN, DSP_NOTCH_NUMTAPS_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DSP_NR_FFT_NUMTAPS,&ts.dsp_nr_numtaps,DSP_NR_NUMTAPS_DEFAULT, DSP_NR_NUMTAPS_MIN, DSP_NOTCH_NUMTAPS_MAX},
 
-	{ ConfigEntry_UInt8, EEPROM_DSP_NOTCH_DECOR_BUFLEN,&ts.dsp_notch_delaybuf_len,DSP_NOTCH_DELAYBUF_DEFAULT,DSP_NOTCH_BUFLEN_MIN,DSP_NOTCH_BUFLEN_MAX},
-    { ConfigEntry_UInt8, EEPROM_DSP_NOTCH_FFT_NUMTAPS,&ts.dsp_notch_numtaps,DSP_NOTCH_NUMTAPS_DEFAULT, DSP_NOTCH_NUMTAPS_MIN,DSP_NOTCH_NUMTAPS_MAX},
-    { ConfigEntry_UInt8, EEPROM_DSP_NOTCH_CONV_RATE,&ts.dsp_notch_mu,DSP_NOTCH_MU_DEFAULT,0,DSP_NOTCH_MU_MAX},
+	{ ConfigEntry_UInt8    , EEPROM_DSP_NOTCH_DECOR_BUFLEN,&ts.dsp_notch_delaybuf_len,DSP_NOTCH_DELAYBUF_DEFAULT,DSP_NOTCH_BUFLEN_MIN,DSP_NOTCH_BUFLEN_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DSP_NOTCH_FFT_NUMTAPS,&ts.dsp_notch_numtaps,DSP_NOTCH_NUMTAPS_DEFAULT, DSP_NOTCH_NUMTAPS_MIN,DSP_NOTCH_NUMTAPS_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DSP_NOTCH_CONV_RATE,&ts.dsp_notch_mu,DSP_NOTCH_MU_DEFAULT,0,DSP_NOTCH_MU_MAX},
 #endif
 
 #ifdef USE_LMS_AUTONOTCH
-	{ ConfigEntry_UInt8, EEPROM_DSP_NOTCH_DECOR_BUFLEN,&ts.dsp_notch_delaybuf_len,DSP_NOTCH_DELAYBUF_DEFAULT,DSP_NOTCH_BUFLEN_MIN,DSP_NOTCH_BUFLEN_MAX},
-    { ConfigEntry_UInt8, EEPROM_DSP_NOTCH_FFT_NUMTAPS,&ts.dsp_notch_numtaps,DSP_NOTCH_NUMTAPS_DEFAULT, DSP_NOTCH_NUMTAPS_MIN,DSP_NOTCH_NUMTAPS_MAX},
-    { ConfigEntry_UInt8, EEPROM_DSP_NOTCH_CONV_RATE,&ts.dsp_notch_mu,DSP_NOTCH_MU_DEFAULT,0,DSP_NOTCH_MU_MAX},
+	{ ConfigEntry_UInt8    , EEPROM_DSP_NOTCH_DECOR_BUFLEN,&ts.dsp_notch_delaybuf_len,DSP_NOTCH_DELAYBUF_DEFAULT,DSP_NOTCH_BUFLEN_MIN,DSP_NOTCH_BUFLEN_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DSP_NOTCH_FFT_NUMTAPS,&ts.dsp_notch_numtaps,DSP_NOTCH_NUMTAPS_DEFAULT, DSP_NOTCH_NUMTAPS_MIN,DSP_NOTCH_NUMTAPS_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DSP_NOTCH_CONV_RATE,&ts.dsp_notch_mu,DSP_NOTCH_MU_DEFAULT,0,DSP_NOTCH_MU_MAX},
 #endif
-	//   { ConfigEntry_UInt8, EEPROM_MAX_RX_GAIN,&ts.max_rf_gain,MAX_RF_GAIN_DEFAULT,0,MAX_RF_GAIN_MAX},
-    { ConfigEntry_Int16, EEPROM_TX_AUDIO_COMPRESS,&ts.tx_comp_level,TX_AUDIO_COMPRESSION_DEFAULT,TX_AUDIO_COMPRESSION_MIN,TX_AUDIO_COMPRESSION_MAX},
-    { ConfigEntry_UInt8, EEPROM_TX_DISABLE,&ts.tx_disable,0,0,1},
-    { ConfigEntry_UInt16, EEPROM_FLAGS1,&ts.flags1,FLAGS1_CONFIG_DEFAULT,0,0xffff},
-    { ConfigEntry_UInt16, EEPROM_FLAGS2,&ts.flags2,FLAGS2_CONFIG_DEFAULT,0,0xffff},
-    { ConfigEntry_UInt16, EEPROM_VERSION_MINOR,&ts.version_number_minor,0,0,255},
-    { ConfigEntry_UInt16, EEPROM_VERSION_NUMBER,&ts.version_number_release,0,0,255},
-    { ConfigEntry_UInt16, EEPROM_VERSION_BUILD,&ts.version_number_major,0,0,255},
-//    { ConfigEntry_UInt8, EEPROM_NB_AGC_TIME_CONST,&ts.nb_agc_time_const,NB_AGC_DEFAULT,0,NB_MAX_AGC_SETTING},
-    { ConfigEntry_UInt8, EEPROM_CW_OFFSET_MODE,&ts.cw_offset_mode,CW_OFFSET_MODE_DEFAULT,0,CW_OFFSET_NUM-1},
-    { ConfigEntry_UInt8, EEPROM_FREQ_CONV_MODE,&ts.iq_freq_mode,FREQ_IQ_CONV_MODE_DEFAULT,0,FREQ_IQ_CONV_MODE_MAX},
-    { ConfigEntry_UInt8, EEPROM_LSB_USB_AUTO_SELECT,&ts.lsb_usb_auto_select,AUTO_LSB_USB_DEFAULT,0,AUTO_LSB_USB_MAX},
-    { ConfigEntry_UInt8, EEPROM_LCD_BLANKING_CONFIG,&ts.lcd_backlight_blanking,0,0,255},
-    { ConfigEntry_UInt32_16, EEPROM_VFO_MEM_MODE,&ts.vfo_mem_mode,0,0,255},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_2200M,&swrm.coupling_calc[COUPLING_2200M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_630M,&swrm.coupling_calc[COUPLING_630M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_160M,&swrm.coupling_calc[COUPLING_160M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_80M,&swrm.coupling_calc[COUPLING_80M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_40M,&swrm.coupling_calc[COUPLING_40M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_20M,&swrm.coupling_calc[COUPLING_20M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_15M,&swrm.coupling_calc[COUPLING_15M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt8, EEPROM_DETECTOR_COUPLING_COEFF_6M,&swrm.coupling_calc[COUPLING_6M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
-    { ConfigEntry_UInt32_16, EEPROM_VOLTMETER_CALIBRATE,&ts.voltmeter_calibrate,POWER_VOLTMETER_CALIBRATE_DEFAULT,POWER_VOLTMETER_CALIBRATE_MIN,POWER_VOLTMETER_CALIBRATE_MAX},
-    { ConfigEntry_UInt8, EEPROM_LOW_POWER_CONFIG,&ts.low_power_config,LOW_POWER_CONFIG_DEFAULT,LOW_POWER_CONFIG_MIN,LOW_POWER_CONFIG_MAX},
-    { ConfigEntry_UInt8, EEPROM_WATERFALL_COLOR_SCHEME,&ts.waterfall.color_scheme,WATERFALL_COLOR_DEFAULT,WATERFALL_COLOR_MIN,WATERFALL_COLOR_MAX},
-    { ConfigEntry_UInt8, EEPROM_WATERFALL_VERTICAL_STEP_SIZE,&ts.waterfall.vert_step_size,WATERFALL_STEP_SIZE_DEFAULT,WATERFALL_STEP_SIZE_MIN,WATERFALL_STEP_SIZE_MAX},
-    //{ ConfigEntry_Int32_16, EEPROM_WATERFALL_OFFSET,&ts.waterfall.offset,WATERFALL_OFFSET_DEFAULT,WATERFALL_OFFSET_MIN,WATERFALL_OFFSET_MAX},
-    { ConfigEntry_UInt8, EEPROM_SPECTRUM_SIZE,&ts.spectrum_size,SPECTRUM_SIZE_DEFAULT,0,SPECTRUM_BIG},
-    { ConfigEntry_UInt32_16, EEPROM_WATERFALL_CONTRAST,&ts.waterfall.contrast,WATERFALL_CONTRAST_DEFAULT,WATERFALL_CONTRAST_MIN,WATERFALL_CONTRAST_MAX},
-    { ConfigEntry_UInt8, EEPROM_WATERFALL_SPEED,&ts.waterfall.speed,WATERFALL_SPEED_DEFAULT,0,WATERFALL_SPEED_MAX},
-    //{ ConfigEntry_UInt8, EEPROM_SPECTRUM_SCOPE_NOSIG_ADJUST,&ts.spectrum_scope_nosig_adjust,SPECTRUM_SCOPE_NOSIG_ADJUST_DEFAULT,SPECTRUM_SCOPE_NOSIG_ADJUST_MIN,SPECTRUM_SCOPE_NOSIG_ADJUST_MAX},
-    //{ ConfigEntry_UInt8, EEPROM_WATERFALL_NOSIG_ADJUST,&ts.waterfall.nosig_adjust,SPECTRUM_SCOPE_NOSIG_ADJUST_DEFAULT,WATERFALL_NOSIG_ADJUST_MIN,WATERFALL_NOSIG_ADJUST_MAX},
-    //{ ConfigEntry_UInt8, EEPROM_FFT_WINDOW,&ts.fft_window_type,FFT_WINDOW_DEFAULT,0,FFT_WINDOW_MAX},
-    { ConfigEntry_UInt8, EEPROM_TXRX_SWITCH_AUDIO_MUTE_DELAY,&ts.txrx_switch_audio_muting_timing,TXRX_SWITCH_AUDIO_MUTE_DELAY_DEFAULT,0,TXRX_SWITCH_AUDIO_MUTE_DELAY_MAX},
-    { ConfigEntry_UInt8, EEPROM_FILTER_DISP_COLOUR,&ts.filter_disp_colour,0,0,SPEC_MAX_COLOUR},
-    { ConfigEntry_UInt32_16, EEPROM_FM_SUBAUDIBLE_TONE_GEN,&ts.fm_subaudible_tone_gen_select,FM_SUBAUDIBLE_TONE_OFF,0,NUM_SUBAUDIBLE_TONES},
-    { ConfigEntry_UInt32_16, EEPROM_FM_SUBAUDIBLE_TONE_DET,&ts.fm_subaudible_tone_det_select,FM_SUBAUDIBLE_TONE_OFF,0,NUM_SUBAUDIBLE_TONES},
-    { ConfigEntry_UInt8, EEPROM_FM_TONE_BURST_MODE,&ts.fm_tone_burst_mode,FM_TONE_BURST_OFF,0,FM_TONE_BURST_MAX},
-    { ConfigEntry_UInt8, EEPROM_FM_SQUELCH_SETTING,&ts.fm_sql_threshold,FM_SQUELCH_DEFAULT,0,FM_SQUELCH_MAX},
-    { ConfigEntry_UInt32_16, EEPROM_KEYBOARD_BEEP_FREQ,&ts.beep_frequency,DEFAULT_BEEP_FREQUENCY,MIN_BEEP_FREQUENCY,MAX_BEEP_FREQUENCY},
-    { ConfigEntry_UInt8, EEPROM_BEEP_LOUDNESS,&ts.beep_loudness,DEFAULT_BEEP_LOUDNESS,0,MAX_BEEP_LOUDNESS},
-    { ConfigEntry_UInt8, EEPROM_TUNE_POWER_LEVEL,&ts.tune_power_level,PA_LEVEL_TUNE_KEEP_CURRENT,PA_LEVEL_FULL,PA_LEVEL_TUNE_KEEP_CURRENT},
-    { ConfigEntry_UInt8, EEPROM_CAT_XLAT,&ts.xlat,1,0,1},
-    { ConfigEntry_UInt32_16, EEPROM_MANUAL_NOTCH,&ts.notch_frequency,800,200,5000},
-    { ConfigEntry_UInt32_16, EEPROM_MANUAL_PEAK,&ts.peak_frequency,750,200,5000},
-    { ConfigEntry_UInt8, EEPROM_DISPLAY_DBM,&ts.display_dbm,0,0,2},
-    { ConfigEntry_Int32_16, EEPROM_DBM_CALIBRATE,&ts.dbm_constant,0,-100,100},
-//    { ConfigEntry_UInt8, EEPROM_S_METER,&ts.s_meter,0,0,2},
-    { ConfigEntry_UInt8, EEPROM_DIGI_MODE_CONF,&ts.digital_mode,DigitalMode_None,0,DigitalMode_Num_Modes-1},
-	{ ConfigEntry_Int32_16, EEPROM_BASS_GAIN,&ts.bass_gain,2,-20,20},
-    { ConfigEntry_Int32_16, EEPROM_TREBLE_GAIN,&ts.treble_gain,0,-20,20},
-    { ConfigEntry_UInt8, EEPROM_TX_FILTER,&ts.tx_filter,0,0,TX_FILTER_BASS},
-	{ ConfigEntry_Int32_16, EEPROM_TX_BASS_GAIN,&ts.tx_bass_gain,4,-20,6},
-    { ConfigEntry_Int32_16, EEPROM_TX_TREBLE_GAIN,&ts.tx_treble_gain,4,-20,6},
-    { ConfigEntry_Int32_16, EEPROM_SAM_PLL_LOCKING_RANGE,&ads.pll_fmax_int,2500,50,8000},
-    { ConfigEntry_Int32_16, EEPROM_SAM_PLL_STEP_RESPONSE,&ads.zeta_int,65,1,100},
-    { ConfigEntry_Int32_16, EEPROM_SAM_PLL_BANDWIDTH,&ads.omegaN_int, 250,15,1000},
-    { ConfigEntry_Int32_16, EEPROM_I2C1_SPEED,&ts.i2c_speed[0], I2C1_SPEED_DEFAULT,1,20},
-    { ConfigEntry_Int32_16, EEPROM_I2C2_SPEED,&ts.i2c_speed[1], I2C2_SPEED_DEFAULT,1,20},
-    { ConfigEntry_UInt8, EEPROM_SAM_FADE_LEVELER,&ads.fade_leveler,1,0,1},
-    { ConfigEntry_UInt8, EEPROM_LINEOUT_GAIN,&ts.lineout_gain,LINEOUT_GAIN_DEFAULT,LINEOUT_GAIN_MIN,LINEOUT_GAIN_MAX},
-    { ConfigEntry_Int16, EEPROM_RTC_CALIB,&ts.rtc_calib,RTC_CALIB_PPM_DEFAULT, RTC_CALIB_PPM_MIN, RTC_CALIB_PPM_MAX},
-    { ConfigEntry_UInt8, EEPROM_CW_DECODER_ENABLE,&ts.cw_decoder_enable,1,0,1},
-	{ ConfigEntry_UInt16, EEPROM_Scope_Graticule_Ypos,&ts.graticulePowerupYpos,0,0,480},
-	{ ConfigEntry_UInt8, EEPROM_Freq_Display_Font,&ts.FreqDisplayFont,0,0,1},
+//  { ConfigEntry_UInt8    , EEPROM_MAX_RX_GAIN,&ts.max_rf_gain,MAX_RF_GAIN_DEFAULT,0,MAX_RF_GAIN_MAX},
+    { ConfigEntry_Int16    , EEPROM_TX_AUDIO_COMPRESS,&ts.tx_comp_level,1,0,1},
+    { ConfigEntry_UInt8    , EEPROM_TX_DISABLE,&ts.tx_disable,0,0,1},
+    { ConfigEntry_UInt16   , EEPROM_FLAGS1,&ts.flags1,FLAGS1_CONFIG_DEFAULT,0,0xffff},
+    { ConfigEntry_UInt16   , EEPROM_FLAGS2,&ts.flags2,FLAGS2_CONFIG_DEFAULT,0,0xffff},
+    { ConfigEntry_UInt16   , EEPROM_VERSION_MINOR,&ts.version_number_minor,0,0,255},
+    { ConfigEntry_UInt16   , EEPROM_VERSION_NUMBER,&ts.version_number_release,0,0,255},
+    { ConfigEntry_UInt16   , EEPROM_VERSION_BUILD,&ts.version_number_major,0,0,255},
+//  { ConfigEntry_UInt8    , EEPROM_NB_AGC_TIME_CONST,&ts.nb_agc_time_const,NB_AGC_DEFAULT,0,NB_MAX_AGC_SETTING},
+    { ConfigEntry_UInt8    , EEPROM_CW_OFFSET_MODE,&ts.cw_offset_mode,CW_OFFSET_MODE_DEFAULT,CW_OFFSET_LSB_RX,CW_OFFSET_LSB_RX },  // CW_OFFSET_NUM-1},
+    { ConfigEntry_UInt8    , EEPROM_FREQ_CONV_MODE,&ts.iq_freq_mode,FREQ_IQ_CONV_MODE_DEFAULT,0,FREQ_IQ_CONV_MODE_MAX},
+    { ConfigEntry_UInt8    , EEPROM_LSB_USB_AUTO_SELECT,&ts.lsb_usb_auto_select,AUTO_LSB_USB_DEFAULT,0,AUTO_LSB_USB_MAX},
+    { ConfigEntry_UInt8    , EEPROM_LCD_BLANKING_CONFIG,&ts.lcd_backlight_blanking,0,0,255},
+    { ConfigEntry_UInt32_16, EEPROM_VFO_MEM_MODE, &ts.vfo_mem_mode, 0, 0, 255 },
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_2200M,&swrm.coupling_calc[COUPLING_2200M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_630M,&swrm.coupling_calc[COUPLING_630M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_160M,&swrm.coupling_calc[COUPLING_160M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_80M,&swrm.coupling_calc[COUPLING_80M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_40M,&swrm.coupling_calc[COUPLING_40M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_20M,&swrm.coupling_calc[COUPLING_20M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_15M,&swrm.coupling_calc[COUPLING_15M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt8    , EEPROM_DETECTOR_COUPLING_COEFF_6M,&swrm.coupling_calc[COUPLING_6M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+    { ConfigEntry_UInt32_16, EEPROM_VOLTMETER_CALIBRATE       ,&ts.voltmeter_calibrate,POWER_VOLTMETER_CALIBRATE_DEFAULT,POWER_VOLTMETER_CALIBRATE_MIN,POWER_VOLTMETER_CALIBRATE_MAX},
+    { ConfigEntry_UInt8    , EEPROM_LOW_POWER_CONFIG          ,&ts.low_power_config,LOW_POWER_CONFIG_DEFAULT,LOW_POWER_CONFIG_MIN,LOW_POWER_CONFIG_MAX},
+    { ConfigEntry_UInt8    , EEPROM_WATERFALL_COLOR_SCHEME    ,&ts.waterfall.color_scheme,WATERFALL_COLOR_DEFAULT,WATERFALL_COLOR_MIN,WATERFALL_COLOR_MAX},
+    { ConfigEntry_UInt8    , EEPROM_WATERFALL_VERTICAL_STEP_SIZE,&ts.waterfall.vert_step_size,WATERFALL_STEP_SIZE_DEFAULT,WATERFALL_STEP_SIZE_MIN,WATERFALL_STEP_SIZE_MAX},
+  //{ ConfigEntry_Int32_16 , EEPROM_WATERFALL_OFFSET          ,&ts.waterfall.offset,WATERFALL_OFFSET_DEFAULT,WATERFALL_OFFSET_MIN,WATERFALL_OFFSET_MAX},
+    { ConfigEntry_UInt8    , EEPROM_SPECTRUM_SIZE             ,&ts.spectrum_size, 1 , 1 ,1}, // SPECTRUM_SIZE_DEFAULT,0,SPECTRUM_BIG},
+    { ConfigEntry_UInt32_16, EEPROM_WATERFALL_CONTRAST        ,&ts.waterfall.contrast,WATERFALL_CONTRAST_DEFAULT,WATERFALL_CONTRAST_MIN,WATERFALL_CONTRAST_MAX},
+    { ConfigEntry_UInt8    , EEPROM_WATERFALL_SPEED           ,&ts.waterfall.speed,WATERFALL_SPEED_DEFAULT, 1,WATERFALL_SPEED_MAX},
+    //{ ConfigEntry_UInt8  , EEPROM_SPECTRUM_SCOPE_NOSIG_ADJUST,&ts.spectrum_scope_nosig_adjust,SPECTRUM_SCOPE_NOSIG_ADJUST_DEFAULT,SPECTRUM_SCOPE_NOSIG_ADJUST_MIN,SPECTRUM_SCOPE_NOSIG_ADJUST_MAX},
+    //{ ConfigEntry_UInt8  , EEPROM_WATERFALL_NOSIG_ADJUST    ,&ts.waterfall.nosig_adjust,SPECTRUM_SCOPE_NOSIG_ADJUST_DEFAULT,WATERFALL_NOSIG_ADJUST_MIN,WATERFALL_NOSIG_ADJUST_MAX},
+    //{ ConfigEntry_UInt8  , EEPROM_FFT_WINDOW                ,&ts.fft_window_type,FFT_WINDOW_DEFAULT,0,FFT_WINDOW_MAX},
+    { ConfigEntry_UInt8    , EEPROM_TXRX_SWITCH_AUDIO_MUTE_DELAY, &ts.txrx_switch_audio_muting_timing, TXRX_SWITCH_AUDIO_MUTE_DELAY_DEFAULT, 0, TXRX_SWITCH_AUDIO_MUTE_DELAY_MAX },
+    { ConfigEntry_UInt8    , EEPROM_FILTER_DISP_COLOUR        ,&ts.filter_disp_colour,0,0,SPEC_MAX_COLOUR },
+    { ConfigEntry_UInt32_16, EEPROM_FM_SUBAUDIBLE_TONE_GEN    ,&ts.fm_subaudible_tone_gen_select,FM_SUBAUDIBLE_TONE_OFF,0,NUM_SUBAUDIBLE_TONES},
+    { ConfigEntry_UInt32_16, EEPROM_FM_SUBAUDIBLE_TONE_DET    ,&ts.fm_subaudible_tone_det_select,FM_SUBAUDIBLE_TONE_OFF,0,NUM_SUBAUDIBLE_TONES},
+    { ConfigEntry_UInt8    , EEPROM_FM_TONE_BURST_MODE        ,&ts.fm_tone_burst_mode,FM_TONE_BURST_OFF,0,FM_TONE_BURST_MAX},
+    { ConfigEntry_UInt8    , EEPROM_FM_SQUELCH_SETTING        ,&ts.fm_sql_threshold,FM_SQUELCH_DEFAULT,0,FM_SQUELCH_MAX},
+    { ConfigEntry_UInt32_16, EEPROM_KEYBOARD_BEEP_FREQ        ,&ts.beep_frequency,DEFAULT_BEEP_FREQUENCY,MIN_BEEP_FREQUENCY,MAX_BEEP_FREQUENCY},
+    { ConfigEntry_UInt8    , EEPROM_BEEP_LOUDNESS             ,&ts.beep_loudness,DEFAULT_BEEP_LOUDNESS,0,MAX_BEEP_LOUDNESS},
+    { ConfigEntry_UInt8    , EEPROM_TUNE_POWER_LEVEL          ,&ts.tune_power_level,PA_LEVEL_TUNE_KEEP_CURRENT,PA_LEVEL_FULL,PA_LEVEL_TUNE_KEEP_CURRENT},
+    { ConfigEntry_UInt8    , EEPROM_CAT_XLAT                  ,&ts.xlat,1,0,1},
+    { ConfigEntry_UInt32_16, EEPROM_MANUAL_NOTCH              ,&ts.notch_frequency,800,200,5000},
+    { ConfigEntry_UInt32_16, EEPROM_MANUAL_PEAK               ,&ts.peak_frequency,750,200,5000},
+    { ConfigEntry_UInt8    , EEPROM_DISPLAY_DBM               ,&ts.display_dbm,0,0,0},    ///  forc� a off pour ne pas afficher le dbm NIZZZ
+    { ConfigEntry_Int32_16 , EEPROM_DBM_CALIBRATE             ,&ts.dbm_constant,0,-100,100},
+//  { ConfigEntry_UInt8    , EEPROM_S_METER                   ,&ts.s_meter,0,0,2},
+    { ConfigEntry_UInt8    , EEPROM_DIGI_MODE_CONF            ,&ts.digital_mode,DigitalMode_None,0,DigitalMode_Num_Modes-1},
+	{ ConfigEntry_Int32_16 , EEPROM_BASS_GAIN                 ,&ts.bass_gain,3,-20,20},
+    { ConfigEntry_Int32_16 , EEPROM_TREBLE_GAIN               ,&ts.treble_gain,0,-20,20},
+    { ConfigEntry_UInt8    , EEPROM_TX_FILTER                 ,&ts.tx_filter, TX_FILTER_BASS, 0 ,TX_FILTER_WIDE },
+	{ ConfigEntry_Int32_16 , EEPROM_TX_BASS_GAIN              ,&ts.tx_bass_gain,   3,-20,20},
+    { ConfigEntry_Int32_16 , EEPROM_TX_TREBLE_GAIN            ,&ts.tx_treble_gain, 20 ,-30,30},
+    { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_LOCKING_RANGE     ,&ads.pll_fmax_int,2500,50,8000},
+    { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_STEP_RESPONSE     ,&ads.zeta_int,65,1,100},
+    { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_BANDWIDTH         ,&ads.omegaN_int, 250,15,1000},
+    { ConfigEntry_Int32_16 , EEPROM_I2C1_SPEED                ,&ts.i2c_speed[0], I2C1_SPEED_DEFAULT,1,20},
+    { ConfigEntry_Int32_16 , EEPROM_I2C2_SPEED                ,&ts.i2c_speed[1], I2C2_SPEED_DEFAULT,1,20},
+    { ConfigEntry_UInt8    , EEPROM_SAM_FADE_LEVELER          ,&ads.fade_leveler,1,0,1},
+    { ConfigEntry_UInt8    , EEPROM_LINEOUT_GAIN              ,&ts.lineout_gain,LINEOUT_GAIN_DEFAULT,LINEOUT_GAIN_MIN,LINEOUT_GAIN_MAX},
+    { ConfigEntry_Int16    , EEPROM_RTC_CALIB                 ,&ts.rtc_calib,RTC_CALIB_PPM_DEFAULT, RTC_CALIB_PPM_MIN, RTC_CALIB_PPM_MAX},
+    { ConfigEntry_UInt8    , EEPROM_CW_DECODER_ENABLE         ,&ts.cw_decoder_enable,1,0,1},
+	{ ConfigEntry_UInt16   , EEPROM_Scope_Graticule_Ypos      ,&ts.graticulePowerupYpos,0,0,480},
+	{ ConfigEntry_UInt8    , EEPROM_Freq_Display_Font         ,&ts.FreqDisplayFont,1,0,1},
+	{ ConfigEntry_UInt8    , EEPROM_TX_HPF_FILTER             ,&ts.tx_hpf_filter, 0, 0 ,7 },
 
 
     UI_C_EEPROM_BAND_5W_PF( 0,80,m)
@@ -238,23 +239,129 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
     UI_C_EEPROM_BAND_FULL_PF(14,2200,m)
     UI_C_EEPROM_BAND_FULL_PF(15,630,m)
     UI_C_EEPROM_BAND_FULL_PF(16,160,m)
-	{ ConfigEntry_UInt8, EEPROM_Scope_TRACE_HL_BW,&ts.scope_trace_BW_colour,SPEC_COLOUR_TRACEBW_DEFAULT,0,SPEC_MAX_COLOUR},
-	{ ConfigEntry_UInt8, EEPROM_Scope_TRACE_HL_BW_BGR,&ts.scope_backgr_BW_colour,SPEC_COLOUR_BACKGRBW_DEFAULT,0,100},
-	{ ConfigEntry_Int32, EEPROM_TScal0_High,&mchf_touchscreen.cal[0], 72816,-2147483648,2147483647},
-	{ ConfigEntry_Int32, EEPROM_TScal1_High,&mchf_touchscreen.cal[1], -5,-2147483648,2147483647},
-	{ ConfigEntry_Int32, EEPROM_TScal2_High,&mchf_touchscreen.cal[2], -1615424,-2147483648,2147483647},
-	{ ConfigEntry_Int32, EEPROM_TScal3_High,&mchf_touchscreen.cal[3], -1,-2147483648,2147483647},
-	{ ConfigEntry_Int32, EEPROM_TScal4_High,&mchf_touchscreen.cal[4], 74886,-2147483648,2147483647},
-	{ ConfigEntry_Int32, EEPROM_TScal5_High,&mchf_touchscreen.cal[5], -1630326,-2147483648,2147483647},
-	{ ConfigEntry_UInt16, EEPROM_NUMBER_OF_ENTRIES,&dummy_val16,EEPROM_FIRST_UNUSED,EEPROM_FIRST_UNUSED,EEPROM_FIRST_UNUSED},
-	{ ConfigEntry_UInt16, EEPROM_DSP_MODE_MASK,&ts.dsp_mode_mask,(1<<DSP_SWITCH_MAX)-1,1,(1<<DSP_SWITCH_MAX)-1},
-    { ConfigEntry_UInt8, EEPROM_ENABLE_PTT_RTS,&ts.enable_ptt_rts,0,0,1},
-	{ ConfigEntry_Int32_16, EEPROM_CW_DECODER_THRESH,&cw_decoder_config.thresh,CW_DECODER_THRESH_DEFAULT,CW_DECODER_THRESH_MIN,CW_DECODER_THRESH_MAX},
-	{ ConfigEntry_Int32_16, EEPROM_CW_DECODER_BLOCKSIZE,&cw_decoder_config.blocksize,CW_DECODER_BLOCKSIZE_DEFAULT,CW_DECODER_BLOCKSIZE_MIN,CW_DECODER_BLOCKSIZE_MAX},
-    // the entry below MUST be the last entry, and only at the last position Stop is allowed
-    {
-        ConfigEntry_Stop
-    }
+	{ ConfigEntry_UInt8   , EEPROM_Scope_TRACE_HL_BW    ,&ts.scope_trace_BW_colour,SPEC_COLOUR_TRACEBW_DEFAULT,0,SPEC_MAX_COLOUR},
+	{ ConfigEntry_UInt8   , EEPROM_Scope_TRACE_HL_BW_BGR,&ts.scope_backgr_BW_transparence,SPEC_COLOUR_BACKGRBW_DEFAULT,0,100},
+	{ ConfigEntry_Int32   , EEPROM_TScal0_High          ,&mchf_touchscreen.cal[0], 72816,-2147483648,2147483647},
+	{ ConfigEntry_Int32   , EEPROM_TScal1_High          ,  &mchf_touchscreen.cal[1], -5,-2147483648,2147483647},
+	{ ConfigEntry_Int32   , EEPROM_TScal2_High          ,  &mchf_touchscreen.cal[2], -1615424,-2147483648,2147483647},
+	{ ConfigEntry_Int32   , EEPROM_TScal3_High          ,  &mchf_touchscreen.cal[3], -1,-2147483648,2147483647},
+	{ ConfigEntry_Int32   , EEPROM_TScal4_High          ,  &mchf_touchscreen.cal[4], 74886,-2147483648,2147483647},
+	{ ConfigEntry_Int32   , EEPROM_TScal5_High          ,  &mchf_touchscreen.cal[5], -1630326,-2147483648,2147483647},
+	{ ConfigEntry_UInt16  , EEPROM_NUMBER_OF_ENTRIES    ,  &dummy_val16,EEPROM_FIRST_UNUSED,EEPROM_FIRST_UNUSED,EEPROM_FIRST_UNUSED},
+	{ ConfigEntry_UInt16  , EEPROM_DSP_MODE_MASK        ,  &ts.dsp_mode_mask,(1<<DSP_SWITCH_MAX)-1,1,(1<<DSP_SWITCH_MAX)-1},
+    { ConfigEntry_UInt8   , EEPROM_ENABLE_PTT_RTS       ,  &ts.enable_ptt_rts,0,0,1},
+	{ ConfigEntry_Int32_16, EEPROM_CW_DECODER_THRESH    ,  &cw_decoder_config.thresh,CW_DECODER_THRESH_DEFAULT,CW_DECODER_THRESH_MIN,CW_DECODER_THRESH_MAX},
+	{ ConfigEntry_Int32_16, EEPROM_CW_DECODER_BLOCKSIZE ,  &cw_decoder_config.blocksize,CW_DECODER_BLOCKSIZE_DEFAULT,CW_DECODER_BLOCKSIZE_MIN,CW_DECODER_BLOCKSIZE_MAX},
+	{ ConfigEntry_UInt8   , EEPROM_LCD_BRIGHTNESS       ,  &ts.lcd_backlight_brightness,3,0,5},
+	{ ConfigEntry_Int16   , EEPROM_TX_COMPRESS_OUT_GAIN ,  &ts.tx_comp_out_gain,25,10,40},
+	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_THRESH ,  &ts.agc_wdsp_hang_thresh, 40,1,120},
+	{ ConfigEntry_UInt8   , EEPROM_AGC_WDSP_ATTACK      ,  &ts.agc_wdsp_Attackk, 20 , 10, 90},
+	{ ConfigEntry_UInt8   , EEPROM_TX_BASS_EQUAL_FREQ   ,  &ts.tx_bass_filter_freq,  75, 0, 255},
+	{ ConfigEntry_UInt8   , EEPROM_TX_BASS_EQUAL_BW     ,  &ts.tx_bass_filter_bwidth,  99, 1, 99},
+	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_TIME   ,  &ts.agc_wdsp_hang_time, 100, 60,5000},
+	{ ConfigEntry_UInt8   , EEPROM_TX_TREB_EQUAL_FREQ   ,  &ts.tx_treb_filter_freq,  255, 0,255},
+	{ ConfigEntry_UInt8   , EEPROM_TX_TREB_EQUAL_BW,       &ts.tx_treb_filter_bwidth,  85, 70,99},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_40M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_40M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_40M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_40M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_20M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_20M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_20M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_20M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_17M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_17M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_17M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_17M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_15M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_15M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_15M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_15M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_12M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_12M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_12M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_12M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_160M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_160M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_160M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_160M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_60M_GAIN_BALANCE , &ts.rx_iq_gain_balance [IQ_60M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_60M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_60M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_30M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_30M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_30M_PHASE_BALANCE,&ts.rx_iq_phase_balance[IQ_30M].value[IQ_TRANS_ON], 0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_160M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_160M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+    { ConfigEntry_Int32_16, EEPROM_TX_IQ_160M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_160M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_60M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_60M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_60M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_60M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_40M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_40M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_40M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_40M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_30M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_30M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_30M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_30M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_20M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_20M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_20M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_20M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_17M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_17M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_17M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_17M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+ 	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_15M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_15M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+ 	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_15M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_15M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_12M_GAIN_BALANCE , &ts.tx_iq_gain_balance [IQ_12M].value[IQ_TRANS_ON], 0, MIN_IQ_GAIN_BALANCE,  MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_12M_PHASE_BALANCE, &ts.tx_iq_phase_balance[IQ_12M].value[IQ_TRANS_ON], 0, MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_UInt8   , EEPROM_TX_CODEC_GAIN_ENABLE   , &ts.codec_mic_boost_enable                        ,  0,    0,     1},
+	{ ConfigEntry_UInt8   , EEPROM_RX_HP_AUDIO_FILTER     , &ts.rx_hp_filter                                  ,  2,    1,    6 },
+	{ ConfigEntry_UInt8   , EEPROM_RX_BASS_EQUAL_FREQ     , &ts.rx_bass_filter_freq,   250,  0, 254},
+	{ ConfigEntry_UInt8   , EEPROM_RX_BASS_EQUAL_BW       , &ts.rx_bass_filter_bwidth,  98, 65,  99},
+	{ ConfigEntry_UInt8   , EEPROM_RX_TREBL_EQUAL_FREQ    , &ts.rx_trebl_filter_freq,   235,  0, 254},
+	{ ConfigEntry_UInt8   , EEPROM_RX_TREBL_EQUAL_BW      , &ts.rx_trebl_filter_bwidth,  99, 01,  99},
+	{ ConfigEntry_UInt8   , EEPROM_TX_BASS_SHEEFT         , &ts.tx_bass_sheeft,  15, 0,  20},
+	{ ConfigEntry_Int16   , EEPROM_MIC_NOISE_GATE_THRESH  , &ts.Noise_Gate_Thresh,  500, 0,  6000 },
+	{ ConfigEntry_UInt8   , EEPROM_MIC_REVERBARATION_ENABL, &ts.reverberation_enable,    0,  0,   255 },
+	{ ConfigEntry_UInt8   , EEPROM_MIC_REVERBARATION_RATE , &ts.reverberation_rate,     10,  0,   15 },
+	{ ConfigEntry_UInt8   , EEPROM_MIC_REVERBARATION_DELAY, &ts.reverberation_delay,    48, 10,  96 },
+	{ ConfigEntry_UInt8   , EEPROM_Scope_BAKGRD_HL_BW     , &ts.scope_backgr_BW_colour, 2 ,0,SPEC_MAX_COLOUR},
+	{ ConfigEntry_UInt8   , EEPROM_DETECTOR_COUPLING_COEFF_60M,&swrm.coupling_calc[COUPLING_60M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+	{ ConfigEntry_UInt8   , EEPROM_DETECTOR_COUPLING_COEFF_30M,&swrm.coupling_calc[COUPLING_30M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+	{ ConfigEntry_UInt8   , EEPROM_DETECTOR_COUPLING_COEFF_17M,&swrm.coupling_calc[COUPLING_17M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+	{ ConfigEntry_UInt8   , EEPROM_DETECTOR_COUPLING_COEFF_12M,&swrm.coupling_calc[COUPLING_12M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+	{ ConfigEntry_UInt8   , EEPROM_DETECTOR_COUPLING_COEFF_10M,&swrm.coupling_calc[COUPLING_10M],SWR_COUPLING_DEFAULT,SWR_COUPLING_MIN,SWR_COUPLING_MAX},
+	{ ConfigEntry_UInt8   , EEPROM_TX_MEDIUM_EQUAL_FREQ   , &ts.tx_medium_filter_freq,    100, 0,  254},
+	{ ConfigEntry_Int32_16, EEPROM_TX_MEDIUM_GAIN         , &ts.tx_medium_filter_gain  ,  14,-30,  30},
+	{ ConfigEntry_UInt8   , EEPROM_TX_MEDIUM_EQUAL_BW     , &ts.tx_medium_filter_bwidth,  85, 70,  99},
+
+
+	{ ConfigEntry_UInt8   , EEPROM_SPECTRUM_BACKGROUND_COL       ,&ts.spectrum_back_ground_color,  0, 0,   3},
+	{ ConfigEntry_UInt8   , EEPROM_SPECTRUM_BACKGROUND_TRANSP    ,&ts.scope_backgr_transparence , 45, 0, 100},
+//	{ ConfigEntry_UInt8   , EEPROM_DIGITAL_NOISE_REDUCTION_COEFF ,&ts.dsp_nr_reduction_coeff    ,  0, 0,  50},
+	{ ConfigEntry_UInt8   , EEPROM_DIG_EX_INPUT_GAIN             ,&ts.tx_DIG_EX_gain            ,  10, 5,  25},
+
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_160M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_160M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_160M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_160M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_60M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_60M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_60M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_60M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_40M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_40M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_40M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_40M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_30M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_30M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_30M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_30M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_20M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_20M].value[IQ_TRANS_OFF] ,0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_20M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_20M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_17M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_17M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_17M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_17M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_15M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_15M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_15M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_15M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_12M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_12M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
+	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_12M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_12M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+
+	/*	{ ConfigEntry_UInt8x2, EEPROM_SMETER_ALPHAS           , &buf_val_16 , 0, 0,  0},
+
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE0        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE1        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE2        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE3        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE4        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE5        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE6        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE7        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE8        , &buf_val_32 , 0, 0,  0},
+	{ ConfigEntry_Int32   , EEPROM_FUTURE_RESERVE9        , &buf_val_32 , 0, 0,  0},  */
+
+	// the entry below MUST be the last entry, and only at the last position Stop is allowed
+    { ConfigEntry_Stop  }
 };
 
 // TODO: LINEAR SEARCH IS VERY BAD FOR LARGER SETS, replace with more clever strategy.
@@ -288,13 +395,13 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_Bool(uint16_t addr, v
 }
 */
 
-static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8(uint16_t addr, volatile uint8_t* val_ptr, uint16_t default_val, uint16_t min_val, uint16_t max_val )
+static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8 ( uint16_t addr, volatile uint8_t* val_ptr, uint16_t default_val, uint16_t min_val, uint16_t max_val )
 {
     uint16_t value;
-    if(ConfigStorage_ReadVariable(addr, &value) == 0)
+    if(ConfigStorage_ReadVariable ( addr, &value) == 0)
     {
         *val_ptr = value;
-        if (*val_ptr < min_val || *val_ptr > max_val || ts.load_eeprom_defaults)
+        if ( *val_ptr < min_val || *val_ptr > max_val || ts.load_eeprom_defaults )
         {
             *val_ptr = default_val;
         }
@@ -303,8 +410,8 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8(uint16_t addr, 
 
 static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8x2(uint16_t addr, volatile uint16_t* val_ptr, uint16_t default_val, uint16_t min_val, uint16_t max_val )
 {
-    uint16_t value;
-    if(ConfigStorage_ReadVariable(addr, &value) == 0)
+    uint16_t  value;
+    if ( ConfigStorage_ReadVariable (addr, &value ) == 0 )
     {
         *val_ptr = value;
 
@@ -337,10 +444,10 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt16(uint16_t addr,
 static void __attribute__ ((noinline)) UiReadSettingEEPROM_Int16(uint16_t addr, volatile int16_t* val_ptr, int16_t default_val, int16_t min_val, int16_t max_val )
 {
     int16_t value;
-    if(ConfigStorage_ReadVariable(addr, (uint16_t*)&value) == 0)
+    if(ConfigStorage_ReadVariable ( addr, (uint16_t*)&value ) == 0 )
     {
         *val_ptr = value;
-        if (*val_ptr < min_val || *val_ptr > max_val || ts.load_eeprom_defaults)
+        if (*val_ptr < min_val || *val_ptr > max_val || ts.load_eeprom_defaults )
         {
             *val_ptr = default_val;
         }
@@ -418,18 +525,18 @@ static uint16_t UiWriteSettingEEPROM_UInt32(uint16_t addrH, uint16_t addrL, uint
     return retval;
 }
 
-static uint32_t UiConfiguration_LimitFrequency(const BandInfo* bandInfo, const uint32_t freq)
+static uint32_t UiConfiguration_LimitFrequency ( const BandInfo* bandInfo, const uint32_t freq )
 {
     uint32_t retval = freq;
 
-    if(ts.load_eeprom_defaults || ts.load_freq_mode_defaults)
+    if ( ts.load_eeprom_defaults || ts.load_freq_mode_defaults )
     {
         // Load default for this band
         retval = bandInfo->tune + DEFAULT_FREQ_OFFSET;
     }
     else
     {
-        if((ts.flags2 & FLAGS2_FREQ_MEM_LIMIT_RELAX) || RadioManagement_FreqIsInBand(bandInfo,freq))       // xxxx relax memory-save frequency restrictions and is it within the allowed range?
+        if ( (ts.flags2 & FLAGS2_FREQ_MEM_LIMIT_RELAX ) || RadioManagement_FreqIsInBand ( bandInfo, freq ))       // xxxx relax memory-save frequency restrictions and is it within the allowed range?
         {
             retval = freq;
         }
@@ -442,7 +549,7 @@ static uint32_t UiConfiguration_LimitFrequency(const BandInfo* bandInfo, const u
     return retval;
 }
 
-void UiReadSettingsBandMode(const uint8_t i, const uint16_t band_mode, const uint16_t band_freq_high, const uint16_t  band_freq_low, VfoReg* vforeg)
+void UiReadSettingsBandMode ( const uint8_t i, const uint16_t band_mode, const uint16_t band_freq_high, const uint16_t  band_freq_low, VfoReg* vforeg)
 {
     uint32_t value32;
     uint16_t value16;
@@ -511,6 +618,7 @@ static uint16_t UiWriteSettingEEPROM_UInt16_Array_2_Dim(uint16_t* array_ptr, con
 }
 #endif
 
+
 static uint16_t UiWriteSettingEEPROM_Filter()
 {
     uint16_t retval = HAL_OK;
@@ -525,51 +633,47 @@ static uint16_t UiWriteSettingEEPROM_Filter()
     return retval;
 }
 
-void UiReadSettingEEPROM_Filter()
+//******************************************************************************************
+
+void   UiReadSettingEEPROM_Filter()
 {
     int idx, mem_idx;
+
     for (idx = 0; idx < FILTER_MODE_MAX; idx++)
     {
         for (mem_idx = 0; mem_idx < FILTER_PATH_MEM_MAX; mem_idx++)
         {
-            UiReadSettingEEPROM_UInt16(EEPROM_FILTER_PATH_MAP_BASE+idx*FILTER_PATH_MEM_MAX+mem_idx,&(ts.filter_path_mem[idx][mem_idx]),0,0,AUDIO_FILTER_PATH_NUM-1);
+            UiReadSettingEEPROM_UInt16(EEPROM_FILTER_PATH_MAP_BASE+idx*FILTER_PATH_MEM_MAX+mem_idx,&(ts.filter_path_mem[idx][mem_idx]),7,1,AUDIO_FILTER_PATH_NUM-1);
         }
     }
 }
+
+//*******************************************************************************************
+
 
 void UiConfiguration_ReadConfigEntryData(const ConfigEntryDescriptor* ced_ptr)
 {
     switch(ced_ptr->typeId)
     {
 
-    case ConfigEntry_UInt8:
-        UiReadSettingEEPROM_UInt8(ced_ptr->id,ced_ptr->val_ptr,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-        break;
-    case ConfigEntry_UInt16:
-        UiReadSettingEEPROM_UInt16(ced_ptr->id,ced_ptr->val_ptr,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-        break;
-    case ConfigEntry_UInt32_16:
-        UiReadSettingEEPROM_UInt32_16(ced_ptr->id,ced_ptr->val_ptr,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-        break;
-    case ConfigEntry_Int32_16:
-        UiReadSettingEEPROM_Int32_16(ced_ptr->id,ced_ptr->val_ptr,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-        break;
-    case ConfigEntry_Int16:
-        UiReadSettingEEPROM_Int16(ced_ptr->id,ced_ptr->val_ptr,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-        break;
-    case ConfigEntry_Int32:
-    {
-    	uint32_t Data;
-    	uint16_t DataLo,DataHi;
-    	UiReadSettingEEPROM_UInt16(ced_ptr->id,&DataHi,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-    	UiReadSettingEEPROM_UInt16(ced_ptr->id+1,&DataLo,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-    	Data=DataHi<<16|DataLo;
-    	*(int32_t*)ced_ptr->val_ptr=(int32_t)Data;
-    }
-    	break;
-//  case ConfigEntry_Bool:
-//    UiReadSettingEEPROM_Bool(ced_ptr->id,ced_ptr->val_ptr,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
-//    break;
+		case ConfigEntry_UInt8    : UiReadSettingEEPROM_UInt8     ( ced_ptr->id, ced_ptr->val_ptr, ced_ptr->val_default, ced_ptr->val_min, ced_ptr->val_max); break;
+		case ConfigEntry_UInt16   : UiReadSettingEEPROM_UInt16    ( ced_ptr->id, ced_ptr->val_ptr, ced_ptr->val_default, ced_ptr->val_min, ced_ptr->val_max); break;
+		case ConfigEntry_UInt32_16:	UiReadSettingEEPROM_UInt32_16 ( ced_ptr->id, ced_ptr->val_ptr, ced_ptr->val_default, ced_ptr->val_min, ced_ptr->val_max); break;
+		case ConfigEntry_Int32_16 :	UiReadSettingEEPROM_Int32_16  ( ced_ptr->id, ced_ptr->val_ptr, ced_ptr->val_default, ced_ptr->val_min, ced_ptr->val_max); break;
+		case ConfigEntry_Int16    :	UiReadSettingEEPROM_Int16     ( ced_ptr->id, ced_ptr->val_ptr, ced_ptr->val_default, ced_ptr->val_min, ced_ptr->val_max); break;
+		case ConfigEntry_Int32:
+									{
+										uint32_t Data;
+										uint16_t DataLo,DataHi;
+										UiReadSettingEEPROM_UInt16(ced_ptr->id,&DataHi,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
+										UiReadSettingEEPROM_UInt16(ced_ptr->id+1,&DataLo,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
+										Data=DataHi<<16|DataLo;
+										*(int32_t*)ced_ptr->val_ptr=(int32_t)Data;
+									}
+									break;
+					//  case ConfigEntry_Bool:
+					//    UiReadSettingEEPROM_Bool(ced_ptr->id,ced_ptr->val_ptr,ced_ptr->val_default,ced_ptr->val_min,ced_ptr->val_max);
+					//    break;
 
     }
 }
@@ -579,32 +683,22 @@ uint16_t UiConfiguration_WriteConfigEntryData(const ConfigEntryDescriptor* ced_p
     switch(ced_ptr->typeId)
     {
 
-    case ConfigEntry_UInt8:
-        retval = UiWriteSettingEEPROM_UInt16(ced_ptr->id,*(uint8_t*)ced_ptr->val_ptr);
-        break;
-    case ConfigEntry_UInt16:
-        retval = UiWriteSettingEEPROM_UInt16(ced_ptr->id,*(uint16_t*)ced_ptr->val_ptr);
-        break;
-    case ConfigEntry_UInt32_16:
-        retval = UiWriteSettingEEPROM_UInt32_16(ced_ptr->id,*(uint32_t*)ced_ptr->val_ptr);
-        break;
-    case ConfigEntry_Int32_16:
-        retval = UiWriteSettingEEPROM_Int32_16(ced_ptr->id,*(int32_t*)ced_ptr->val_ptr);
-        break;
-    case ConfigEntry_Int16:
-        retval = UiWriteSettingEEPROM_Int16(ced_ptr->id,*(int16_t*)ced_ptr->val_ptr);
-        break;
-    case ConfigEntry_Int32:
-    {
-    	int32_t Data=*(int32_t*)ced_ptr->val_ptr;
-    	uint16_t DataHi,DataLo;
-    	DataHi=(uint16_t)((Data>>16)&0xffff);
-    	DataLo=(uint16_t)(Data&0xffff);
+		case ConfigEntry_UInt8    :	retval = UiWriteSettingEEPROM_UInt16    ( ced_ptr->id, *(uint8_t* ) ced_ptr->val_ptr);	break;
+		case ConfigEntry_UInt16   :	retval = UiWriteSettingEEPROM_UInt16    ( ced_ptr->id, *(uint16_t*) ced_ptr->val_ptr);	break;
+		case ConfigEntry_UInt32_16:	retval = UiWriteSettingEEPROM_UInt32_16 ( ced_ptr->id, *(uint32_t*) ced_ptr->val_ptr);	break;
+		case ConfigEntry_Int32_16 :	retval = UiWriteSettingEEPROM_Int32_16  ( ced_ptr->id, *(int32_t* ) ced_ptr->val_ptr);	break;
+		case ConfigEntry_Int16    : retval = UiWriteSettingEEPROM_Int16     ( ced_ptr->id, *(int16_t* ) ced_ptr->val_ptr);	break;
+		case ConfigEntry_Int32    :
+									{
+										int32_t  Data=*(int32_t*)ced_ptr->val_ptr;
+										uint16_t DataHi, DataLo;
+										DataHi = (uint16_t) ((Data>>16)&0xffff);
+										DataLo = (uint16_t)  (Data     &0xffff);
 
-        retval = UiWriteSettingEEPROM_UInt16(ced_ptr->id,DataHi);
-        retval = UiWriteSettingEEPROM_UInt16(ced_ptr->id+1,DataLo);
-    }
-    	break;
+										retval = UiWriteSettingEEPROM_UInt16(ced_ptr->id,DataHi);
+										retval = UiWriteSettingEEPROM_UInt16(ced_ptr->id+1,DataLo);
+									}
+									break;
 //  case ConfigEntry_Bool:
 //    UiWriteSettingEEPROM_Bool(ced_ptr->id,*(bool*)ced_ptr->val_ptr,ced_ptr->val_default);
 //    break;
@@ -618,7 +712,7 @@ uint16_t UiConfiguration_WriteConfigEntries()
     int idx;
     for (idx = 0; ConfigEntryInfo[idx].typeId != ConfigEntry_Stop ; idx++)
     {
-        retval = UiConfiguration_WriteConfigEntryData(&ConfigEntryInfo[idx]);
+        retval = UiConfiguration_WriteConfigEntryData( &ConfigEntryInfo[idx] );
     }
     return retval;
 }
@@ -628,7 +722,7 @@ static void __attribute__ ((noinline)) UiConfiguration_ReadConfigEntries()
     int idx;
     for (idx = 0; ConfigEntryInfo[idx].typeId != ConfigEntry_Stop ; idx++)
     {
-        UiConfiguration_ReadConfigEntryData(&ConfigEntryInfo[idx]);
+        UiConfiguration_ReadConfigEntryData( &ConfigEntryInfo[idx] );
     }
 }
 
@@ -663,23 +757,22 @@ void UiConfiguration_UpdateMacroCap(void)
 //* Functions called    :
 //*----------------------------------------------------------------------------
 //
-void UiConfiguration_LoadEepromValues(void)
+void   UiConfiguration_LoadEepromValues( void )
 {
-    bool dspmode = ts.dsp_inhibit;
-    ts.dsp_inhibit = 1;     // disable dsp while loading EEPROM data
+    ts.dsp_inhibit++;   // disable dsp while loading EEPROM data
 
-    uint16_t value16;
-    uint32_t value32;
+    uint16_t  value16;
+    uint32_t  value32;
 
     UiConfiguration_ReadConfigEntries();
 
     // ------------------------------------------------------------------------------------
     // Try to read Band and Mode saved values, but read freq-limit-settings before
-    UiReadSettingEEPROM_UInt8x2(EEPROM_BAND_MODE,&value16,(DEMOD_LSB<< 8) | (BAND_MODE_80),0, (DEMOD_MAX_MODE<< 8) | (MAX_BANDS -1));
+    UiReadSettingEEPROM_UInt8x2( EEPROM_BAND_MODE, &value16, (DEMOD_LSB<< 8) | (BAND_MODE_80), 0, (DEMOD_MAX_MODE<< 8) | (MAX_BANDS -1));
     {
-        ts.band = value16 & 0xFF;
-        ts.dmod_mode = (value16 >> 8) & 0xFF;       // demodulator mode might not be right for saved band!
-        if(ts.load_freq_mode_defaults)       // freq defaults to be loaded?
+        ts.band      =  value16       & 0xFF;
+        ts.dmod_mode = (value16 >> 8) & 0xFF;   // demodulator mode might not be right for saved band!
+        if(ts.load_freq_mode_defaults)          // freq defaults to be loaded?
         {
             ts.dmod_mode = DEMOD_LSB;           // yes - set to LSB
         }
@@ -687,7 +780,7 @@ void UiConfiguration_LoadEepromValues(void)
     }
     // ------------------------------------------------------------------------------------
     // Try to read Freq saved values
-    UiReadSettingEEPROM_UInt32(EEPROM_FREQ_HIGH,EEPROM_FREQ_LOW,&value32,0,0,0xffffffff);
+    UiReadSettingEEPROM_UInt32( EEPROM_FREQ_HIGH, EEPROM_FREQ_LOW, &value32, 0, 0, 0xffffffff);
     {
 
         // We have loaded from eeprom the last used band, but can't just
@@ -698,17 +791,18 @@ void UiConfiguration_LoadEepromValues(void)
     // Try to read saved per-band values for frequency, mode and filter
 
 
-    uint8_t i;
-    for(i = 0; i < MAX_BANDS; i++)
+    uint8_t    i;
+    for ( i = 0; i < MAX_BANDS; i++ )
     {
         // read from stored bands
         // UiReadSettingsBandMode(i,EEPROM_BAND0_MODE,EEPROM_BAND0_FREQ_HIGH,EEPROM_BAND0_FREQ_LOW, &vfo[VFO_WORK].band[i]);
-        UiReadSettingsBandMode(i,EEPROM_BAND0_MODE_A,EEPROM_BAND0_FREQ_HIGH_A,EEPROM_BAND0_FREQ_LOW_A, &vfo[VFO_A].band[i]);
-        UiReadSettingsBandMode(i,EEPROM_BAND0_MODE_B,EEPROM_BAND0_FREQ_HIGH_B,EEPROM_BAND0_FREQ_LOW_B, &vfo[VFO_B].band[i]);
+
+    	UiReadSettingsBandMode ( i, EEPROM_BAND0_MODE_A, EEPROM_BAND0_FREQ_HIGH_A, EEPROM_BAND0_FREQ_LOW_A, &vfo[VFO_A].band[i] );
+        UiReadSettingsBandMode ( i, EEPROM_BAND0_MODE_B, EEPROM_BAND0_FREQ_HIGH_B, EEPROM_BAND0_FREQ_LOW_B, &vfo[VFO_B].band[i] );
     }
 
 
-    UiReadSettingEEPROM_UInt32( EEPROM_XVERTER_OFFSET_HIGH,EEPROM_XVERTER_OFFSET_LOW,&ts.xverter_offset,0,0,XVERTER_OFFSET_MAX);
+    UiReadSettingEEPROM_UInt32 ( EEPROM_XVERTER_OFFSET_HIGH,EEPROM_XVERTER_OFFSET_LOW,&ts.xverter_offset,0,0,XVERTER_OFFSET_MAX);
 
     UiReadSettingEEPROM_Filter();
 
@@ -716,31 +810,61 @@ void UiConfiguration_LoadEepromValues(void)
     UiConfiguration_UpdateMacroCap();
 
     // post configuration loading actions below
-    df.tuning_step  = tune_steps[df.selected_idx];
+    df.tuning_step  = tune_steps[df.selected_idx];   Gett_Tune_ordre_integer(df.tuning_step);
     ts.tx_gain[TX_AUDIO_LINEIN_R] = ts.tx_gain[TX_AUDIO_LINEIN_L];
     // TODO: Right and Left Settings stored
 
     {
         ulong bias_val;
         bias_val = BIAS_OFFSET + (ts.pa_bias * 2);
-        if(bias_val > 255)
-            bias_val = 255;
+        if(bias_val > 255)  bias_val = 255;
 
         // Set DAC Channel1 DHR12L register with bias value
-        HAL_DAC_SetValue(&hdac,DAC_CHANNEL_2,DAC_ALIGN_8B_R,bias_val);
+        HAL_DAC_SetValue ( &hdac, DAC_CHANNEL_2, DAC_ALIGN_8B_R, bias_val);
     }
 
-    ts.alc_decay_var = ts.alc_decay;
 
-    ts.alc_tx_postfilt_gain_var =  ts.alc_tx_postfilt_gain; // "working" copy of variable
+							// Forcer a  OFF les flags masqués suivants
+
+	ts.flags2                      &= ~FLAGS2_FREQ_MEM_LIMIT_RELAX;    // pas de memorisation des freq hors bandes
+	ts.flags2                      &= ~FLAGS2_HIGH_BAND_BIAS_REDUCE;   // pas de reduction du Bias pour bandes hautes
+	ts.flags2                      &= ~FLAGS2_LOW_BAND_BIAS_REDUCE;    // pas de reduction du Bias pour bandes basses
+	cw_decoder_config.show_CW_LED   = ((ts.flags2  & FLAGS2_SHOW_CW_LED) != 0);
+
+	ts.twenty_watt_meter = ((ts.flags2  & FLAGS2_TWENTY_WATT_POWER) != 0);
+
+    if (sd.magnify!=0) { sd.magnify = 2; } // forcee au spectre de  96Khz , Zoom x1 ou Zoom X8 seulement
+    ts.alc_decay_var                = ts.alc_tx_custom_comp_decay;
+    ts.alc_tx_postfilt_gain_var     = ts.alc_tx_custom_comp_gain; // "working" copy of variable
+    ts.alc_tx_postfilt_gain_float   = ( 0.1 * ts.alc_tx_postfilt_gain_var) + 0.9 ;
+ // ts.nb_setting_float             = ( 15 - ts.nb_setting) * 0.5  + 3 ;  // copy float du NB setting
+    ts.nb_setting_int_coeff         =   15 - ts.nb_setting         + 6 ;
+    ts.rx_gain[RX_AUDIO_SPKR].max   =  70;
+    ts.FreqDisplayFont              =   1;  // forcer l'affichage de frequence à une fonte en gras
+
+    UiMenu_Set_Spectrum_BackGround_color (NULL, NULL); // NIZZ
+
+    if (ts.dsp_active & DSP_NR_ENABLE)   ts.enc_two_mode = ENC_TWO_MODE_NR;   // Activer en orange le PAD du DSP-DNR
 
     // set xlate to -12KHz at first start
-    if(ts.version_number_release == 0 && ts.version_number_minor == 0 && ts.version_number_major == 0 )
-         {
+    if ( ts.version_number_release == 0 && ts.version_number_minor == 0 && ts.version_number_major == 0 )
+    {
         ts.iq_freq_mode = FREQ_IQ_CONV_MODE_DEFAULT;
     }
 
-    ts.dsp_inhibit = dspmode;       // restore setting
+    ts.last_CW_side_tone_freq_A = ts.last_CW_side_tone_freq_B = ts.cw_sidetone_freq;
+
+    ts.rf_codec_gain = 9;  // pour forcer le gain hardware entrée codec a automatique  a chaque demarrage radio, on peut le changer en cours de fonctionnement
+
+
+    ts.tx_equalizer  = ( ts.reverberation_enable & 0xF0 ) / 16;  // extraire le tx_equalizer à partir du reverberation_ènable
+    if (ts.tx_equalizer > 0) { ts.EQ_custom_display = false; }  else { ts.EQ_custom_display = true; }
+
+    ts.float_Fix_audio_Gain       = 0.4 + 0.2 * ts.agc_wdsp_hang_enable;
+
+    if ( ts.agc_wdsp_slope )  {  ts.agc_wdsp_action = 1; } else ts.agc_wdsp_action = 0; // Affichage AGC PAd
+
+    if (ts.dsp_inhibit)  { ts.dsp_inhibit--; } ;  // restore setting
 }
 
 // ********************************************************************************************************************
@@ -786,7 +910,7 @@ uint16_t UiConfiguration_SaveEepromValues(void)
 
             // TODO: move value to a static variable, so that it can be read/written with standard approach
             retval = UiWriteSettingEEPROM_UInt8x2(EEPROM_BAND_MODE,
-                                       ((uint16_t)ts.band| dmod_mode << 8));
+                                       ((uint16_t)ts.band |  dmod_mode << 8));
 
             // TODO: move value to a static variable, so that it can be read/written with standard approach
             if (retval == HAL_OK)

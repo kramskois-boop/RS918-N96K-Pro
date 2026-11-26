@@ -228,7 +228,7 @@ void HAL_DisableMemorySwappingBank(void);
 /**
   * @}
   */
-
+__IO uint32_t uwTick;
 /**
   * @}
   */

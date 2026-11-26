@@ -60,6 +60,11 @@
   * @brief general defines for the usb device library file
   * @{
   */ 
+
+ //  uint8_t *     USBD_FS_DeviceDescriptor          ( USBD_SpeedTypeDef speed , uint16_t *length);
+
+
+
 #define AUDIO_DESCRIPTOR_TYPE                         0x21
 #define USB_DEVICE_CLASS_AUDIO                        0x01
 #define AUDIO_SUBCLASS_AUDIOCONTROL                   0x01
@@ -83,15 +88,25 @@
 #define AUDIO_STANDARD_ENDPOINT_DESC_SIZE             0x09
 #define AUDIO_STREAMING_ENDPOINT_DESC_SIZE            0x07
 
-#define AUDIO_SAMPLE_FREQ(frq)      (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
-#define AUDIO_IN_PACKET                              (uint32_t)(((USBD_AUDIO_IN_FREQ * USBD_AUDIO_IN_CHANNELS * 2) /1000))
-#define AUDIO_PACKET_SZE(frq,channels)          (uint8_t)(((frq * channels * 2)/1000) & 0xFF), \
-                                       (uint8_t)((((frq * channels * 2)/1000) >> 8) & 0xFF)
-#define SAMPLE_FREQ(frq)               (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
+#define AUDIO_SAMPLE_FREQ(frq)                       (uint8_t)((uint32_t)frq<<1),(uint8_t)(((uint32_t)frq>>7)),(uint8_t)(((uint32_t)frq>>15))
+
+#define AUDIO_IN_PACKET                              (uint32_t)(((USBD_AUDIO_IN_FREQ*USBD_AUDIO_IN_CHANNELS*2)/1000))
+#define AUDIO_PACKET_SZE(frq,channels)               (uint8_t)((((uint32_t)frq*channels*2)/1000)&0xFF),(uint8_t)(((((uint32_t)frq*channels*2)/1000)>>8)& 0xFF)
 
 
-#define USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE 0x0B
-#define USB_INTERFACE_ASSOCIATION_DESC_SIZE 0x08
+// #define AUDIO_IN_PACKET                              256
+// #define AUDIO_PACKET_SZE(frq,channels)               (uint8_t)(256&0xFF),(uint8_t)((256>>8)& 0xFF)
+
+
+#define SAMPLE_FREQ(frq)                             (uint8_t)((uint32_t)frq<<1),(uint8_t)(((uint32_t)frq>>7)),(uint8_t)(((uint32_t)frq>>15))
+
+
+
+
+
+
+#define USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE   0x0B
+#define USB_INTERFACE_ASSOCIATION_DESC_SIZE         0x08
 
 #define USB_DEVICE_CLASS_MISCELLANEOUS 0xEF
 
@@ -111,6 +126,7 @@
 #define STANDARD_ENDPOINT_DESC_SIZE             0x09
 
 #define USB_ENDPOINT_TYPE_ISOCHRONOUS                 0x01
+#define USB_ENDPOINT_TYPE_ASYNCHRONOUS                0x05                 // Niz96
 #define AUDIO_ENDPOINT_GENERAL                        0x01
 
 #define AUDIO_INPUT_TERMINAL_DESC_SIZE                0x0C

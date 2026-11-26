@@ -56,7 +56,7 @@ enum
     BUTTON_BNDP_PRESSED,    // 13
     BUTTON_F5_PRESSED,  	// 14 - Press and release handled in UiDriverProcessFunctionKeyClick()
     BUTTON_G1_PRESSED,  	// 15
-    BUTTON_PWR_PRESSED,   // 16 - Used for press and release
+    BUTTON_PWR_PRESSED,     // 16 - Used for press and release
     TOUCHSCREEN_ACTIVE, 	// 17 - Touchscreen touched, needs to last entry before BUTTON_NUM,
 #ifdef UI_BRD_OVI40
     BUTTON_F6_PRESSED,      // we have one more function button

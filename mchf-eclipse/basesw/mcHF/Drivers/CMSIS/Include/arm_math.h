@@ -1191,12 +1191,9 @@ extern "C"
    * @param[out] pDst       points to the block of output data.
    * @param[in]  blockSize  number of samples to process.
    */
-  void arm_fir_f32(
-  const arm_fir_instance_f32 * S,
-  float32_t * pSrc,
-  float32_t * pDst,
-  uint32_t blockSize);
+  void arm_fir_f32      ( const arm_fir_instance_f32 * S,  float32_t * pSrc,  float32_t * pDst,  uint32_t blockSize);
 
+  void arm_fir_f32_Nizar( const arm_fir_instance_f32 * S,float32_t * pSrc,float32_t * pDst,uint32_t blockSize);
 
   /**
    * @brief  Initialization function for the floating-point FIR filter.
@@ -1348,7 +1345,7 @@ extern "C"
   float32_t * pDst,
   uint32_t blockSize);
 
-
+  void arm_biquad_cascade_df1_f32_Nizar( const arm_biquad_casd_df1_inst_f32 * S, float32_t * pSrc,	float32_t * pDst, uint32_t  blockSize);
   /**
    * @brief  Initialization function for the floating-point Biquad cascade filter.
    * @param[in,out] S          points to an instance of the floating-point Biquad cascade structure.
@@ -2511,7 +2508,9 @@ void arm_rfft_fast_f32(
   float32_t * pDst,
   uint32_t blockSize);
 
+  void  arm_scale_f32_saturation_30000( float32_t * pSrc,  float32_t scale,  float32_t * pDst,  uint32_t blockSize);
 
+  void  arm_scale_interpolate_2x_f32_Nizar( float32_t * pSrc,  float32_t scale,  float32_t * pDst,  uint32_t blockSize );
   /**
    * @brief Multiplies a Q7 vector by a scalar.
    * @param[in]  pSrc        points to the input vector
@@ -2559,8 +2558,7 @@ void arm_rfft_fast_f32(
   q31_t * pDst,
   uint32_t blockSize);
 
-
-  /**
+   /**
    * @brief Q7 vector absolute value.
    * @param[in]  pSrc       points to the input buffer
    * @param[out] pDst       points to the output buffer
@@ -3304,12 +3302,9 @@ void arm_rfft_fast_f32(
    * @param[out] pDst       points to the block of output data
    * @param[in]  blockSize  number of input samples to process per call.
    */
-  void arm_fir_decimate_f32(
-  const arm_fir_decimate_instance_f32 * S,
-  float32_t * pSrc,
-  float32_t * pDst,
-  uint32_t blockSize);
+   void arm_fir_decimate_f32( const arm_fir_decimate_instance_f32 * S, float32_t * pSrc, float32_t * pDst, uint32_t blockSize);
 
+  void arm_fir_decimate_f32_Nizar ( const  arm_fir_decimate_instance_f32 * S,	float32_t * pSrc, float32_t * pDst,  uint32_t blockSize );
 
   /**
    * @brief  Initialization function for the floating-point FIR decimator.
@@ -3338,6 +3333,7 @@ void arm_rfft_fast_f32(
    * @param[out] pDst       points to the block of output data
    * @param[in]  blockSize  number of input samples to process per call.
    */
+
   void arm_fir_decimate_q15(
   const arm_fir_decimate_instance_q15 * S,
   q15_t * pSrc,
@@ -3541,6 +3537,9 @@ void arm_rfft_fast_f32(
   float32_t * pDst,
   uint32_t blockSize);
 
+
+
+  void arm_fir_interpolate_f32_Nizar( const arm_fir_interpolate_instance_f32 * S, float32_t * pSrc, float32_t * pDst, uint32_t blockSize );
 
   /**
    * @brief  Initialization function for the floating-point FIR interpolator.
@@ -3873,12 +3872,11 @@ void arm_rfft_fast_f32(
    * @param[out] pDst       points to the block of output data.
    * @param[in]  blockSize  number of samples to process.
    */
-  void arm_iir_lattice_f32(
-  const arm_iir_lattice_instance_f32 * S,
-  float32_t * pSrc,
-  float32_t * pDst,
-  uint32_t blockSize);
+  void arm_iir_lattice_f32(   const arm_iir_lattice_instance_f32 * S,  float32_t * pSrc,  float32_t * pDst,  uint32_t blockSize);
 
+
+
+  void arm_iir_lattice_f32_Nizar (  const arm_iir_lattice_instance_f32 * S,  float32_t * pSrc,   float32_t * pDst, uint32_t  blockSize );
 
   /**
    * @brief Initialization function for the floating-point IIR lattice filter.

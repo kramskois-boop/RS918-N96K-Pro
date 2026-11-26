@@ -29,7 +29,7 @@
 #endif
 
 #ifndef TRX_HW_LIC
-#define TRX_HW_LIC "CC BY-NC-SA 3.0"
+#define TRX_HW_LIC "mchf QRP"
 #define TRX_HW_CREATOR "K. Atanassov, M0NKA, www.m0nka.co.uk"
 #endif
 
@@ -147,15 +147,22 @@
 // pin 5
 #define ENC_ONE_CH2 			GPIO_PIN_5
 #define ENC_ONE_CH2_PIO       	GPIOB
+
+
+
 // pin 6
 #define I2C1_SCL_PIN            GPIO_PIN_6
 #define I2C1_SCL_GPIO           GPIOB
 // pin 7
 #define I2C1_SDA_PIN            GPIO_PIN_7
 #define I2C1_SDA_GPIO           GPIOB
+
+
 // pin 8
 #define BUTTON_G2 				GPIO_PIN_8
 #define BUTTON_G2_PIO       	GPIOB
+
+
 // pin 9
 #define GREEN_LED 				GPIO_PIN_9
 #define GREEN_LED_PIO       	GPIOB
@@ -337,6 +344,16 @@
 // pin 14
 #define LCD_D13					GPIO_PIN_14
 #define LCD_D13_PIO      		GPIOE
+
+
+
+//pin 14 bis
+#ifdef  ATTENUATOR_6DB
+#define ATTENUATION_6DB 		GPIO_PIN_14
+#define ATTENUATION_6DB_PIO     GPIOE
+#endif
+
+
 // pin 15
 #define LCD_D14					GPIO_PIN_15
 #define LCD_D14_PIO      		GPIOE

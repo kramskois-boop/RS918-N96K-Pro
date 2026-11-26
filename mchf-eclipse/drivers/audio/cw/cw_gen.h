@@ -18,7 +18,6 @@
 
 // Exports
 void 	CwGen_Init();
-void    CwGen_PrepareTx();
 void    CwGen_SetSpeed();
 
 bool    CwGen_TimersActive();

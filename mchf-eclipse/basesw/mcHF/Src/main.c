@@ -162,71 +162,92 @@ int main(void)
 
 /** System Clock Configuration
 */
-void SystemClock_Config(void)
+void   SystemClock_Config( void )
 {
 
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
+  RCC_OscInitTypeDef        RCC_OscInitStruct;
+  RCC_ClkInitTypeDef        RCC_ClkInitStruct;
+  RCC_PeriphCLKInitTypeDef  PeriphClkInitStruct;
 
     /**Configure the main internal regulator output voltage 
     */
   __HAL_RCC_PWR_CLK_ENABLE();
 
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  __HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 10;
-  RCC_OscInitStruct.PLL.PLLN = 210;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 7;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  RCC_OscInitStruct.HSEState       = RCC_HSE_ON;
+  RCC_OscInitStruct.LSEState       = RCC_LSE_ON;
+  RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
+
+  // 16Mhz Quartz divise par 10 = 1.6Mhz, multiplié par 210 = 336Mhz , divise par 2 = 168Mhz Coeur  , 336Mhz/7 = 48Mhz pour USB
+  // Overclocking
+  // 168Mhz : Quartz=16Mhz , PLLM=10 , PLLN = 210 , PLLP = DIV2, PLLQ = 7 (->USB=48.00Mhz) , PLLI2SN=192,  PLLI2SR=5; RCC_MCODIV_5
+  // 180Mhz : Quartz=16Mhz , PLLM=10 , PLLN = 225 , PLLP = DIV2, PLLQ = 7 (->USB=51.43Mhz) , PLLI2SN=192,  PLLI2SR=5; RCC_MCODIV_5 // USB ne marche pas, non reconnaissable
+  // 192Mhz : Quartz=16Mhz , PLLM=10 , PLLN = 240 , PLLP = DIV2, PLLQ = 8 (->USB=48.00Mhz) , PLLI2SN=192,  PLLI2SR=5; RCC_MCODIV_5
+  // 216Mhz : Quartz=16Mhz , PLLM=10 , PLLN = 270 , PLLP = DIV2, PLLQ = 9 (->USB=48.00Mhz) , PLLI2SN=192,  PLLI2SR=5; RCC_MCODIV_5
+
+  RCC_OscInitStruct.PLL.PLLM       = 10;             // (2..63) Diviseur
+  RCC_OscInitStruct.PLL.PLLN       = 210;            // (50..432) Multiplicat // Attention PLL de 100Mhz min a 432Mhz max
+  RCC_OscInitStruct.PLL.PLLP       = RCC_PLLP_DIV2;  // DIV2, DIV4 , DIV6 ou DIV8 c'est tout ce qu'il ya
+  RCC_OscInitStruct.PLL.PLLQ       = 7;              // (2..15) pour 48Mhz USB ou tres proche de 48Mhz
+                                                     // Pour notre radio RS928 il faut quelle soit exactement 48Mhz, si non le PC ne reconnait pas le port USB, ne marche pas
+
+  if ( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK)
   {
     Error_Handler();
   }
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.ClockType      =   RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
+                                     | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  if ( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_5 ) != HAL_OK )
   {
-    Error_Handler();
+       Error_Handler();
   }
 
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2S|RCC_PERIPHCLK_I2S
-                              |RCC_PERIPHCLK_RTC;
-  PeriphClkInitStruct.PLLI2S.PLLI2SN = 192;
-  PeriphClkInitStruct.PLLI2S.PLLI2SR = 5;
-  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  // NB: Le PLL du I2S tire sa reference directement du quartz 16Mhz divisé par le PLLM  (le 1er diviseur du core)
+  // il semble qu'il y a une division de plus par 10 avant d'appliquer ces multiplicateur/diviseur
+  // le codec WM8731 nécessite MCLK = 12.288 Mhz quelque soit la FS sous multiple de 96Khz
+
+  // I2S_freq = (( Quartz_freq /PLLM) * PLLI2SN ) /PLLI2SR = 61.44 Mhz // PLLM semble celui du processeur
+  // Clock I2S = [ 16Mhz / PLLM(10) * PLLI2SN(192) / PLLI2SR(5) ] = 61.44 Mhz
+
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2S | RCC_PERIPHCLK_RTC;
+  PeriphClkInitStruct.PLLI2S.PLLI2SN       = 192;   // de 50 min à 432 max, Multiplicateur du (Quartz/PLLM)
+  PeriphClkInitStruct.PLLI2S.PLLI2SR       = 5;     // de 2 min à 7 max, Diviseur final pour avoir Freq I2S
+  PeriphClkInitStruct.RTCClockSelection    = RCC_RTCCLKSOURCE_LSE;   // RTC=32.768 Khz
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
 
-  HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_PLLI2SCLK, RCC_MCODIV_5);
+
+  	// La Division par 5 du clock I2S (61.44Mhz) pour obtenir le I2S_MSK  (12.288 Mhz) au pin PC10 nécessaire pour commander le codec WM8731S
+	// On peut utiliser les diviseurs :  RCC_MCODIV_1,  RCC_MCODIV_2,  RCC_MCODIV_3,  RCC_MCODIV_4,  RCC_MCODIV_5
+	// on choisit aussi en meme temps la source du MCO PLLI2SCLK (61.44 Mhz)
+
+  HAL_RCC_MCOConfig( RCC_MCO2, RCC_MCO2SOURCE_PLLI2SCLK, RCC_MCODIV_5 );
 
     /**Configure the Systick interrupt time 
     */
-  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq()/1000 );  // reglage du tick a chaque 1ms quelque soit la frequence du systeme déja tabli
 
     /**Configure the Systick 
     */
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+  HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
 
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  HAL_NVIC_SetPriority( SysTick_IRQn, 0, 0 );
 }
 
 /* USER CODE BEGIN 4 */
@@ -238,7 +259,7 @@ void SystemClock_Config(void)
   * @param  None
   * @retval None
   */
-void Error_Handler(void)
+void Error_Handler( void )
 {
   /* USER CODE BEGIN Error_Handler */
   /* User can add his own implementation to report the HAL error return state */
@@ -248,7 +269,7 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler */ 
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 
 /**
    * @brief Reports the name of the source file and the source line number
@@ -257,7 +278,9 @@ void Error_Handler(void)
    * @param line: assert_param error line source number
    * @retval None
    */
-void assert_failed(uint8_t* file, uint32_t line)
+
+
+void   assert_failed( uint8_t* file, uint32_t line )
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,

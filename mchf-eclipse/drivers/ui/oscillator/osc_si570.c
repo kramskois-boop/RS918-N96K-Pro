@@ -363,8 +363,8 @@ static Oscillator_ResultCodes_t Si570_ConfigToRegs(Si570_FreqConfig* config, uin
 
     for(i = 5; i >= 3; i--)
     {
-        regs[i] = frac_bits & 0xFF;
-        frac_bits = frac_bits >> 8;
+        regs[i]   =  frac_bits & 0xFF;
+        frac_bits = (frac_bits >> 8);
     }
 
     regs[2] = Si570_SetBits(regs[2], 0xF0, (frac_bits & 0xF));
@@ -379,22 +379,13 @@ static Oscillator_ResultCodes_t Si570_WriteRegs(bool is_small) {
 
     Oscillator_ResultCodes_t retval = OSC_OK;
 
-    if(is_small)
-    {
-        retval = Si570_SmallFrequencyChange();
-    }
-    else
-    {
-        retval = Si570_LargeFrequencyChange();
-    }
-    if(retval == OSC_OK)
-    {
+    if(is_small)         {  retval = Si570_SmallFrequencyChange();     }
+    else    		     {  retval = Si570_LargeFrequencyChange();     }
+    if(retval == OSC_OK) {  retval = Si570_VerifyFrequencyRegisters(); }
 
-        // Verify second time - we might be transmitting, so
-        // it is absolutely unacceptable to be on startup
-        // SI570 frequency if any I2C error or chip reset occurs!
-        retval = Si570_VerifyFrequencyRegisters();
-    }
+										// Verify second time - we might be transmitting, so
+										// it is absolutely unacceptable to be on startup
+										// SI570 frequency if any I2C error or chip reset occurs!
     return retval;
 }
 

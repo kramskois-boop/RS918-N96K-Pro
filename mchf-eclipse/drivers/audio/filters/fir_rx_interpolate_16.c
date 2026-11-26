@@ -22,7 +22,7 @@ IMPORTANT NOTE:
 
 This low-pass filter is designed to remove aliasing artifacts from the interpolated output.
 
-Response (15th order FIR, Least Pth-norm:  Fpass = 4000 Hz, Fstop = 8600 Hz Fsamp = 12000 Hz):
+Response (16th order FIR, Least Pth-norm:  Fpass = 4000 Hz, Fstop = 8600 Hz Fsamp = 12000 Hz):
 
 	-6dB:  5075 Hz
 	-10dB: 5841 Hz
@@ -40,8 +40,8 @@ attenuation is still at least 40dB where this, plus the effects of psychoacousti
 should make these artifacts inaudible.
 
 ***************************************************************/
-
-const arm_fir_interpolate_instance_f32 FirRxInterpolate=
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =   // Filtre Original de UHSDR
 {
     .phaseLength = 16,
     .pCoeffs = (float*) (const float[])
@@ -64,6 +64,473 @@ const arm_fir_interpolate_instance_f32 FirRxInterpolate=
         -0.009023372039440496
     }
 };
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 02/12/2023  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 4.524 Khz (0.1885) Hyper-cosinus TAP = 16  Kaiser = 3.29 , Hypercosi= 1.000    FS = 48 KHz Att < -40db f > 9Khz
+// -0.25db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+    	-0.009284663846808502,
+    	-0.019581921916432779,
+    	-0.021929873989181666,
+    	-0.003440390004891204,
+    	 0.042830864475949269,
+    	 0.110321228499366528,
+    	 0.178508844597441568,
+    	 0.221533443280371056,
+    	 0.221533443280371056,
+    	 0.178508844597441568,
+    	 0.110321228499366528,
+    	 0.042830864475949269,
+    	-0.003440390004891204,
+    	-0.021929873989181666,
+    	-0.019581921916432779,
+    	-0.009284663846808502
+    }
+};
+*/
+
+
+
+
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 08/08/2024  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 4.764 Khz (0.1985) rised-cosinus TAP = 16  Kaiser = 3.29 , rectangle= 1.000    FS = 48 KHz Att < -40db f > 9Khz
+// -0.11db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+    	-0.007573434375976785,
+    	-0.019492521650571124,
+    	-0.025097173784641571,
+    	-0.009482969863730373,
+    	 0.036849008258592240,
+    	 0.108304569173783116,
+    	 0.182541384485130354,
+    	 0.230047278429472091,
+    	 0.230047278429472091,
+    	 0.182541384485130354,
+    	 0.108304569173783116,
+    	 0.036849008258592240,
+    	-0.009482969863730373,
+    	-0.025097173784641571,
+    	-0.019492521650571124,
+    	-0.007573434375976785
+    }
+};
+
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 10/08/2024  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 4.764 Khz (0.1985) Inv-chebychef  TAP = 16  stop band=-60db   Pole = 9 ,  FS = 48 KHz Att < -28db f > 9Khz
+// -0.09db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 0.006767458811556748,
+    	 0.027922819185333323,
+    	 0.070892270925522291,
+    	 0.133388712077743526,
+    	 0.198067666921556668,
+    	 0.238111880401527809,
+    	 0.228235322285966907,
+    	 0.165602241180484916,
+    	 0.071891031372959019,
+    	-0.014610619303758701,
+    	-0.061050100670858767,
+    	-0.059569151192268459,
+    	-0.028923320360144774,
+    	 0.001710554034865270,
+    	 0.013530438685727748,
+    	 0.008032795643786126
+    }
+};
+
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 11/08/2024  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 4.764 Khz (0.1985) Parks  TAP = 16  Kaiser = 2.60  transition = 0.260   FS = 48 KHz Att < -24db f > 9Khz
+// -0.32 db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+    	-0.003030044444996243,
+    	-0.010118936775723682,
+    	-0.017815654893391437,
+    	-0.012236940394088451,
+    	 0.024286251135188473,
+    	 0.096530748043648515,
+    	 0.182954814387684850,
+    	 0.242693170570158434,
+    	 0.242693170570158434,
+    	 0.182954814387684850,
+    	 0.096530748043648515,
+    	 0.024286251135188473,
+    	-0.012236940394088451,
+    	-0.017815654893391437,
+    	-0.010118936775723682,
+    	-0.003030044444996243
+    }
+};
+*/
+
+
+//**************************************************************************************************************
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 11/08/2024  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 5.069 Khz (0.2112) Parks  TAP = 16  Kaiser = 2.60  transition = 0.300   FS = 48 KHz Att < -22db f > 9Khz
+// -0.32 db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+    	-0.001673400654736168,
+    	-0.008102872195600009,
+    	-0.016772623836450000,
+    	-0.015606050179179836,
+    	 0.017000185924391863,
+    	 0.090256060149513387,
+    	 0.183776571428420382,
+    	 0.250431414622368842,
+    	 0.250431414622368842,
+    	 0.183776571428420382,
+    	 0.090256060149513387,
+    	 0.017000185924391863,
+    	-0.015606050179179836,
+    	-0.016772623836450000,
+    	-0.008102872195600009,
+    	-0.001673400654736168
+    }
+};
+
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 10/08/2024  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 4.764 Khz (0.1985) Inv-chebychef  TAP = 16  stop band=-60db   Pole = 11 ,  FS = 48 KHz Att < -27db f > 9Khz
+// -0.09db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 0.006517328832426185,
+    	 0.026662792188768672,
+    	 0.067721671461793545,
+    	 0.128094132307891156,
+    	 0.192333073575773394,
+    	 0.234690022732080034,
+    	 0.230110594931574097,
+    	 0.173116130666829737,
+    	 0.081498295310188276,
+    	-0.007343641672980877,
+    	-0.059201677967981127,
+    	-0.062708309254726272,
+    	-0.033430639609899178,
+    	-700.7116860496540770E-6,
+    	 0.013725275164852432,
+    	 0.008915663019459551
+    }
+};
+
+*/
+
+//**************************************************************************************************************
+
+
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 02/12/2023  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 4.524 Khz (0.1885) Hyper-cosinus TAP = 16  Kaiser = 3.69 , Hypercosi = 1.000    FS = 48 KHz Att < -45db f > 9Khz
+// -0.35db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+			-0.007175863696851627,
+			-0.016942409096029114,
+			-0.020601787184993215,
+			-0.004565430744211906,
+			 0.039988361448690168,
+			 0.107925769353253070,
+			 0.178329155745069468,
+			 0.223365664504718314,
+			 0.223365664504718314,
+			 0.178329155745069468,
+			 0.107925769353253070,
+			 0.039988361448690168,
+			-0.004565430744211906,
+			-0.020601787184993215,
+			-0.016942409096029114,
+			-0.007175863696851627
+    }
+};
+
+*/
+//**************************************************************************************************************
+//**************************************************************************************************************
+
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 03/09/2025  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 16 , FS = 48Khz
+// Fc = 5.069 Khz (0.2112) Inv-chebychef  TAP = 16  stop band=-42db wind=off  Pole = 11 ,  FS = 48 KHz Att < -31db f > 9Khz
+// -0.12db at 2.7Khz
+
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 16,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 0.022326410565486256,
+    	 0.063419729988454521,
+    	 0.125609317160201017,
+    	 0.191931759750972791,
+    	 0.234552658086811722,
+    	 0.233327513655760849,
+    	 0.175108607859924353,
+    	 0.087611702119732515,
+    	-0.002457642276214702,
+    	-0.059016277633038107,
+    	-0.066573373086250096,
+    	-0.039236714844076370,
+    	-0.004306443791844757,
+    	 0.016077653195726172,
+    	 0.015979047870542586,
+    	 0.005646051377811282
+    }
+};
+
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+//**************************************************************************************************************
+
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 12/08/2024  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 12 , FS = 48Khz
+// Fc = 5.069 Khz (0.2112) Inv-chebychef  TAP = 12  stop band=-42db wind=off  Pole = 11 ,  FS = 48 KHz Att < -21db f > 9Khz
+// -0.12db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 12,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 0.026371249276604870,
+    	 0.078418703518395819,
+    	 0.154375748909960836,
+    	 0.226130756917810399,
+    	 0.255296913048424834,
+    	 0.220828547738607189,
+    	 0.128944481479645268,
+    	 0.029336034273781401,
+    	-0.038923567622498899,
+    	-0.051454225102949516,
+    	-0.026813682783845820,
+    	-0.002510959653936143
+    }
+};
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 16/08/2024  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, tap= 12 , FS = 48Khz
+// Fc = 5.069 Khz (0.2112) Inv-chebychef  TAP = 16  stop band=-42db wind=off  Pole = 8 ,  FS = 48 KHz Att < -20db f > 9Khz
+// -0.12db at 2.7Khz
+/*
+const    arm_fir_interpolate_instance_f32    FirRxInterpolate =
+{
+    .phaseLength = 12,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 0.027709697315723435,
+    	 0.083732296098281200,
+    	 0.164789856658333594,
+    	 0.237214412710246736,
+    	 0.263386350294140426,
+    	 0.214043964169212314,
+    	 0.116609469038234367,
+    	 0.012468928584287534,
+    	-0.048282416102188884,
+    	-0.050599659933609188,
+    	-0.021675325458765170,
+    	 602.4266261036949570E-6
+    }
+};
+
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 10/09/2023  pour ne pas trop attenuer les images aux alentours de  12 Khz +/-2K7  ,
+// effet psycoacoustique agreable , en plus on reduit le tap a 12 au lieu de 16  ( doit etre un multiple de 4 )
+
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 12,
+    .pCoeffs = (float*) (const float[])
+    {
+    	-0.005303236589114442,
+    	 0.011210321832646954,
+    	 0.047359495332232479,
+    	 0.110291926750286803,
+    	 0.181662420860022905,
+    	 0.229793826412553609,
+    	 0.229793826412553609,
+    	 0.181662420860022905,
+    	 0.110291926750286803,
+    	 0.047359495332232479,
+    	 0.011210321832646954,
+    	-0.005303236589114442
+    }
+};
+
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 10/09/2023  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, en plus on reduit le tap a 8 au lieu de 16 , FS = 48Khz
+// Fc = 4.102 Khz (0.1709) Hyper-cosinus TAP = 8  Kaiser = 1.2 , Hypercosi= 1.000    FS = 48 KHz Att < -30db f > 9Khz
+
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 8,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 0.038878169670229973,
+    	 0.104146269474974823,
+    	 0.173056664884683742,
+    	 0.217593782458493673,
+    	 0.217593782458493673,
+    	 0.173056664884683742,
+    	 0.104146269474974823,
+    	 0.038878169670229973
+    }
+};
+
+*/
+
+//**************************************************************************************************************
+//**************************************************************************************************************
+// Filtre interpolation Rx  12 Khz ---> 48 Khz  juste avant Haut Patleur
+// par Nizar Le 13/10/2023  pour ne pas trop attenuer les images aux alentours de  12Khz +/- 3khz ,
+// effet psycoacoustique agreable des images audio treble, en plus on reduit le tap a 4 au lieu de 16 , FS = 48Khz
+// Fc = 3.862 Khz (0.1609) Hyper-cosinus TAP = 4  Kaiser = 0.0 , Hypercosi = 1.000    FS = 48 KHz Att < -10db f > 9Khz
+/*
+const    arm_fir_interpolate_instance_f32   FirRxInterpolate =
+{
+    .phaseLength = 4,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 0.211876893987432341,
+    	 0.308009872242060501,
+    	 0.308009872242060501,
+    	 0.211876893987432341
+    }
+};
+
+*/
+//*******************************************************************************************************************
+//*** Concu par Nizar le 08 avril 2023  pour Interpolation Tx 12Khz ---> 48 Khz
+// LPF 4.193 Hz  FIR 24 taps Parks-McClellan windows = Off  Iteration : 0.300  Attenu  < -71db pour f > 9Khz   pour interpolation 12Khz ---> 48Khz    en Rx et Tx
+
+const    arm_fir_interpolate_instance_f32   FirTxInterpolate =
+{
+    .phaseLength = 24,
+    .pCoeffs = (float*) (const float[])
+    {
+    	 455.6805226621324890E-6,
+    	 316.3762438708072860E-6,
+    	-0.001657363584365586,
+    	-0.006733620972160864,
+    	-0.013981984291160231,
+    	-0.018677208078960526,
+    	-0.012806306495996914,
+    	 0.011366268417686329,
+    	 0.055967425876196755,
+    	 0.113670215069383157,
+    	 0.168519123852969022,
+    	 0.202089886359897608,
+    	 0.202089886359897608,
+    	 0.168519123852969022,
+    	 0.113670215069383157,
+    	 0.055967425876196755,
+    	 0.011366268417686329,
+    	-0.012806306495996914,
+    	-0.018677208078960526,
+    	-0.013981984291160231,
+    	-0.006733620972160864,
+    	-0.001657363584365586,
+    	 316.3762438708072860E-6,
+    	 455.6805226621324890E-6
+    }
+};
+
+
 
 /*#####################################################
  *
@@ -82,8 +549,10 @@ const arm_fir_interpolate_instance_f32 FirRxInterpolate=
  *
  * ####################################################
  */
+//*******************************************************************************************************
 
-const arm_fir_interpolate_instance_f32 FirRxInterpolate_4_5k=
+
+const    arm_fir_interpolate_instance_f32    FirRxInterpolate_4_5k=
 {
     .phaseLength = 4,
     .pCoeffs = (float*) (const float[])
@@ -96,7 +565,11 @@ const arm_fir_interpolate_instance_f32 FirRxInterpolate_4_5k=
     }
 };
 
-const arm_fir_interpolate_instance_f32 FirRxInterpolate_4_10k=
+
+//**********************************************************************************************************
+
+
+const   arm_fir_interpolate_instance_f32   FirRxInterpolate_4_10k=
 {
     .phaseLength = 4,
     .pCoeffs = (float*) (const float[])
@@ -108,11 +581,16 @@ const arm_fir_interpolate_instance_f32 FirRxInterpolate_4_10k=
     }
 };
 
+
+//********************************************************************************************************
+
 // FIXME: Is this the right file for a FreeDV TX filter?
 // this is meant to be an interpolation filter for FreeDV
 // cutoff 2.4kHz (30 Taps)
 
-const arm_fir_instance_f32 Fir_TxFreeDV_Interpolate =
+#ifdef USE_FREEDV
+
+const   arm_fir_instance_f32   Fir_TxFreeDV_Interpolate =
 {
     .numTaps = FIR_TX_FREEDV_INTERPOLATE_NUM_TAPS,
     .pCoeffs = (float*) (const float[])
@@ -149,6 +627,9 @@ const arm_fir_instance_f32 Fir_TxFreeDV_Interpolate =
     	-0.001351058376639693
     }
 };
+
+#endif
+
 /*
 
 // And here for you to try the same filter with 60 taps

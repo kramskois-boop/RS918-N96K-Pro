@@ -64,20 +64,20 @@ static void mchf_board_debug_init(void)
     // as well which renders it unusable
     #error "Debug Build No Longer Supported, needs alternative way of communication"
     USART_InitTypeDef USART_InitStructure;
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef  GPIO_InitStructure;
 
-    USART_InitStructure.USART_BaudRate = 921600;//230400;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_BaudRate            = 921600;//230400;
+    USART_InitStructure.USART_WordLength          = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits            = USART_StopBits_1;
+    USART_InitStructure.USART_Parity              = USART_Parity_No;
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = USART_Mode_Tx;
+    USART_InitStructure.USART_Mode                = USART_Mode_Tx;
 
     // Enable UART clock
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
     // Connect PXx to USARTx_Tx
-    GPIO_PinAFConfig(DEBUG_PRINT_PIO, DEBUG_PRINT_SOURCE, GPIO_AF_USART1);
+    GPIO_PinAFConfig( DEBUG_PRINT_PIO,  DEBUG_PRINT_SOURCE,  GPIO_AF_USART1 );
 
     // Configure USART Tx as alternate function
     GPIO_InitStructure.GPIO_OType 	= GPIO_OType_PP;
@@ -95,7 +95,7 @@ static void mchf_board_debug_init(void)
     USART_Cmd(USART1, ENABLE);
 
     // Wait tx ready
-    while (USART_GetFlagStatus(DEBUG_COM, USART_FLAG_TC) == RESET);
+    while ( USART_GetFlagStatus( DEBUG_COM, USART_FLAG_TC) == RESET );
 #endif
 
 }
@@ -107,13 +107,13 @@ static void mchf_board_ptt_init(void)
     GPIO_InitTypeDef GPIO_InitStructure;
 
 
-    GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStructure.Pull = GPIO_PULLDOWN;
+    GPIO_InitStructure.Mode  = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStructure.Pull  = GPIO_PULLDOWN;
     GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
 
     // RX/TX control pin init
-    GPIO_InitStructure.Pin = PTT_CNTR;
-    HAL_GPIO_Init(PTT_CNTR_PIO, &GPIO_InitStructure);
+    GPIO_InitStructure.Pin   = PTT_CNTR;
+    HAL_GPIO_Init( PTT_CNTR_PIO, &GPIO_InitStructure );
 }
 
 static void mchf_board_keyer_irq_init(void)
@@ -236,6 +236,25 @@ static void mchf_board_power_down_init(void)
     GPIO_ResetBits(POWER_DOWN_PIO,POWER_DOWN);
 }
 
+
+#ifdef ATTENUATOR_6DB
+
+static void mchf_board_attenuateur_6dB_init(void)   // NIZZ  Initialiser le PIN PE14 (pour Attenuateur HF -6db) si le display est SPI
+{
+    GPIO_InitTypeDef          GPIO_InitStructure;
+
+    GPIO_InitStructure.Mode  = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStructure.Pull  = GPIO_NOPULL;
+    GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
+
+    GPIO_InitStructure.Pin   = ATTENUATION_6DB;
+    HAL_GPIO_Init( ATTENUATION_6DB_PIO, &GPIO_InitStructure );
+    GPIO_SetBits ( ATTENUATION_6DB_PIO, ATTENUATION_6DB     );  // Set initial state - low to enable main regulator
+}
+
+#endif
+
+
 // Band control GPIOs setup
 //
 // -------------------------------------------
@@ -269,24 +288,32 @@ static void mchf_board_band_cntr_init(void)
     GPIO_SetBits(BAND2_PIO,BAND2);
 }
 
+
+
 void Board_TouchscreenInit()
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef      GPIO_InitStructure;
 
     GPIO_InitStructure.Mode 	= GPIO_MODE_INPUT;
-    GPIO_InitStructure.Pull 	= GPIO_PULLUP;
-    GPIO_InitStructure.Speed 	= GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStructure.Pull 	= GPIO_NOPULL;    // GPIO_PULLUP;
+    GPIO_InitStructure.Speed 	= GPIO_SPEED_FREQ_LOW;  // GPIO_SPEED_FREQ_VERY_HIGH;  // GPIO_SPEED_FREQ_LOW; // GPIO_SPEED_FREQ_VERY_HIGH; NIZZ
+    GPIO_InitStructure.Pin      = TP_IRQ;
 
-    GPIO_InitStructure.Pin = TP_IRQ;
     HAL_GPIO_Init(TP_IRQ_PIO, &GPIO_InitStructure);
 
-    GPIO_InitStructure.Mode 	= GPIO_MODE_OUTPUT_PP;
 
-    GPIO_InitStructure.Pin = TP_CS;
+
+    GPIO_InitStructure.Mode 	= GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStructure.Pull 	= GPIO_PULLUP;
+    GPIO_InitStructure.Speed 	= GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStructure.Pin      = TP_CS;
+
     HAL_GPIO_Init(TP_CS_PIO, &GPIO_InitStructure);
 
     GPIO_SetBits(TP_CS_PIO, TP_CS);
 }
+
+
 
 void Board_InitMinimal()
 {
@@ -371,12 +398,20 @@ void Board_InitFull()
     // Init watchdog - not working
     //mchf_board_watchdog_init();
 
+#ifdef ATTENUATOR_6DB
+    // si Le LCD afficheur est Serie SPI alors
+	// Initialisation du PIN PE14 (libéré du D13 du LCD parallele) pour commander l'Attenuateur -6db
+	if ( ts.display->use_spi == true  )  mchf_board_attenuateur_6dB_init();   /// NIZZZ ajouté
+
+#endif
+
 }
 
 /*
  * @brief  handle final power-off and delay
  */
-void Board_HandlePowerDown() {
+void Board_HandlePowerDown()
+{
     static ulong    powerdown_delay = 0;
 
     if(ts.powering_down)        // are we powering down?
@@ -401,14 +436,14 @@ void Board_Powerdown()
     // simply setting the OUTPUT to high did not do the trick here
     // worked on F4, though.
 
-    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef  GPIO_InitStructure;
 
-    GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStructure.Pull = GPIO_PULLUP;
+    GPIO_InitStructure.Mode  = GPIO_MODE_INPUT;
+    GPIO_InitStructure.Pull  = GPIO_PULLUP;
     GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
 
-    GPIO_InitStructure.Pin = POWER_DOWN;
-    HAL_GPIO_Init(POWER_DOWN_PIO, &GPIO_InitStructure);
+    GPIO_InitStructure.Pin   = POWER_DOWN;
+    HAL_GPIO_Init( POWER_DOWN_PIO, &GPIO_InitStructure );
 
     for(;;) { asm("nop"); }
 }
@@ -509,26 +544,26 @@ __attribute__ ((noinline)) bool is_ram_at(volatile uint32_t* where) {
     if (*where == oldval+1) {
         *where = oldval;
     }
-    retval = busfault_detected == false;
+    retval            = busfault_detected == false;
     busfault_detected = false;
     return retval;
 }
 
-unsigned int Board_RamSizeGet() {
+unsigned int Board_RamSizeGet()
+{
     uint32_t retval = 0;
+
     // we enable the bus fault
     // we now get bus faults if we access not  available  memory
     // instead of hard faults
     // this will run our very special bus fault handler in case no memory
     // is at the defined location
+
     SCB->SHCSR |= SCB_SHCSR_BUSFAULTENA_Msk;
-    if (is_ram_at((volatile uint32_t*)TEST_ADDR_512)){
-        retval=512;
-    } else if (is_ram_at((volatile uint32_t*)TEST_ADDR_256)){
-        retval=256;
-    } else if (is_ram_at((volatile uint32_t*)TEST_ADDR_192)){
-        retval=192;
-    }
+
+    if      ( is_ram_at ( (volatile uint32_t*) TEST_ADDR_512))    {  retval = 512; }
+    else if ( is_ram_at ( (volatile uint32_t*) TEST_ADDR_256))    {  retval = 256; }
+    else if ( is_ram_at (( volatile uint32_t*) TEST_ADDR_192))    {  retval = 192; }
     // now we disable it
     // we'll get hard faults as usual if we access wrong addresses
     SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTENA_Msk;
@@ -543,31 +578,48 @@ unsigned int Board_RamSizeGet() {
  * what you are doing!
  * USE WITH CARE!
  */
-void Board_RamSizeDetection() {
+
+void Board_RamSizeDetection()
+{
     // we enable the bus fault
     // we now get bus faults if we access not  available  memory
     // instead of hard faults
     // this will run our very special bus fault handler in case no memory
     // is at the defined location
+
     ts.ramsize = Board_RamSizeGet();
 }
-
-
 
 static void Board_BandFilterPulseRelays()
 {
     // FIXME: Replace non_os_delay with HAL_Delay
-    GPIO_ResetBits(BAND2_PIO, BAND2);
+    GPIO_ResetBits( BAND2_PIO, BAND2 );  ts.nr_first_time = 1;  // reinitialiser le DSP pour ne pas se planter  ..
     // TODO: Check if we can go down to 10ms as per datasheet
     // HAL_Delay(20);
-    non_os_delay();
-    GPIO_SetBits(BAND2_PIO, BAND2);
+    non_os_delay();  non_os_delay();  //  non_os_delay();     non_os_delay();   non_os_delay();   //  non_os_delay();
+    GPIO_SetBits ( BAND2_PIO, BAND2 );  // ts.nr_first_time = 1;  // reinitialiser le DSP pour ne pas se planter  ..
+
 }
 
+/*
+static void Board_BandFilterPulseRelays_Switch_all_Relays() /// NIZZ pour bouger les relais au premier demarrage
+{
+    GPIO_SetBits    ( BAND0_PIO, BAND0); 	    GPIO_ResetBits(BAND1_PIO, BAND1);  GPIO_ResetBits(BAND2_PIO, BAND2);
+    non_os_delay(); non_os_delay(); non_os_delay(); non_os_delay(); non_os_delay();  non_os_delay(); non_os_delay();
+    GPIO_SetBits(BAND2_PIO, BAND2); GPIO_ResetBits  ( BAND0_PIO, BAND0); 	    GPIO_SetBits  (BAND1_PIO, BAND1);  GPIO_ResetBits(BAND2_PIO, BAND2);
+    non_os_delay(); non_os_delay(); non_os_delay(); non_os_delay(); non_os_delay();  non_os_delay(); non_os_delay();
+    GPIO_SetBits(BAND2_PIO, BAND2); GPIO_SetBits    ( BAND0_PIO, BAND0); 	    GPIO_ResetBits(BAND1_PIO, BAND1);    GPIO_ResetBits(BAND2_PIO, BAND2);
+    non_os_delay(); non_os_delay(); non_os_delay(); non_os_delay(); non_os_delay();  non_os_delay(); non_os_delay();
+    GPIO_SetBits(BAND2_PIO, BAND2);
+
+}
+*/
 /**
  * @brief switches one of the four LPF&BPF groups into the RX/TX signal path
  * @param group 0: 80m, 1: 40m, 2: 20m , 3:10m
  */
+
+// static bool premier_switcht = true;
 void Board_SelectLpfBpf(uint8_t group)
 {
     // -------------------------------------------
@@ -588,94 +640,125 @@ void Board_SelectLpfBpf(uint8_t group)
     // Set BPFs
     // Constant line states for the BPF filter,
     // always last - after LPF change
+
+/*	if (premier_switcht)
+	{
+		premier_switcht = false;
+		Board_BandFilterPulseRelays_Switch_all_Relays(); /// NIZZZ   pour degripper et nettoyer les relais au demarrage du rig
+	} */
+
     switch(group)
     {
-    case 0:
-    {
-        // Internal group - Set(High/Low)
-        GPIO_SetBits(BAND0_PIO, BAND0);
-        GPIO_ResetBits(BAND1_PIO, BAND1);
+			case 0: // 80m  160m
+					{
+						// Internal group - Set(High/Low)
+						GPIO_SetBits  (BAND0_PIO, BAND0);
+						GPIO_ResetBits(BAND1_PIO, BAND1);
 
-        Board_BandFilterPulseRelays();
+						Board_BandFilterPulseRelays();
 
-        // External group -Set(High/High)
-        GPIO_SetBits(BAND0_PIO, BAND0);
-        GPIO_SetBits(BAND1_PIO, BAND1);
+						// External group -Set(High/High)
+						GPIO_SetBits(BAND0_PIO, BAND0);
+						GPIO_SetBits(BAND1_PIO, BAND1);
 
-        Board_BandFilterPulseRelays();
+						Board_BandFilterPulseRelays();
 
-        // BPF
-        GPIO_SetBits(BAND0_PIO, BAND0);
-        GPIO_SetBits(BAND1_PIO, BAND1);
+						// BPF
+						GPIO_SetBits(BAND0_PIO, BAND0);
+						GPIO_SetBits(BAND1_PIO, BAND1);
 
-        break;
+						break;
+					}
+
+			case 1: // 40m
+					{
+						// Internal group - Set(High/Low)
+						GPIO_SetBits  (BAND0_PIO, BAND0);
+						GPIO_ResetBits(BAND1_PIO, BAND1);
+
+						Board_BandFilterPulseRelays();
+
+						// External group - Reset(Low/High)
+						GPIO_ResetBits(BAND0_PIO, BAND0);
+						GPIO_SetBits  (BAND1_PIO, BAND1);
+
+						Board_BandFilterPulseRelays();
+
+						// BPF
+						GPIO_SetBits  (BAND0_PIO, BAND0);
+						GPIO_ResetBits(BAND1_PIO, BAND1);
+
+						break;
+					}
+
+			case 2: // 20m
+					{
+						// Internal group - Reset(Low/Low)
+						GPIO_ResetBits(BAND0_PIO, BAND0);
+						GPIO_ResetBits(BAND1_PIO, BAND1);
+
+						Board_BandFilterPulseRelays();
+
+						// External group - Reset(Low/High)
+						GPIO_ResetBits(BAND0_PIO, BAND0);
+						GPIO_SetBits  (BAND1_PIO, BAND1);
+
+						Board_BandFilterPulseRelays();
+
+						// BPF
+						GPIO_ResetBits (BAND0_PIO, BAND0);
+						GPIO_ResetBits (BAND1_PIO, BAND1);
+
+						break;
+					}
+
+			case 3:  // 10m
+					{
+					/* if ((RadioManagement_GetBand ( ts.tune_freq ) == BAND_MODE_17 ) && ts.show_debug_info)
+						{
+							// Internal group - Reset(Low/Low)
+							GPIO_ResetBits(BAND0_PIO, BAND0);
+							GPIO_ResetBits(BAND1_PIO, BAND1);
+
+							Board_BandFilterPulseRelays();
+
+							// External group - Reset(Low/High)
+							GPIO_ResetBits(BAND0_PIO, BAND0);
+							GPIO_SetBits  (BAND1_PIO, BAND1);
+
+							Board_BandFilterPulseRelays();
+						}
+
+						else */
+
+						{
+							// Internal group - Reset(Low/Low)
+							GPIO_ResetBits(BAND0_PIO, BAND0);
+							GPIO_ResetBits(BAND1_PIO, BAND1);
+
+							Board_BandFilterPulseRelays();
+
+							// External group - Set(High/High)
+							GPIO_SetBits(BAND0_PIO, BAND0);
+							GPIO_SetBits(BAND1_PIO, BAND1);
+
+							Board_BandFilterPulseRelays();
+						}
+
+						// BPF
+						GPIO_ResetBits(BAND0_PIO, BAND0);
+						GPIO_SetBits  (BAND1_PIO, BAND1);
+
+						break;
+					}
+
+
+
+    default:        	break;
     }
 
-    case 1:
-    {
-        // Internal group - Set(High/Low)
-        GPIO_SetBits(BAND0_PIO, BAND0);
-        GPIO_ResetBits(BAND1_PIO, BAND1);
-
-        Board_BandFilterPulseRelays();
-
-        // External group - Reset(Low/High)
-        GPIO_ResetBits(BAND0_PIO, BAND0);
-        GPIO_SetBits(BAND1_PIO, BAND1);
-
-        Board_BandFilterPulseRelays();
-
-        // BPF
-        GPIO_SetBits(BAND0_PIO, BAND0);
-        GPIO_ResetBits(BAND1_PIO, BAND1);
-
-        break;
-    }
-
-    case 2:
-    {
-        // Internal group - Reset(Low/Low)
-        GPIO_ResetBits(BAND0_PIO, BAND0);
-        GPIO_ResetBits(BAND1_PIO, BAND1);
-
-        Board_BandFilterPulseRelays();
-
-        // External group - Reset(Low/High)
-        GPIO_ResetBits(BAND0_PIO, BAND0);
-        GPIO_SetBits(BAND1_PIO, BAND1);
-
-        Board_BandFilterPulseRelays();
-
-        // BPF
-        GPIO_ResetBits(BAND0_PIO, BAND0);
-        GPIO_ResetBits(BAND1_PIO, BAND1);
-
-        break;
-    }
-
-    case 3:
-    {
-        // Internal group - Reset(Low/Low)
-        GPIO_ResetBits(BAND0_PIO, BAND0);
-        GPIO_ResetBits(BAND1_PIO, BAND1);
-
-        Board_BandFilterPulseRelays();
-
-        // External group - Set(High/High)
-        GPIO_SetBits(BAND0_PIO, BAND0);
-        GPIO_SetBits(BAND1_PIO, BAND1);
-
-        Board_BandFilterPulseRelays();
-
-        // BPF
-        GPIO_ResetBits(BAND0_PIO, BAND0);
-        GPIO_SetBits(BAND1_PIO, BAND1);
-
-        break;
-    }
-
-    default:
-        break;
-    }
+    ts.nr_first_time = 1;  // reinitialiser le DSP pour ne pas se planter  ..
+                           // le DSP semble comporter des bugs qui se manifestent lors des forts signaux sur le codec
+                           // Pour le moment on reinitialise le DSP a chaque foix qu'on cummute les relais
 
 }

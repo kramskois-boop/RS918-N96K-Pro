@@ -64,17 +64,16 @@
  * These are multiplied to yield a 2.62 intermediate result and this is shifted with saturation to 1.31 format.       
  */
 
-void arm_scale_q31(
-  q31_t * pSrc,
-  q31_t scaleFract,
-  int8_t shift,
-  q31_t * pDst,
-  uint32_t blockSize)
+void arm_scale_q31(	  q31_t     *pSrc,
+					  q31_t      scaleFract,
+					  int8_t     shift,
+					  q31_t     *pDst,
+					  uint32_t   blockSize)
 {
-  int8_t kShift = shift + 1;                     /* Shift to apply after scaling */
-  int8_t sign = (kShift & 0x80);
-  uint32_t blkCnt;                               /* loop counter */
-  q31_t in, out;
+  int8_t     kShift = shift + 1;                   /* Shift to apply after scaling */
+  int8_t     sign   = (kShift & 0x80);
+  uint32_t   blkCnt;                               /* loop counter */
+  q31_t      in, out;
 
 #ifndef ARM_MATH_CM0_FAMILY
 
@@ -167,7 +166,7 @@ void arm_scale_q31(
       out4 = in4 >> -kShift;
 
       /* Store result destination */
-      *pDst = out1;
+      *pDst       = out1;
       *(pDst + 1) = out2;
 
       *(pDst + 2) = out3;
@@ -233,6 +232,10 @@ void arm_scale_q31(
   
   }
 }
+
+
+//*****************************************************************************************************
+
 
 /**       
  * @} end of scale group       

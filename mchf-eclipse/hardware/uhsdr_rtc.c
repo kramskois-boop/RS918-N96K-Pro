@@ -101,14 +101,16 @@ static void MchfRtc_StartInternal(bool doClock)
         // ok, there is a battery, so let us now start the oscillator
         RTC_LSE_Config();
     }
+
+
     // very first start of rtc
-    hrtc.Instance = RTC;
-    hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-    hrtc.Init.AsynchPrediv = 127;
-    hrtc.Init.SynchPrediv = 255;
-    hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-    hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-    hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+    hrtc.Instance            =  RTC;
+    hrtc.Init.HourFormat     =  RTC_HOURFORMAT_24;
+    hrtc.Init.AsynchPrediv   =  127;
+    hrtc.Init.SynchPrediv    =  255;
+    hrtc.Init.OutPut         =  RTC_OUTPUT_DISABLE;
+    hrtc.Init.OutPutPolarity =  RTC_OUTPUT_POLARITY_HIGH;
+    hrtc.Init.OutPutType     =  RTC_OUTPUT_TYPE_OPENDRAIN;
 
     HAL_RTC_Init(&hrtc);
 }

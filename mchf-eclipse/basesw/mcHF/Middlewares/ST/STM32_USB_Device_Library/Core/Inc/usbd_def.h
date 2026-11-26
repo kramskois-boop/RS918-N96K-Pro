@@ -110,9 +110,9 @@
 
 #define USB_DEVICE_CAPABITY_TYPE                           0x10
 
-#define USB_HS_MAX_PACKET_SIZE                            512
-#define USB_FS_MAX_PACKET_SIZE                            64
-#define USB_MAX_EP0_SIZE                                  64
+#define USB_HS_MAX_PACKET_SIZE                            512    // NIZ96
+#define USB_FS_MAX_PACKET_SIZE                             64    // NIZ96
+#define USB_MAX_EP0_SIZE                                   64    // NIZ96 le  PC ne reconnait pas le USB si on change
 
 /*  Device Status */
 #define USBD_STATE_DEFAULT                                1
@@ -257,7 +257,7 @@ typedef struct _USBD_HandleTypeDef
 /** @defgroup USBD_DEF_Exported_Macros
   * @{
   */ 
-#define  SWAPBYTE(addr)        (((uint16_t)(*((uint8_t *)(addr)))) + \
+#define  SWAPBYTE(addr)        (((uint16_t)(*((uint8_t*)(addr)))) + \
                                (((uint16_t)(*(((uint8_t *)(addr)) + 1))) << 8))
 
 #define LOBYTE(x)  ((uint8_t)(x & 0x00FF))

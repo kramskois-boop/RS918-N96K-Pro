@@ -103,7 +103,7 @@
 /** @defgroup USBD_COMP_Private_Macros
  * @{
  */
-#define AUDIO_SAMPLE_FREQ(frq)      (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
+#define AUDIO_SAMPLE_FREQ(frq)      (uint8_t)((uint32_t)frq<<1),(uint8_t)(((uint32_t)frq>>7)),(uint8_t)(((uint32_t)frq>>15))
 
 
 /**
@@ -118,6 +118,36 @@
  */
 
 
+
+// VID/PID = 0x2341/0x8036 ARDUINO LEONARDO officiel marche Bien Win11+Android Isochronouse, bDelay=1, bInterval=128, powred=200ma
+// VID/PID = 0x2341/0x0043 ARDUINO UNO      Officiel marche Bien Win11+Android Isochronouse, bDelay=1, bInterval=128, powred=200ma
+// VID/PID = 0x2341/0x0010 ARDUINO Mega2560 Officiel marche Bien Win11+Android Isochronouse, bDelay=1, bInterval=128, powred=200ma
+// VID/PID = 0x2341/0xA711 ARDUINO        arbitraire marche bien Win11, (Android pas de com),  Isochronouse, bDelay=1, bInterval=128, powred=200ma
+
+// VID/PID = 0x0483/0x5732 STM officiel      marche bien Win11+Android Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x0483/0x5740 STM officiel      Win11 PAS AUDIO ? COM ok, Android tout OK Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x0483/0xA3AF STM arbitraire    marche trés bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x0483/0x9667 STM arbitraire    marche trés bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+
+// VID/PID = 0x16C0/0x0483 Teensy officiel  marche bien Win11 + Android ,  Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x16C0/0x0486 Teensy officiel  marche bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+
+// VID/PID = 0x1209/0x6666 Generic   arbitrai  marche bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x0403/0x6001 FTDI      officiel  marche bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x0403/0x6015 FTDI      officiel  marche bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x04D8/0x000A Microchip officiel  marche bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x04B4/0x0002 Cypress   officiel  marche bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+// VID/PID = 0x1FC9/0x0094 NXP       officiel  marche bien Win11 (Android pas de com)  Isochronouse, bDelay=1, binterval=128, powred=200ma
+
+
+
+// on a forcé bcdUSB  2.00
+// bDeviceClass  0x00 --> 0xEF, bDeviceSubClass  0x00 -->0x02  pour se faire accepter par Android  Niz96
+
+// On a change le Self Powred 0xC0 --> 0x80  Powred en quatre endroits du code
+// On a changé bMaxPower de l'USB aussi de 0x32 = 100 ma   a 0x64 = 200 ma
+
+// on a remis bInterval 0xFF  255 ms delay du polling du com port au lieu de 16 ms
 
 
 
@@ -134,18 +164,18 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
         0x05,                                 /* bNumInterfaces */
         0x01,                                 /* bConfigurationValue */
         0x00,                                 /* iConfiguration */
-        0xC0,                                 /* bmAttributes  BUS Powred*/
+        0xC0,                                 /* bmAttributes  0xC0 Self Powred , 0x80 BUS Auto Powred NIZ96 */
         0x32,                                 /* bMaxPower = 100 mA*/
         /* 09 byte*/
         /*---------------------------------------------------------------------------*/
         USB_INTERFACE_ASSOCIATION_DESC_SIZE,
         USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE,
-        CDC_CTRL_IF,                          /* first interface */
-        CDC_TOTAL_IF_NUM,                     /* bNumInterfaces */
-        0x02,               /* bInterfaceClass */
-        0x02,          /* bInterfaceSubClass */
-        0x01,             /* bInterfaceProtocol */
-        0x00,                                 /* String Index */
+        CDC_CTRL_IF,        /* first interface    */
+        CDC_TOTAL_IF_NUM,   /* bNumInterfaces     */
+        0x02,               /* bInterfaceClass    */
+        0x02,               /* bInterfaceSubClass */
+        0x01,               /* bInterfaceProtocol */
+        0x00,               /* String Index       */
 
         /*Interface Descriptor */
         0x09,   /* bLength: Interface Descriptor size */
@@ -193,11 +223,11 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
         0x03,                           /* bmAttributes: Interrupt */
         LOBYTE(CDC_CMD_PACKET_SIZE),     /* wMaxPacketSize: */
         HIBYTE(CDC_CMD_PACKET_SIZE),
-#ifdef USE_USB_OTG_HS
-        0x10,                           /* bInterval: */
-#else
-        0xFF,                           /* bInterval: */
-#endif /* USE_USB_OTG_HS */
+
+        0xFF,                           /* bInterval: USE_USB_OTG_HS   0x10 = 16ms polling  0x40 = 64 ms polling du com port */
+
+
+
 
         /*---------------------------------------------------------------------------*/
 
@@ -223,12 +253,12 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
 
         /*Endpoint IN Descriptor*/
         0x07,   /* bLength: Endpoint Descriptor size */
-        USB_ENDPOINT_DESCRIPTOR_TYPE,      /* bDescriptorType: Endpoint */
-        CDC_IN_EP,                         /* bEndpointAddress */
-        0x02,                              /* bmAttributes: Bulk */
+        USB_ENDPOINT_DESCRIPTOR_TYPE,        /* bDescriptorType: Endpoint */
+        CDC_IN_EP,                           /* bEndpointAddress */
+        0x02,                                /* bmAttributes: Bulk */
         LOBYTE(CDC_DATA_FS_IN_PACKET_SIZE),  /* wMaxPacketSize: */
         HIBYTE(CDC_DATA_FS_IN_PACKET_SIZE),
-        0x00,                               /* bInterval: ignore for Bulk transfer */
+        0x00,                                /* bInterval: ignore for Bulk transfer */
 
         USB_INTERFACE_ASSOCIATION_DESC_SIZE,
         USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE,
@@ -241,8 +271,8 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
 
         /* USB Sound Standard interface descriptor */
         AUDIO_INTERFACE_DESC_SIZE,            /* bLength */
-        USB_DESC_TYPE_INTERFACE,        /* bDescriptorType */
-        AUDIO_CTRL_IF,                                 /* bInterfaceNumber */
+        USB_DESC_TYPE_INTERFACE,              /* bDescriptorType */
+        AUDIO_CTRL_IF,                        /* bInterfaceNumber */
         0x00,                                 /* bAlternateSetting */
         0x00,                                 /* bNumEndpoints */
         USB_DEVICE_CLASS_AUDIO,               /* bInterfaceClass */
@@ -371,7 +401,7 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
         USB_DESC_TYPE_INTERFACE,        /* bDescriptorType */
         AUDIO_OUT_IF,                         /* bInterfaceNumber */
         0x01,                                 /* bAlternateSetting */
-        0x01,                                 /* bNumEndpoints */
+        0x01,                                 /* bNumEndpoints 0x01 ajoute 1 autre pour Feedback propose par chatGPT*/
         USB_DEVICE_CLASS_AUDIO,               /* bInterfaceClass */
         AUDIO_SUBCLASS_AUDIOSTREAMING,        /* bInterfaceSubClass */
         AUDIO_PROTOCOL_UNDEFINED,             /* bInterfaceProtocol */
@@ -383,7 +413,7 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
         AUDIO_INTERFACE_DESCRIPTOR_TYPE,      /* bDescriptorType */
         AUDIO_STREAMING_GENERAL,              /* bDescriptorSubtype */
         0x01,                                 /* bTerminalLink */
-        0x01,                                 /* bDelay */
+        0x01,                                 /* bDelay 0x02 trame delay a la place de 0x01 originale Niz96 */
         0x01,                                 /* wFormatTag AUDIO_FORMAT_PCM  0x0001*/
         0x00,
         /* 07 byte*/
@@ -395,22 +425,26 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
 		/* Type III" format descriptor is assigned, but wFormatTag on AS interface desc is set to PCM
 		 * (type III is not PCM). As Type III is not a popular one, it should be of Type I */
         AUDIO_FORMAT_TYPE_I,                  /* bFormatType */
-        0x02,                                 /* bNrChannels */
+        0x02,                                 /* bNrChannels */ // Important pour 96000 Hz
         0x02,                                 /* bSubFrameSize :  2 Bytes per frame (16bits) */
         16,                                   /* bBitResolution (16-bits per sample) */
         0x01,                                 /* bSamFreqType only one frequency supported */
-        SAMPLE_FREQ(USBD_AUDIO_FREQ),         /* Audio sampling frequency coded on 3 bytes */
+
+		0x00,                                 // 96000 Hz echantiollannge de la carte audio gténérique USB
+		0x77,
+		0x01,
+        //SAMPLE_FREQ((USBD_AUDIO_FREQ)),    /* Audio sampling frequency coded on 3 bytes */ // NIZ96
         /* 11 byte*/
 
         /* Endpoint 1 - Standard Descriptor */
         AUDIO_STANDARD_ENDPOINT_DESC_SIZE,    /* bLength */
         USB_ENDPOINT_DESCRIPTOR_TYPE,         /* bDescriptorType */
         AUDIO_OUT_EP,                         /* bEndpointAddress 1 out endpoint*/
-        USB_ENDPOINT_TYPE_ISOCHRONOUS,        /* bmAttributes */
+		USB_ENDPOINT_TYPE_ISOCHRONOUS,        // USB_ENDPOINT_TYPE_ISOCHRONOUS, Niz96   /* bmAttributes */
         AUDIO_PACKET_SZE(USBD_AUDIO_FREQ,USBD_AUDIO_OUT_CHANNELS),    /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
         0x01,                                 /* bInterval */
         0x00,                                 /* bRefresh */
-        0x00,                                 /* bSynchAddress */
+        0x00,                                 /* bSynchAddress 0x00 modifie par Nizar suite feedback endpoint propose par CHATGPT*/
         /* 09 byte*/
 
         /* Endpoint - Audio Streaming Descriptor*/
@@ -460,28 +494,35 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
 		AUDIO_STREAMING_INTERFACE_DESC_SIZE, // Size of the descriptor, in bytes (bLength)
         AUDIO_INTERFACE_DESCRIPTOR_TYPE, // CS_INTERFACE Descriptor Type (bDescriptorType) 0x24
         AUDIO_STREAMING_GENERAL,         // GENERAL subtype (bDescriptorSubtype) 0x01
-        0x05,             // Unit ID of the Output Terminal.(bTerminalLink)
-        0x01,                         // Interface delay. (bDelay)
-        0x01,0x00,                    // PCM Format (wFormatTag)
+        0x05,                            // Unit ID of the Output Terminal.(bTerminalLink)
+        0x01,                           // Interface delay. (bDelay) 0x02 trame delay a la place de 0x01 originale NIZ96
+        0x01,0x00,                      // PCM Format (wFormatTag)
 
-        /*  USB Microphone Type I Format Type Descriptor (CODE == 6)*/
+        /*  USB Microphone Type I Format Type Descriptor (CODE == 6)*/      ///  NIZ96 !!!!!!!!!!!!!
 		/* Microphone Audio Type I Format Interface Descriptor */
-        0x0B,                        // Size of the descriptor, in bytes (bLength)
+        0x0B,                           // Ox0B // Size of the descriptor, in bytes (bLength)
         AUDIO_INTERFACE_DESCRIPTOR_TYPE,// CS_INTERFACE Descriptor Type (bDescriptorType) 0x24
-        AUDIO_STREAMING_FORMAT_TYPE,   // FORMAT_TYPE subtype. (bDescriptorSubtype) 0x02
-        0x01,                        // FORMAT_TYPE_I. (bFormatType)
-        USBD_AUDIO_IN_CHANNELS,                        // One or two channel.(bNrChannels)
-        0x02,                        // Two bytes per audio subframe.(bSubFrameSize)
-        0x10,                        // 16 bits per sample.(bBitResolution)
-        0x01,                        // One frequency supported. (bSamFreqType)
-        (USBD_AUDIO_IN_FREQ&0xFF),((USBD_AUDIO_IN_FREQ>>8)&0xFF),0x00,  // (tSamFreq) (NOT COMPLETE!!!)
+        AUDIO_STREAMING_FORMAT_TYPE,    // FORMAT_TYPE subtype. (bDescriptorSubtype) 0x02
+        0x01,                           // FORMAT_TYPE_I. (bFormatType)
+        0x02,                           // USBD_AUDIO_IN_CHANNELS,         // One or two channel.(bNrChannels) NIZ96 !!!
+
+		0x02,                           // Two bytes per audio subframe.(bSubFrameSize)
+        0x10,                           // 16 bits per sample.(bBitResolution)
+        0x01,                           // One frequency supported. (bSamFreqType)
+
+
+		0x00,                          // 96000 Hz echantiollannge de la carte audio gténérique USB microphone
+		0x77,
+		0x01,
+
+      //  (((uint32_t)USBD_AUDIO_IN_FREQ<<1)&0xFF),(((uint32_t)USBD_AUDIO_IN_FREQ>>7)&0xFF),(((uint32_t)USBD_AUDIO_IN_FREQ>>15)&0xFF),  //0x00,  // (tSamFreq) (NOT COMPLETE!!!) // NIZ96
 
         /*  USB Microphone Standard Endpoint Descriptor (CODE == 8)*/ //Standard AS Isochronous Audio Data Endpoint Descriptor
 		/* Endpoint 1 - Standard Descriptor */
 		AUDIO_STANDARD_ENDPOINT_DESC_SIZE, // Size of the descriptor, in bytes (bLength)
 		USB_DESC_TYPE_ENDPOINT, // ENDPOINT descriptor (bDescriptorType)
-        AUDIO_IN_EP,                    // IN Endpoint 1. (bEndpointAddress)
-        USB_ENDPOINT_TYPE_ISOCHRONOUS, // Isochronous, not shared. (bmAttributes)//USB_ENDPOINT_TYPE_asynchronous USB_ENDPOINT_TYPE_ISOCHRONOUS
+        AUDIO_IN_EP,                     // IN Endpoint 1. (bEndpointAddress)
+		USB_ENDPOINT_TYPE_ISOCHRONOUS,  // USB_ENDPOINT_TYPE_ISOCHRONOUS, Niz96 // Isochronous, not shared. (bmAttributes)//USB_ENDPOINT_TYPE_asynchronous USB_ENDPOINT_TYPE_ISOCHRONOUS
         (AUDIO_IN_PACKET&0xFF),((AUDIO_IN_PACKET>>8)&0xFF),                  //bytes per packet (wMaxPacketSize)
         0x01,                       // One packet per frame.(bInterval)
         0x00,                       // Unused. (bRefresh)
@@ -493,31 +534,44 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
         AUDIO_ENDPOINT_GENERAL,            // GENERAL subtype. (bDescriptorSubtype) 0x01
         0x00,                              // No sampling frequency control, no pitch control, no packet padding.(bmAttributes)
         0x00,                              // Unused. (bLockDelayUnits)
-        0x00,0x00,                         // Unused. (wLockDelay)
+        0x00,0x00                         // Unused. (wLockDelay)
+
+		//******************************* Ajouté par Nizar *********************************
+		//**********************************************************************************
+
+	                  /* Feedback endpoint  NIZ96  ajout par ChatGPT */
+	//	0x07,        /* bLength */
+	//	0x05,        /* ENDPOINT descriptor */
+	//	0x84,        /* endpoint address (IN) */
+	//	0x11,        /* Isochronous feedback */
+	//	0x03,        /* wMaxPacketSize = 3 bytes */
+	//	0x00,
+	//	0x01         /* bInterval */
+
 } ;
 
 
 const usbd_ep_map_t usbdEpMap =
 {
-        .in = { CLASS_UNUSED, CLASS_CDC, CLASS_CDC, CLASS_AUDIO },
+        .in  = { CLASS_UNUSED, CLASS_CDC, CLASS_CDC,   CLASS_AUDIO  },
         .out = { CLASS_UNUSED, CLASS_CDC, CLASS_AUDIO, CLASS_UNUSED }
 };
 
 USBD_ClassCompInfo dev_instance[CLASS_NUM] =
 {
         {
-                .class = &USBD_AUDIO,
+                .class    = &USBD_AUDIO,
                 .userData = &USBD_AUDIO_fops_FS,
-                .ctrlIf = AUDIO_CTRL_IF,
-                .minIf = AUDIO_CTRL_IF,
-                .maxIf = AUDIO_IN_IF
+                .ctrlIf   = AUDIO_CTRL_IF,
+                .minIf    = AUDIO_CTRL_IF,
+                .maxIf    = AUDIO_IN_IF
         },
         {
-                .class = &USBD_CDC,
+                .class    = &USBD_CDC,
                 .userData = &USBD_Interface_fops_FS,
-                .ctrlIf = CDC_CTRL_IF,
-                .minIf = CDC_CTRL_IF,
-                .maxIf = CDC_DATA_IF
+                .ctrlIf   = CDC_CTRL_IF,
+                .minIf    = CDC_CTRL_IF,
+                .maxIf    = CDC_DATA_IF
         }
 };
 

@@ -50,13 +50,13 @@
 /* USER CODE END Includes */
 
 /* Private define ------------------------------------------------------------*/
-
-#define BUTTON_PWR_Pin GPIO_PIN_13
-#define BUTTON_PWR_GPIO_Port GPIOC
-#define PADDLE_DAH_Pin GPIO_PIN_0
-#define PADDLE_DAH_GPIO_Port GPIOE
-#define PADDLE_DIT_Pin GPIO_PIN_1
-#define PADDLE_DIT_GPIO_Port GPIOE
+                                                  // NIZZ  GPIO
+#define  BUTTON_PWR_Pin         GPIO_PIN_13
+#define  BUTTON_PWR_GPIO_Port   GPIOC
+#define  PADDLE_DAH_Pin         GPIO_PIN_0                         // 0  // nizou
+#define  PADDLE_DAH_GPIO_Port   GPIOE
+#define  PADDLE_DIT_Pin         GPIO_PIN_1                         // 1  // nizou
+#define  PADDLE_DIT_GPIO_Port   GPIOE
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

@@ -1557,7 +1557,7 @@
             MENU_BASE -> MENU_ALC_RELEASE
             
             MENU_BASE -> MENU_ALC_POSTFILT_GAIN
-            
+              
             MENU_BASE -> MENU_NOISE_BLANKER_SETTING
             
             MENU_BASE -> MENU_DSP_NR_STRENGTH

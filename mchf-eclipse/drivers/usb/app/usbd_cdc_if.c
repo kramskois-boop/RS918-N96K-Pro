@@ -75,8 +75,10 @@
 /* USER CODE BEGIN PRIVATE_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  64
-#define APP_TX_DATA_SIZE  2048
+
+#define  APP_RX_DATA_SIZE    64      //  64  // NIZ96 USB Data Rx Buffers pour CAT  ( virtual com port )
+#define  APP_TX_DATA_SIZE   2048     // 2048 // NiZ96 USB Data Tx Buffers pour CAT  ( virtual com port )
+
 /* USER CODE END PRIVATE_DEFINES */
 /**
   * @}
@@ -99,31 +101,31 @@
 /* Create buffer for reception and transmission           */
 /* It's up to user to redefine and/or remove those define */
 /* Received Data over USB are stored in this buffer       */
-uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
+uint8_t   UserRxBufferFS[APP_RX_DATA_SIZE];
 
 /* Send Data over USB CDC are stored in this buffer       */
 uint8_t UserTxBufferFS   [APP_TX_DATA_SIZE];
 
-uint32_t CDC_Tx_PtrIn  = 0;
-uint32_t CDC_Tx_PtrOut = 0;
-uint32_t CDC_Tx_Length  = 0;
+uint32_t  CDC_Tx_PtrIn   = 0;
+uint32_t  CDC_Tx_PtrOut  = 0;
+uint32_t  CDC_Tx_Length  = 0;
 
-uint8_t  CDC_Tx_State = 0;
+uint8_t   CDC_Tx_State   = 0;
 
 typedef struct
 {
     uint32_t speed;
-    uint8_t stop;
-    uint8_t parity;
-    uint8_t bits;
+    uint8_t  stop;
+    uint8_t  parity;
+    uint8_t  bits;
 } CdvVcp_LineCoding_t;
 
 static CdvVcp_LineCoding_t CDC_Linecoding =
 {
         // 9600 8n1
-        .speed = 9600,
-        .stop  = 0, // 1 stop bit
-        .bits  = 8, // 8 data bits
+        .speed  = 9600,
+        .stop   = 0, // 1 stop bit
+        .bits   = 8, // 8 data bits
         .parity = 0, // parity none
 };
 
@@ -148,10 +150,10 @@ static CdvVcp_LineCoding_t CDC_Linecoding =
 /** @defgroup USBD_CDC_Private_FunctionPrototypes
   * @{
   */
-static int8_t CDC_Init_FS     (void);
-static int8_t CDC_DeInit_FS   (void);
-static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
-static int8_t CDC_Receive_FS  (uint8_t* pbuf, uint32_t *Len);
+static int8_t  CDC_Init_FS     (void);
+static int8_t  CDC_DeInit_FS   (void);
+static int8_t  CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
+static int8_t  CDC_Receive_FS  (uint8_t* pbuf, uint32_t *Len);
 static int8_t  CDC_SOF (USBD_HandleTypeDef *pdev);
 static int8_t  CDC_DataIn (USBD_HandleTypeDef *pdev);
 
@@ -186,9 +188,9 @@ static int8_t CDC_Init_FS(void)
 { 
   /* USER CODE BEGIN 3 */ 
   /* Set Application Buffers */
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
-  return (USBD_OK);
+  USBD_CDC_SetTxBuffer( &hUsbDeviceFS, UserTxBufferFS, 0 );
+  USBD_CDC_SetRxBuffer( &hUsbDeviceFS, UserRxBufferFS    );
+  return ( USBD_OK );
   /* USER CODE END 3 */ 
 }
 
@@ -218,25 +220,15 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* USER CODE BEGIN 5 */
   switch (cmd)
   {
-  case CDC_SEND_ENCAPSULATED_COMMAND:
- 
-    break;
+	  case CDC_SEND_ENCAPSULATED_COMMAND: 		break;
 
-  case CDC_GET_ENCAPSULATED_RESPONSE:
- 
-    break;
+	  case CDC_GET_ENCAPSULATED_RESPONSE:		break;
 
-  case CDC_SET_COMM_FEATURE:
- 
-    break;
+	  case CDC_SET_COMM_FEATURE:				break;
 
-  case CDC_GET_COMM_FEATURE:
+	  case CDC_GET_COMM_FEATURE:				break;
 
-    break;
-
-  case CDC_CLEAR_COMM_FEATURE:
-
-    break;
+	  case CDC_CLEAR_COMM_FEATURE:				break;
 
   /*******************************************************************************/
   /* Line Coding Structure                                                       */
@@ -256,29 +248,28 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
   case CDC_SET_LINE_CODING:
-      // just copy the requested line coding
-      // we ignore it for now but keep it to
-      // satisfy the host when it asks for the current
-      // line coding
-	memcpy(&CDC_Linecoding,pbuf,sizeof(CDC_Linecoding));
-    break;
-  case CDC_GET_LINE_CODING:     
-    memcpy(pbuf,&CDC_Linecoding,length);
-    break;
+							  // just copy the requested line coding
+							  // we ignore it for now but keep it to
+							  // satisfy the host when it asks for the current
+							  // line coding
+							memcpy(&CDC_Linecoding,pbuf,sizeof(CDC_Linecoding));
+							break;
+
+  case CDC_GET_LINE_CODING:     memcpy(pbuf,&CDC_Linecoding,length);    break;
 
   case CDC_SET_CONTROL_LINE_STATE:
-  {
-      // we get wValue here as buffer
-      uint16_t wValue = *(uint16_t*)&(pbuf[0]);
-      cdcvcp_ctrllines.dtr = (wValue & 0x01)?1:0;
-      cdcvcp_ctrllines.rts = (wValue & 0x02)?1:0;
-      break;
-  }
+								  {
+									  // we get wValue here as buffer
 
-    break;
+									  uint16_t  wValue     = *(uint16_t*)&(pbuf[0]);
+									  cdcvcp_ctrllines.dtr = (wValue & 0x01)?1:0;
+									  cdcvcp_ctrllines.rts = (wValue & 0x02)?1:0;
+									  break;
+								  }
 
-  case CDC_SEND_BREAK:
-    break;    
+									break;
+
+  case CDC_SEND_BREAK:			    break;
     
   default:
     break;
@@ -303,6 +294,8 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   * @param  Len: Number of data received (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
+
+
 static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
@@ -311,8 +304,8 @@ static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
         CatDriver_InterfaceBufferAddData(Buf[i]);
     }
 
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+  USBD_CDC_SetRxBuffer  ( &hUsbDeviceFS, &Buf[0]);
+  USBD_CDC_ReceivePacket( &hUsbDeviceFS  );
   return (USBD_OK);
   /* USER CODE END 6 */ 
 }
@@ -368,31 +361,29 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 
 static void CDC_InitiateTransmit(USBD_HandleTypeDef *pdev)
 {
-    uint16_t USB_Tx_ptr;
-    uint16_t USB_Tx_length;
+    uint16_t  USB_Tx_ptr;
+    uint16_t  USB_Tx_length;
 
-    if (CDC_Tx_Length > CDC_DATA_FS_IN_PACKET_SIZE)
+    if ( CDC_Tx_Length > CDC_DATA_FS_IN_PACKET_SIZE)
     {
-        USB_Tx_ptr = CDC_Tx_PtrOut;
-        USB_Tx_length = CDC_DATA_FS_IN_PACKET_SIZE;
+        USB_Tx_ptr     =  CDC_Tx_PtrOut;
+        USB_Tx_length  =  CDC_DATA_FS_IN_PACKET_SIZE;
 
-        CDC_Tx_PtrOut += CDC_DATA_FS_IN_PACKET_SIZE;
-        CDC_Tx_Length -= CDC_DATA_FS_IN_PACKET_SIZE;
+        CDC_Tx_PtrOut +=  CDC_DATA_FS_IN_PACKET_SIZE;
+        CDC_Tx_Length -=  CDC_DATA_FS_IN_PACKET_SIZE;
     }
     else
     {
-        USB_Tx_ptr = CDC_Tx_PtrOut;
-        USB_Tx_length = CDC_Tx_Length;
+        USB_Tx_ptr     = CDC_Tx_PtrOut;
+        USB_Tx_length  = CDC_Tx_Length;
 
         CDC_Tx_PtrOut += CDC_Tx_Length;
-        CDC_Tx_Length = 0;
+        CDC_Tx_Length  = 0;
     }
 
     CDC_Tx_State = 1;
 
-    USBD_CDC_SetTxBuffer(pdev,
-            &UserTxBufferFS[USB_Tx_ptr],
-            USB_Tx_length);
+    USBD_CDC_SetTxBuffer ( pdev,    &UserTxBufferFS[USB_Tx_ptr],   USB_Tx_length);
     /* Prepare the available data buffer to be sent on IN endpoint */
     USBD_CDC_TransmitPacket(pdev);
 
@@ -404,10 +395,13 @@ static void CDC_InitiateTransmit(USBD_HandleTypeDef *pdev)
   * @param  pdev: instance
   * @retval None
   */
-static void CDC_Handle_USBAsynchXfer (USBD_HandleTypeDef *pdev)
+
+
+
+static   void     CDC_Handle_USBAsynchXfer (  USBD_HandleTypeDef  *pdev )
 {
 
-    if(CDC_Tx_State != 1)
+    if ( CDC_Tx_State != 1 )
     {
 
         if (CDC_Tx_PtrOut == APP_TX_DATA_SIZE)
@@ -437,11 +431,15 @@ static void CDC_Handle_USBAsynchXfer (USBD_HandleTypeDef *pdev)
     }
 }
 
-static int8_t  CDC_DataIn (USBD_HandleTypeDef *pdev)
+
+
+
+
+static  int8_t   CDC_DataIn ( USBD_HandleTypeDef *pdev )
 {
-    if (CDC_Tx_State == 1)
+    if ( CDC_Tx_State == 1 )
     {
-        if (CDC_Tx_Length == 0)
+        if ( CDC_Tx_Length == 0 )
         {
             CDC_Tx_State = 0;
         }
@@ -454,17 +452,17 @@ static int8_t  CDC_DataIn (USBD_HandleTypeDef *pdev)
     return CDC_Tx_State;
 }
 
-static int8_t  CDC_SOF (USBD_HandleTypeDef *pdev)
+static  int8_t  CDC_SOF ( USBD_HandleTypeDef *pdev )
 {
-    static uint32_t FrameCount = 0;
+    static  uint32_t  FrameCount = 0;
 
-    if (FrameCount++ == 2) // every second frame
+    if ( FrameCount++ == 2 ) // every second frame
     {
-        /* Reset the frame counter */
+        			/* Reset the frame counter */
         FrameCount = 0;
 
-        /* Check the data to be sent through IN pipe */
-        CDC_Handle_USBAsynchXfer(pdev);
+        			/* Check the data to be sent through IN pipe */
+        CDC_Handle_USBAsynchXfer( pdev );
     }
 
     return USBD_OK;

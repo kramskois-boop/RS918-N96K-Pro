@@ -364,8 +364,8 @@ typedef struct
   */
 
 /* Initialization and de-initialization functions *****************************/
-HAL_StatusTypeDef HAL_I2S_Init(I2S_HandleTypeDef *hi2s);
-HAL_StatusTypeDef HAL_I2S_DeInit (I2S_HandleTypeDef *hi2s);
+HAL_StatusTypeDef HAL_I2S_Init   ( I2S_HandleTypeDef *hi2s );
+HAL_StatusTypeDef HAL_I2S_DeInit ( I2S_HandleTypeDef *hi2s);
 void HAL_I2S_MspInit(I2S_HandleTypeDef *hi2s);
 void HAL_I2S_MspDeInit(I2S_HandleTypeDef *hi2s);
 /**

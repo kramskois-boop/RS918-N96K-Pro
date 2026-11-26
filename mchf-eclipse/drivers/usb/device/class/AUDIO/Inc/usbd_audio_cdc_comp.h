@@ -79,14 +79,14 @@
 
 
 
-#define AUDIO_OUT_PACKET                              (uint32_t)(((USBD_AUDIO_FREQ * 2 * 2) /1000)) 
+#define AUDIO_OUT_PACKET                              (uint32_t)(((USBD_AUDIO_FREQ*2*2)/1000))
 #define AUDIO_DEFAULT_VOLUME                          70
     
 /* Number of sub-packets in the audio transfer buffer. You can modify this value but always make sure
   that it is an even number and higher than 3 */
 #define AUDIO_OUT_PACKET_NUM                          16
 /* Total size of the audio transfer buffer */
-#define AUDIO_TOTAL_BUF_SIZE                          ((uint32_t)(AUDIO_OUT_PACKET * AUDIO_OUT_PACKET_NUM))
+#define AUDIO_TOTAL_BUF_SIZE                          ((uint32_t)(AUDIO_OUT_PACKET*AUDIO_OUT_PACKET_NUM))
     
     /* Audio Commands enumeration */
 typedef enum
@@ -149,7 +149,7 @@ typedef struct
     int8_t  (*MuteCtl)      (uint8_t cmd);
     int8_t  (*PeriodicTC)   (uint8_t cmd);
     int8_t  (*GetState)     (void);
-    int8_t  (*InVolumeCtl)    (uint8_t vol);
+    int8_t  (*InVolumeCtl)  (uint8_t vol);
 }USBD_AUDIO_ItfTypeDef;
 /**
   * @}
@@ -169,7 +169,7 @@ typedef struct
   * @{
   */ 
 
-extern USBD_ClassTypeDef  USBD_AUDIO;
+extern  USBD_ClassTypeDef    USBD_AUDIO;
 #define USBD_AUDIO_CLASS    &USBD_AUDIO
 /**
   * @}
@@ -178,7 +178,7 @@ extern USBD_ClassTypeDef  USBD_AUDIO;
 /** @defgroup USB_CORE_Exported_Functions
   * @{
   */ 
-uint8_t  USBD_AUDIO_RegisterInterface  (USBD_HandleTypeDef   *pdev, 
+uint8_t  USBD_AUDIO_RegisterInterface  (USBD_HandleTypeDef    *pdev,
                                         USBD_AUDIO_ItfTypeDef *fops);
 
 void  USBD_AUDIO_Sync (USBD_HandleTypeDef *pdev, AUDIO_OffsetTypeDef offset);

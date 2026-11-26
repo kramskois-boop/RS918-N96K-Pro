@@ -145,41 +145,37 @@
 
   /* Run the below code for Cortex-M4 and Cortex-M3 */
 
-void arm_fir_interpolate_f32(
-  const arm_fir_interpolate_instance_f32 * S,
-  float32_t * pSrc,
-  float32_t * pDst,
-  uint32_t blockSize)
+void arm_fir_interpolate_f32( const arm_fir_interpolate_instance_f32 * S, float32_t * pSrc, float32_t * pDst, uint32_t blockSize )
 {
-  float32_t *pState = S->pState;                 /* State pointer */
-  float32_t *pCoeffs = S->pCoeffs;               /* Coefficient pointer */
-  float32_t *pStateCurnt;                        /* Points to the current sample of the state */
-  float32_t *ptr1, *ptr2;                        /* Temporary pointers for state and coefficient buffers */
-  float32_t sum0;                                /* Accumulators */
-  float32_t x0, c0;                              /* Temporary variables to hold state and coefficient values */
-  uint32_t i, blkCnt, j;                         /* Loop counters */
-  uint16_t phaseLen = S->phaseLength, tapCnt;    /* Length of each polyphase filter component */
-  float32_t acc0, acc1, acc2, acc3;
-  float32_t x1, x2, x3;
-  uint32_t blkCntN4;
-  float32_t c1, c2, c3;
+  float32_t  *pState  = S->pState;                 /* State pointer */
+  float32_t  *pCoeffs = S->pCoeffs;                /* Coefficient pointer */
+  float32_t  *pStateCurnt;                         /* Points to the current sample of the state */
+  float32_t  *ptr1, *ptr2;                         /* Temporary pointers for state and coefficient buffers */
+  float32_t   sum0;                                /* Accumulators */
+  float32_t   x0, c0;                              /* Temporary variables to hold state and coefficient values */
+  uint32_t    i, blkCnt, j;                        /* Loop counters */
+  uint16_t    phaseLen = S->phaseLength, tapCnt;   /* Length of each polyphase filter component */
+  float32_t   acc0, acc1, acc2, acc3;
+  float32_t   x1, x2, x3;
+  uint32_t    blkCntN4;
+  float32_t   c1, c2, c3;
 
   /* S->pState buffer contains previous frame (phaseLen - 1) samples */
   /* pStateCurnt points to the location where the new input data should be written */
   pStateCurnt = S->pState + (phaseLen - 1u);
 
   /* Initialise  blkCnt */
-  blkCnt = blockSize / 4;
-  blkCntN4 = blockSize - (4 * blkCnt);
+  blkCnt    = blockSize / 4;
+  blkCntN4  = blockSize - (4 * blkCnt);
 
   /* Samples loop unrolled by 4 */
   while(blkCnt > 0u)
   {
     /* Copy new input sample into the state buffer */
-    *pStateCurnt++ = *pSrc++;
-    *pStateCurnt++ = *pSrc++;
-    *pStateCurnt++ = *pSrc++;
-    *pStateCurnt++ = *pSrc++;
+    *pStateCurnt++  = *pSrc++;
+    *pStateCurnt++  = *pSrc++;
+    *pStateCurnt++  = *pSrc++;
+    *pStateCurnt++  = *pSrc++;
 
     /* Address modifier index of coefficient buffer */
     j = 1u;
@@ -573,6 +569,204 @@ void arm_fir_interpolate_f32(
 }
 
 #endif /*   #ifndef ARM_MATH_CM0_FAMILY */
+
+
+
+
+
+
+
+void arm_fir_interpolate_f32_Nizar( const arm_fir_interpolate_instance_f32 * S, float32_t * pSrc, float32_t * pDst, uint32_t blockSize )
+{
+  float32_t  *pState  = S->pState;                 /* State pointer */
+  float32_t  *pCoeffs = S->pCoeffs;                /* Coefficient pointer */
+  float32_t  *pStateCurnt;                         /* Points to the current sample of the state */
+  float32_t  *ptr1, *ptr2;                         /* Temporary pointers for state and coefficient buffers */
+  float32_t   sum0;                                /* Accumulators */
+  float32_t   x0, c0;                              /* Temporary variables to hold state and coefficient values */
+  uint32_t    i, blkCnt, j;                        /* Loop counters */
+  uint16_t    phaseLen = S->phaseLength, tapCnt;   /* Length of each polyphase filter component */
+  float32_t   acc0, acc1, acc2, acc3;
+  float32_t   x1, x2, x3;
+  uint32_t    blkCntN4;
+  float32_t   c1, c2, c3;
+
+
+  pStateCurnt = S->pState + (phaseLen - 1u);
+
+
+          blkCnt = (blockSize >> 2u);
+  while ( blkCnt > 0u )   // 2
+  {
+
+		* pStateCurnt      = *pSrc++;
+		*(pStateCurnt+1u)  = *pSrc++;
+		*(pStateCurnt+2u)  = *pSrc++;
+		*(pStateCurnt+3u)  = *pSrc++;
+		  pStateCurnt     += 4u;
+
+		j = 1u;
+
+		i = (S->L);  // 4
+
+		while(i > 0u)   // 4
+		{
+			  acc0 = 0.0f;
+			  acc1 = 0.0f;
+			  acc2 = 0.0f;
+			  acc3 = 0.0f;
+			  ptr1 = pState;
+			  ptr2 = pCoeffs + (S->L - j);
+			  tapCnt = (phaseLen >> 2u) ;
+
+			  x0 = *(ptr1++);         // +3
+			  x1 = *(ptr1++);
+			  x2 = *(ptr1++);
+
+			  while(tapCnt > 0u)  // 1
+			  {
+					x3 = *(ptr1++);
+					c0 = *(ptr2);
+					acc0 += x0 * c0;
+					acc1 += x1 * c0;
+					acc2 += x2 * c0;
+					acc3 += x3 * c0;
+					c1 = *(ptr2 + S->L);
+					acc0 += x1 * c1;
+					x0 = *(ptr1++);
+					acc1 += x2 * c1;
+					acc2 += x3 * c1;
+					acc3 += x0 * c1;
+					c2 = *(ptr2 + S->L * 2);
+					x1 = *(ptr1++);
+					acc0 += x2 * c2;
+					acc1 += x3 * c2;
+					acc2 += x0 * c2;
+					acc3 += x1 * c2;
+					c3 = *(ptr2 + S->L * 3);
+					x2 = *(ptr1++);
+					acc0 += x3 * c3;
+					acc1 += x0 * c3;
+					acc2 += x1 * c3;
+					acc3 += x2 * c3;
+					ptr2 += 4 * S->L;
+					tapCnt--;
+			  }
+
+
+			  tapCnt = phaseLen & 0x3u;  // Reste Division par 4
+
+			  while(tapCnt > 0u)
+			  {
+
+					c0    = *(ptr2);
+					acc0 += x0 * c0;
+					x3    = *(ptr1++);
+					acc1 += x1 * c0;
+					acc2 += x2 * c0;
+					ptr2 += S->L;
+					acc3 += x3 * c0;
+					x0    = x1;
+					x1    = x2;
+					x2    = x3;
+					tapCnt--;
+			  }
+
+
+			  *pDst                    = acc0;
+			  *(pDst +     S->L      ) = acc1;
+			  *(pDst +    (S->L << 1)) = acc2;
+			  *(pDst + 3 * S->L      ) = acc3;
+
+			  pDst++;
+			  j++;
+			  i--;
+		}
+
+		pState = pState + 4u;
+		pDst += S->L * 3u;
+		blkCnt--;
+  }
+
+
+        blkCntN4  =  blockSize & 0x3;
+  while(blkCntN4 > 0u)
+  {
+
+		*pStateCurnt++ = *pSrc++;
+		j = 1u;
+		i = S->L;
+		while(i > 0u)
+		{
+			  sum0 = 0.0f;
+			  ptr1 = pState;
+			  ptr2 = pCoeffs + (S->L - j);
+			  tapCnt = (phaseLen >> 2u);
+			  while(tapCnt > 0u)
+			  {
+					c0     = *(ptr2);
+					ptr2  += S->L;
+					x0     = *(ptr1);
+					sum0  += x0 * c0;
+					c0     = *(ptr2);
+					ptr2  += S->L;
+					x0     = *(ptr1+1u);
+					sum0  += x0 * c0;
+					c0     = *(ptr2);
+					ptr2  += S->L;
+					x0     = *(ptr1+2u);
+					sum0  += x0 * c0;
+					c0     = *(ptr2);
+					ptr2  += S->L;
+					x0     = *(ptr1+3u);
+					sum0  += x0 * c0;
+					ptr1  += 4u;
+					tapCnt--;
+			  }
+
+
+			  tapCnt = phaseLen & 0x3u;
+
+			  while(tapCnt > 0u)
+			  {
+					sum0 += *(ptr1++) * (*ptr2);
+					ptr2 += S->L;
+					tapCnt--;
+			  }
+
+			  *pDst++ = sum0;
+
+			  j++;
+			  i--;
+		}
+
+		pState++;
+		blkCntN4--;
+  }
+
+  pStateCurnt = S->pState;
+  tapCnt      = ((phaseLen - 1u) >> 2u);
+
+
+  while(tapCnt > 0u)
+  {
+		*pStateCurnt     = *pState++;
+		*(pStateCurnt+1) = *pState++;
+		*(pStateCurnt+2) = *pState++;
+		*(pStateCurnt+3) = *pState++;
+		  pStateCurnt   += 4u;
+		tapCnt--;
+  }
+
+  tapCnt = (phaseLen - 1u) & 0x03u;
+
+  while(tapCnt > 0u)
+  {
+		*pStateCurnt++ = *pState++;
+		tapCnt--;
+  }
+
+}
 
 
 

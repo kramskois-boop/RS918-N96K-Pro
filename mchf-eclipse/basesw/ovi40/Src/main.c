@@ -112,15 +112,18 @@ int main(void)
   /* Enable D-Cache-------------------------------------------------------------*/
   SCB_EnableDCache();
 
-  /* MCU Configuration----------------------------------------------------------*/
+  	  	  	  	  	  	  /* MCU Configuration----------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  	  	  	  	  	  	  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+
   HAL_Init();
 
-  /* Ensure we have a clock configuration as in reset state, i.e. PLL clock is off and we are using HSI */
+  	  	  	  	  	  	  /* Ensure we have a clock configuration as in reset state, i.e. PLL clock is off and we are using HSI */
+
   HAL_RCC_DeInit();
 
-  /* Configure the system clock */
+  	  	  	  	  	  	  /* Configure the system clock */
+
   SystemClock_Config();
 
 #ifdef BOOTLOADER_BUILD
@@ -192,9 +195,9 @@ int main(void)
 void SystemClock_Config(void)
 {
 
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
+  RCC_OscInitTypeDef        RCC_OscInitStruct;
+  RCC_ClkInitTypeDef        RCC_ClkInitStruct;
+  RCC_PeriphCLKInitTypeDef  PeriphClkInitStruct;
 
     /**Configure LSE Drive Capability 
     */
@@ -208,19 +211,19 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.HSEState            = RCC_HSE_BYPASS;
+  RCC_OscInitStruct.LSEState            = RCC_LSE_ON;
+  RCC_OscInitStruct.HSIState            = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = 16;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 16; //10;
-  RCC_OscInitStruct.PLL.PLLN = 432; //270;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 9;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM            = 16;     //   10;
+  RCC_OscInitStruct.PLL.PLLN            = 432;    //  270;
+  RCC_OscInitStruct.PLL.PLLP            = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ            = 9;
+
+  if ( HAL_RCC_OscConfig( &RCC_OscInitStruct ) != HAL_OK)
   {
     Error_Handler();
   }
@@ -234,50 +237,51 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
+  if ( HAL_RCC_ClockConfig( &RCC_ClkInitStruct, FLASH_LATENCY_7 ) != HAL_OK)
   {
     Error_Handler();
   }
 
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_SAI1
-                              |RCC_PERIPHCLK_SAI2|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_I2C4
-                              |RCC_PERIPHCLK_CLK48;
-  PeriphClkInitStruct.PLLSAI.PLLSAIN = 258; //192;
-  PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
-  PeriphClkInitStruct.PLLSAI.PLLSAIQ = 7; //5;
-  PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV2;
-  PeriphClkInitStruct.PLLSAIDivQ = 3; //5;
-  PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
-  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
-  PeriphClkInitStruct.Sai1ClockSelection = RCC_SAI1CLKSOURCE_PLLSAI;
-  PeriphClkInitStruct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLSAI;
-  PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
-  PeriphClkInitStruct.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
-  PeriphClkInitStruct.I2c4ClockSelection = RCC_I2C4CLKSOURCE_PCLK1;
+  PeriphClkInitStruct.PeriphClockSelection =   RCC_PERIPHCLK_RTC |RCC_PERIPHCLK_SAI1
+											  |RCC_PERIPHCLK_SAI2|RCC_PERIPHCLK_I2C1
+											  |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_I2C4
+											  |RCC_PERIPHCLK_CLK48;
+
+  PeriphClkInitStruct.PLLSAI.PLLSAIN      = 258; //192;
+  PeriphClkInitStruct.PLLSAI.PLLSAIR      = 2;
+  PeriphClkInitStruct.PLLSAI.PLLSAIQ      = 7; //5;
+  PeriphClkInitStruct.PLLSAI.PLLSAIP      = RCC_PLLSAIP_DIV2;
+  PeriphClkInitStruct.PLLSAIDivQ          = 3; //5;
+  PeriphClkInitStruct.PLLSAIDivR          = RCC_PLLSAIDIVR_2;
+  PeriphClkInitStruct.RTCClockSelection   = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInitStruct.Sai1ClockSelection  = RCC_SAI1CLKSOURCE_PLLSAI;
+  PeriphClkInitStruct.Sai2ClockSelection  = RCC_SAI2CLKSOURCE_PLLSAI;
+  PeriphClkInitStruct.I2c1ClockSelection  = RCC_I2C1CLKSOURCE_HSI;
+  PeriphClkInitStruct.I2c2ClockSelection  = RCC_I2C2CLKSOURCE_PCLK1;
+  PeriphClkInitStruct.I2c4ClockSelection  = RCC_I2C4CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
+
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
-    Error_Handler();
+        Error_Handler();
   }
 
     /**Configure the Systick interrupt time 
     */
-  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  HAL_SYSTICK_Config( HAL_RCC_GetHCLKFreq() / 1000 );
 
     /**Configure the Systick 
     */
-  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+  HAL_SYSTICK_CLKSourceConfig( SYSTICK_CLKSOURCE_HCLK );
 
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  HAL_NVIC_SetPriority( SysTick_IRQn,  0,  0 );
 }
 
 /* USER CODE BEGIN 4 */
@@ -294,22 +298,23 @@ void MPU_Config(void)
   HAL_MPU_Disable();
     /**Initializes and configures the Region and the memory to be protected 
     */
-  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-  MPU_InitStruct.Number = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress = 0x60000000;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_4MB;
+  MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
+  MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
+  MPU_InitStruct.BaseAddress      = 0x60000000;
+  MPU_InitStruct.Size             = MPU_REGION_SIZE_4MB;
   MPU_InitStruct.SubRegionDisable = 0x0;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+  MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL0;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+  MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_DISABLE;
+  MPU_InitStruct.IsShareable      = MPU_ACCESS_SHAREABLE;
+  MPU_InitStruct.IsCacheable      = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
 
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+  HAL_MPU_ConfigRegion( &MPU_InitStruct );
 
   /* Enables the MPU */
-  HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+
+  HAL_MPU_Enable( MPU_PRIVILEGED_DEFAULT );
 
 }
 
@@ -324,6 +329,7 @@ void Error_Handler()
   /* User can add his own implementation to report the HAL error return state */
   while(1) 
   {
+
   }
   /* USER CODE END Error_Handler_Debug */ 
 }
@@ -337,7 +343,7 @@ void Error_Handler()
    * @param line: assert_param error line source number
    * @retval None
    */
-void assert_failed(uint8_t* file, uint32_t line)
+void   assert_failed (  uint8_t*   file,  uint32_t   line  )
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,

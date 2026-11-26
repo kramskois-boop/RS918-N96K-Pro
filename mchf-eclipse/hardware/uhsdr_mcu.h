@@ -37,7 +37,7 @@ typedef enum {
 #include "stm32f407xx.h"
 #endif
 
-inline mchf_cpu_t MchfHW_Cpu()
+inline static mchf_cpu_t MchfHW_Cpu()
 {
     mchf_cpu_t retval = CPU_NONE;
 #if defined(STM32F4)
@@ -67,11 +67,17 @@ inline mchf_cpu_t MchfHW_Cpu()
     #define GPIO_SetBits(PORT,PINS) { (PORT)->BSRRL = (PINS); }
     #define GPIO_ResetBits(PORT,PINS) { (PORT)->BSRRH = (PINS); }
 #elif defined(STM32F7) || defined(STM32F4)
-    #define GPIO_SetBits(PORT,PINS) { (PORT)->BSRR = (PINS); }
-    #define GPIO_ResetBits(PORT,PINS) { (PORT)->BSRR = (PINS) << 16U; }
+
+     #define GPIO_SetBits(PORT,PINS) { (PORT)->BSRR = (PINS); }
+  //  inline static void GPIO_SetBits(GPIO_TypeDef *PORT, uint32_t PINS) { (PORT)->BSRR = (PINS); }  // NIZZ
+
+     #define GPIO_ResetBits(PORT,PINS) { (PORT)->BSRR = (PINS) << 16U; }
+    // inline static void GPIO_ResetBits(GPIO_TypeDef *PORT, uint32_t PINS) { (PORT)->BSRR = (PINS) << 16U; } // NIZZ
 #endif
 
-#define GPIO_ToggleBits(PORT,PINS) { (PORT)->ODR ^= (PINS); }
-#define GPIO_ReadInputDataBit(PORT,PINS) { ((PORT)->IDR = (PINS); }
+ #define GPIO_ToggleBits(PORT,PINS) { (PORT)->ODR ^= (PINS); }
+//inline static void GPIO_ToggleBits(GPIO_TypeDef *PORT, uint32_t PINS) { (PORT)->ODR ^= (PINS); }   // NIZZ
 
+  #define GPIO_ReadInputDataBit(PORT,PINS) { ((PORT)->IDR = (PINS); }
+// inline static void GPIO_ReadInputDataBit ( GPIO_TypeDef *PORT, uint32_t PINS ) { (PORT)->IDR = (PINS); }
 #endif

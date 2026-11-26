@@ -71,44 +71,34 @@
  */
 
 
-void arm_copy_f32(
-  float32_t * pSrc,
-  float32_t * pDst,
-  uint32_t blockSize)
+void    arm_copy_f32 (  float32_t * pSrc, float32_t * pDst,  uint32_t  blockSize )
 {
-  uint32_t blkCnt;                               /* loop counter */
+  uint32_t   blkCnt;
 
 #ifndef ARM_MATH_CM0_FAMILY
 
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-  float32_t in1, in2, in3, in4;
+  float32_t   in1, in2, in3, in4;
 
-  /*loop Unrolling */
   blkCnt = blockSize >> 2u;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.    
-   ** a second loop below computes the remaining 1 to 3 samples. */
-  while(blkCnt > 0u)
+  while ( blkCnt > 0u )
   {
-    /* C = A */
-    /* Copy and then store the results in the destination buffer */
-    in1 = *pSrc++;
-    in2 = *pSrc++;
-    in3 = *pSrc++;
-    in4 = *pSrc++;
+    in1        = * pSrc;
+    in2        = *(pSrc+1u);
+    in3        = *(pSrc+2u);
+    in4        = *(pSrc+3u);
 
-    *pDst++ = in1;
-    *pDst++ = in2;
-    *pDst++ = in3;
-    *pDst++ = in4;
+    *(pDst)    = in1;
+    *(pDst+1u) = in2;
+    *(pDst+2u) = in3;
+    *(pDst+3u) = in4;
 
-    /* Decrement the loop counter */
+    pSrc += 4u;
     blkCnt--;
+    pDst += 4u;
   }
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.    
-   ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4u;
+  blkCnt = blockSize & 0x3u;
 
 #else
 

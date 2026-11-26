@@ -46,10 +46,14 @@ uint16_t MCHF_I2C_ReadRegister(I2C_HandleTypeDef* hi2c, uchar I2CAddr, uint16_t 
 uint16_t MCHF_I2C_ReadBlock(I2C_HandleTypeDef* hi2c, uchar I2CAddr,uint16_t addr, uint16_t addr_size, uint8_t *data, uint32_t size)
 {
 
-    HAL_StatusTypeDef i2cRet = HAL_I2C_Mem_Read(hi2c,I2CAddr,addr,addr_size,data,size,100);
+    HAL_StatusTypeDef i2cRet = HAL_I2C_Mem_Read ( hi2c, I2CAddr, addr, addr_size, data, size, 100 );
 
     return  i2cRet != HAL_OK?0xFF00:0;
 }
+
+
+
+
 
 /**
  * @brief init I2C
@@ -62,26 +66,27 @@ void MchfHw_I2C_ChangeSpeed(I2C_HandleTypeDef* hi2c)
 #ifdef STM32F4
     uint8_t speedIdx;
 
-    if (hi2c->Instance == I2C1)
-    {
-        speedIdx = I2C_BUS_1;
-    }
-    else
-    {
-        speedIdx = I2C_BUS_2;
-    }
+    if   ( hi2c->Instance == I2C1) { speedIdx = I2C_BUS_1; }
+    else    					   { speedIdx = I2C_BUS_2; }
 
 
     HAL_I2C_DeInit(hi2c);
     // FIXME: F7PORT: I2C Clock Timing works differently on the F7, we need to supply correct register values instead of a simple speed value
-    hi2c->Init.ClockSpeed = ts.i2c_speed[speedIdx] * I2C_BUS_SPEED_MULT;
+    //
+    // overclocking 3//  20000 pour 168Mhz/ 18666 pour 180Mhz/ 17500 pour 192Mhz/ 15555 pour 216Mhz
+    // il parait que la I2C via les fonction HAL_ s'adapte a la nouvelle frequence du processeur overclockee a 216Mhz
+    // donc pas besoins de changer la valeur de la frequence I2C_speed, on garde les vrais valeurs en Hz comme avant , on ne change pas de coeff
+    hi2c->Init.ClockSpeed = ts.i2c_speed[speedIdx] * 20000;  // 15556;  // I2C_BUS_SPEED_MULT; // 17500;   //  I2C_BUS_SPEED_MULT; // on vient de l'adapter pour 192Mhz au lieu du 20000 du 168Mhz
 #endif
 
     HAL_I2C_Init(hi2c);
 
 }
 
-void MchfHw_I2C_Reset(I2C_HandleTypeDef* hi2c)
+
+
+
+void MchfHw_I2C_Reset( I2C_HandleTypeDef* hi2c )
 {
     MchfHw_I2C_ChangeSpeed(hi2c);
 }
@@ -91,7 +96,7 @@ void MchfHw_I2C_Reset(I2C_HandleTypeDef* hi2c)
  */
 void mchf_hw_i2c1_init()
 {
-    MchfHw_I2C_ChangeSpeed(&hi2c1);
+    MchfHw_I2C_ChangeSpeed( &hi2c1 );
 }
 
 /*
@@ -104,7 +109,7 @@ void mchf_hw_i2c2_init()
 
 void mchf_hw_i2c1_reset(void)
 {
-    MchfHw_I2C_Reset(&hi2c2);
+    MchfHw_I2C_Reset(&hi2c1);
 }
 
 void mchf_hw_i2c2_reset(void)

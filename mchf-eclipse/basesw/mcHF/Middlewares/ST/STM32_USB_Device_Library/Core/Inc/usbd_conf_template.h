@@ -70,7 +70,7 @@
 #define USBD_DFU_XFERS_IZE                     1024
 
  /* AUDIO Class Config */
-#define USBD_AUDIO_FREQ                       22100 
+#define USBD_AUDIO_FREQ                      22100    // Niz96
 
 /** @defgroup USBD_Exported_Macros
   * @{

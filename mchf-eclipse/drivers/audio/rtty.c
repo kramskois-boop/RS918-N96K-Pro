@@ -171,13 +171,13 @@ const uint8_t Ascii2Baudot[128] =
 
 const rtty_speed_item_t rtty_speeds[RTTY_SPEED_NUM] =
 {
-		{ .id =RTTY_SPEED_45, .value = 45.45, .label = "45" },
-		{ .id =RTTY_SPEED_50, .value = 50, .label = "50"  },
+		{ .id =RTTY_SPEED_45, .value = 45.45, .label = " 45" },
+		{ .id =RTTY_SPEED_50, .value = 50   , .label = " 50" },
 };
 
 const rtty_shift_item_t rtty_shifts[RTTY_SHIFT_NUM] =
 {
-		{ RTTY_SHIFT_85, 85, " 85" },
+		{ RTTY_SHIFT_85,   85, " 85" },
 		{ RTTY_SHIFT_170, 170, "170" },
 		{ RTTY_SHIFT_200, 200, "200" },
 		{ RTTY_SHIFT_425, 425, "425" },
@@ -198,7 +198,7 @@ typedef struct
 {
 	float32_t gain;
 	float32_t coeffs[4];
-	uint16_t freq; // center freq
+	uint16_t  freq; // center freq
 } rtty_bpf_config_t;
 
 typedef struct
@@ -255,18 +255,18 @@ typedef enum {
 
 
 typedef struct {
-	rtty_bpf_data_t bpfSpaceData;
-	rtty_bpf_data_t bpfMarkData;
-	rtty_lpf_data_t lpfData;
-	rtty_bpf_config_t *bpfSpaceConfig;
-	rtty_bpf_config_t *bpfMarkConfig;
-	rtty_lpf_config_t *lpfConfig;
+	rtty_bpf_data_t    bpfSpaceData;
+	rtty_bpf_data_t    bpfMarkData;
+	rtty_lpf_data_t    lpfData;
+	rtty_bpf_config_t  *bpfSpaceConfig;
+	rtty_bpf_config_t  *bpfMarkConfig;
+	rtty_lpf_config_t  *lpfConfig;
 
 	uint16_t oneBitSampleCount;
-	int32_t DPLLOldVal;
-	int32_t DPLLBitPhase;
+	int32_t  DPLLOldVal;
+	int32_t  DPLLBitPhase;
 
-	uint8_t byteResult;
+	uint8_t  byteResult;
 	uint16_t byteResultp;
 
 	rtty_charSetMode_t charSetMode;
@@ -290,9 +290,9 @@ rtty_decoder_data_t rttyDecoderData;
 // order 2 Butterworth, freqs: 865-965 Hz
 rtty_bpf_config_t rtty_bp_48khz_915 =
 {
-		.gain = 2.356080041e+04,  // gain at centre
+		.gain   = 2.356080041e+04,  // gain at centre
 		.coeffs = {-0.9816582826, 3.9166274264, -5.8882201843, 3.9530488323 },
-		.freq = 915
+		.freq   = 915
 };
 
 // order 2 Butterworth, freqs: 1035-1135 Hz
@@ -307,7 +307,7 @@ rtty_bpf_config_t rtty_bp_48khz_1085 =
 // order 2 Butterworth, freq: 50 Hz
 rtty_lpf_config_t rtty_lp_48khz_50 =
 {
-		.gain = 9.381008646e+04,
+		.gain   = 9.381008646e+04,
 		.coeffs = {-0.9907866988, 1.9907440595 }
 };
 
@@ -316,9 +316,9 @@ rtty_lpf_config_t rtty_lp_48khz_50 =
 // order 2 Butterworth, freqs: 865-965 Hz, centre: 915 Hz
 static rtty_bpf_config_t rtty_bp_12khz_915 =
 {
-		.gain = 1.513364755e+03,
+		.gain   = 1.513364755e+03,
 		.coeffs = { -0.9286270861, 3.3584472566, -4.9635817596, 3.4851652468 },
-		.freq = 915
+		.freq   = 915
 };
 
 // order 2 Butterworth, freqs: 1315-1415 Hz, centre 1365Hz
@@ -331,9 +331,9 @@ static rtty_bpf_config_t rtty_bp_12khz_1365 =
 // order 2 Butterworth, freqs: 1035-1135 Hz, centre: 1085Hz
 static rtty_bpf_config_t rtty_bp_12khz_1085 =
 {
-		.gain = 1.513364927e+03,
+		.gain   = 1.513364927e+03,
 		.coeffs = { -0.9286270861, 3.1900687350, -4.6666321298, 3.3104336142 },
-		.freq = 1085
+		.freq   = 1085
 };
 // order 2 Butterworth, freqs: 1065-1165 Hz, centre: 1115Hz
 // for 200Hz shift
@@ -349,9 +349,9 @@ static rtty_bpf_config_t rtty_bp_12khz_1115 =
 // order 2 Butterworth, freqs: 975-1025 Hz, centre: 1000Hz
 static rtty_bpf_config_t rtty_bp_12khz_1000 =
 {
-		.gain = 5.944465260e+03,
+		.gain   = 5.944465260e+03,
 		.coeffs = { -0.9636529842, 3.3693752166, -4.9084595657, 3.4323354886 },
-		.freq = 1000
+		.freq   = 1000
 };
 
 // for 425Hz shift --> 915 + 425Hz = space = 1340Hz
@@ -359,9 +359,9 @@ static rtty_bpf_config_t rtty_bp_12khz_1000 =
 // order 2 Butterworth, freqs: 1290 - 1390 Hz, centre: 1340Hz
 static rtty_bpf_config_t rtty_bp_12khz_1340 =
 {
-		.gain = 1.513365018e+03,
+		.gain   = 1.513365018e+03,
 		.coeffs = { -0.9286270862, 2.8906128091, -4.1762457780, 2.9996788796 },
-		.freq = 1340
+		.freq   = 1340
 };
 
 // for 850Hz shift --> 915 + 850Hz = space = 1765Hz
@@ -369,15 +369,15 @@ static rtty_bpf_config_t rtty_bp_12khz_1340 =
 // order 2 Butterworth, freqs: 1715 - 1815 Hz, centre: 1765Hz
 static rtty_bpf_config_t rtty_bp_12khz_1765 =
 {
-		.gain = 1.513365057e+03,
+		.gain   = 1.513365057e+03,
 		.coeffs = { -0.9286270862, 2.1190223173, -3.1352567157, 2.1989754113 },
-		.freq = 1765
+		.freq   = 1765
 };
 
 
 static rtty_lpf_config_t rtty_lp_12khz_50 =
 {
-		.gain = 5.944465310e+03,
+		.gain   = 5.944465310e+03,
 		.coeffs = { -0.9636529842, 1.9629800894 }
 };
 
@@ -389,51 +389,41 @@ void RttyDecoder_Init()
 
 	// TODO: pass config as parameter and make it changeable via menu
 	rtty_mode_current_config.samplerate = 12000;
-	rtty_mode_current_config.shift = rtty_shifts[rtty_ctrl_config.shift_idx].value;
-	rtty_mode_current_config.speed = rtty_speeds[rtty_ctrl_config.speed_idx].value;
-	rtty_mode_current_config.stopbits = rtty_ctrl_config.stopbits_idx;
+	rtty_mode_current_config.shift      = rtty_shifts[rtty_ctrl_config.shift_idx].value;
+	rtty_mode_current_config.speed      = rtty_speeds[rtty_ctrl_config.speed_idx].value;
+	rtty_mode_current_config.stopbits   = rtty_ctrl_config.stopbits_idx;
 
-	rttyDecoderData.config_p = &rtty_mode_current_config;
+	rttyDecoderData.config_p            = &rtty_mode_current_config;
 
 	// common config to all supported modes
 	rttyDecoderData.oneBitSampleCount = (uint16_t)roundf(rttyDecoderData.config_p->samplerate/rttyDecoderData.config_p->speed);
 	rttyDecoderData.charSetMode = RTTY_MODE_LETTERS;
-	rttyDecoderData.state = RTTY_RUN_STATE_WAIT_START;
+	rttyDecoderData.state       = RTTY_RUN_STATE_WAIT_START;
 
 	rttyDecoderData.bpfMarkConfig = &rtty_bp_12khz_915; // this is mark, or '1'
-	rttyDecoderData.lpfConfig = &rtty_lp_12khz_50;
+	rttyDecoderData.lpfConfig     = &rtty_lp_12khz_50;
 
 	// now we handled the specifics
 	switch (rttyDecoderData.config_p->shift)
 	{
-	case 85:
-		rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1000;
-		break;
-	case 200:
-		rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1115;
-		break;
-	case 425:
-		rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1340;
-		break;
-	case 450:
-		rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1365; // this is space or '0'
-		break;
-	case 850:
-		rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1765; // this is space or '0'
-		break;
-	case 170:
-	default:
-		// all unsupported shifts are mapped to 170
-		rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1085; // this is space or '0'
+		case 85:   rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1000;	break;
+		case 200:  rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1115;	break;
+		case 425:  rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1340;	break;
+		case 450:  rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1365; 	break;// this is space or '0'
+		case 850:  rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1765;	break;// this is space or '0'
+		case 170:
+		default:
+				   // all unsupported shifts are mapped to 170
+				   rttyDecoderData.bpfSpaceConfig = &rtty_bp_12khz_1085; // this is space or '0'
 	}
 
 	// configure DDS for transmission
-	softdds_setFreqDDS(&rttyDecoderData.tx_dds[0], rttyDecoderData.bpfSpaceConfig->freq, ts.samp_rate, 0);
-	softdds_setFreqDDS(&rttyDecoderData.tx_dds[1], rttyDecoderData.bpfMarkConfig->freq, ts.samp_rate, 0);
+	softdds_setFreqDDS(&rttyDecoderData.tx_dds[0], rttyDecoderData.bpfSpaceConfig->freq, ts.samp_rate_48k, 0);
+	softdds_setFreqDDS(&rttyDecoderData.tx_dds[1], rttyDecoderData.bpfMarkConfig->freq,  ts.samp_rate_48k, 0);
 
 }
 
-float32_t decayavg(float32_t average, float32_t input, int weight)
+float32_t  decayavg(float32_t average, float32_t input, int weight)
 { // adapted from https://github.com/ukhas/dl-fldigi/blob/master/src/include/misc.h
 	float32_t retval;
 	if (weight <= 1)
@@ -452,13 +442,13 @@ float32_t decayavg(float32_t average, float32_t input, int weight)
 static int RttyDecoder_demodulator(float32_t sample)
 {
 
-	float32_t space_mag = RttyDecoder_bandPassFreq(sample, rttyDecoderData.bpfSpaceConfig, &rttyDecoderData.bpfSpaceData);
-	float32_t mark_mag = RttyDecoder_bandPassFreq(sample, rttyDecoderData.bpfMarkConfig, &rttyDecoderData.bpfMarkData);
+	float32_t  space_mag = RttyDecoder_bandPassFreq(sample, rttyDecoderData.bpfSpaceConfig, &rttyDecoderData.bpfSpaceData);
+	float32_t  mark_mag  = RttyDecoder_bandPassFreq(sample, rttyDecoderData.bpfMarkConfig,  &rttyDecoderData.bpfMarkData);
 
-	float32_t v1 = 0.0;
+	float32_t  v1 = 0.0;
 	// calculating the RMS of the two lines (squaring them)
 	space_mag *= space_mag;
-	mark_mag *= mark_mag;
+	mark_mag  *= mark_mag;
 
     if(ts.rtty_atc_enable)
 	{   // RTTY decoding with ATC = automatic threshold correction
@@ -466,10 +456,10 @@ static int RttyDecoder_demodulator(float32_t sample)
 		// dirty fix
 		float32_t helper = space_mag;
 		space_mag = mark_mag;
-		mark_mag = helper;
-		static float32_t mark_env = 0.0;
-		static float32_t space_env = 0.0;
-		static float32_t mark_noise = 0.0;
+		mark_mag  = helper;
+		static float32_t mark_env    = 0.0;
+		static float32_t space_env   = 0.0;
+		static float32_t mark_noise  = 0.0;
 		static float32_t space_noise = 0.0;
 		// experiment to implement an ATC (Automatic threshold correction), DD4WH, 2017_08_24
 		// everything taken from FlDigi, licensed by GNU GPLv2 or later
@@ -492,8 +482,8 @@ static int RttyDecoder_demodulator(float32_t sample)
 		//		v1 = space_mag - mark_mag - 0.5 * (space_env - mark_env);
 
 		// Compensating for the noise floor by using clipping
-		float32_t mclipped = 0.0, sclipped = 0.0;
-		mclipped = mark_mag > mark_env ? mark_env : mark_mag;
+		float32_t   mclipped = 0.0,  sclipped = 0.0;
+		mclipped =  mark_mag >  mark_env ? mark_env  : mark_mag;
 		sclipped = space_mag > space_env ? space_env : space_mag;
 		if (mclipped < noise_floor)
 		{
@@ -517,9 +507,9 @@ static int RttyDecoder_demodulator(float32_t sample)
 		 */
 
 		// Optimal ATC (Section 6 of of www.w7ay.net/site/Technical/ATC)
-		v1  = (mclipped - noise_floor) * (mark_env - noise_floor) -
-				(sclipped - noise_floor) * (space_env - noise_floor) -
-				0.25 *  ((mark_env - noise_floor) * (mark_env - noise_floor) -
+		v1  =            (mclipped - noise_floor) * (mark_env  - noise_floor) -
+				         (sclipped - noise_floor) * (space_env - noise_floor) -
+				0.25 *  ((mark_env - noise_floor) * (mark_env  - noise_floor) -
 						(space_env - noise_floor) * (space_env - noise_floor));
 
 		v1 = RttyDecoder_lowPass(v1, rttyDecoderData.lpfConfig, &rttyDecoderData.lpfData);
@@ -543,9 +533,10 @@ static int RttyDecoder_demodulator(float32_t sample)
 }
 
 // this function returns true once at the half of a bit with the bit's value
-static bool RttyDecoder_getBitDPLL(float32_t sample, bool* val_p) {
-	static bool phaseChanged = false;
-	bool retval = false;
+static bool RttyDecoder_getBitDPLL(float32_t sample, bool* val_p)
+{
+	static bool  phaseChanged = false;
+	       bool  retval       = false;
 
 
 	if (rttyDecoderData.DPLLBitPhase < rttyDecoderData.oneBitSampleCount)
@@ -579,40 +570,45 @@ static bool RttyDecoder_getBitDPLL(float32_t sample, bool* val_p) {
 }
 
 // this function returns only true when the start bit is successfully received
-static bool RttyDecoder_waitForStartBit(float32_t sample) {
-	bool retval = false;
-	int bitResult;
-	static int16_t wait_for_start_state = 0;
-	static int16_t wait_for_half = 0;
+static  bool  RttyDecoder_waitForStartBit( float32_t sample)
+{
+	       bool     retval               = false;
+	       int      bitResult;
+	static int16_t  wait_for_start_state = 0;
+	static int16_t  wait_for_half        = 0;
 
 	bitResult = RttyDecoder_demodulator(sample);
-	switch (wait_for_start_state)
+
+	switch ( wait_for_start_state )
 	{
-	case 0:
-		// waiting for a falling edge
-		if (bitResult != 0)
-		{
-			wait_for_start_state++;
-		}
-		break;
-	case 1:
-		if (bitResult != 1)
-		{
-			wait_for_start_state++;
-		}
-		break;
-	case 2:
-		wait_for_half = rttyDecoderData.oneBitSampleCount/2;
-		wait_for_start_state ++;
-		/* no break */
-	case 3:
-		wait_for_half--;
-		if (wait_for_half == 0)
-		{
-			retval = (bitResult == 0);
-			wait_for_start_state = 0;
-		}
-		break;
+		case 0:
+				// waiting for a falling edge
+				if (bitResult != 0)
+				{
+					wait_for_start_state++;
+				}
+				break;
+
+		case 1:
+				if (bitResult != 1)
+				{
+					wait_for_start_state++;
+				}
+				break;
+
+		case 2:
+				wait_for_half = rttyDecoderData.oneBitSampleCount/2;
+				wait_for_start_state ++;
+				/* no break */
+
+		case 3:
+				wait_for_half--;
+				if (wait_for_half == 0)
+				{
+					retval = (bitResult == 0);
+					wait_for_start_state = 0;
+				}
+				break;
 	}
 	return retval;
 }
@@ -633,7 +629,7 @@ void RttyDecoder_ProcessSample(float32_t sample)
 		{
 			rttyDecoderData.state = RTTY_RUN_STATE_BIT;
 			rttyDecoderData.byteResultp = 1;
-			rttyDecoderData.byteResult = 0;
+			rttyDecoderData.byteResult  = 0;
 		}
 		break;
 	case RTTY_RUN_STATE_BIT:
@@ -674,26 +670,29 @@ void RttyDecoder_ProcessSample(float32_t sample)
 		{
 			char charResult;
 
-			switch (rttyDecoderData.byteResult) {
-			case RTTY_LETTER_CODE:
-				rttyDecoderData.charSetMode = RTTY_MODE_LETTERS;
-				// System.out.println(" ^L^");
-				break;
-			case RTTY_SYMBOL_CODE:
-				rttyDecoderData.charSetMode = RTTY_MODE_SYMBOLS;
-				// System.out.println(" ^F^");
-				break;
-			default:
-				switch (rttyDecoderData.charSetMode)
-				{
-				case RTTY_MODE_LETTERS:
-					charResult = RTTYLetters[rttyDecoderData.byteResult];
-					break;
-				case RTTY_MODE_SYMBOLS:
-					charResult = RTTYSymbols[rttyDecoderData.byteResult];
-					break;
-				}
-				UiDriver_TextMsgPutChar(charResult);
+			switch (rttyDecoderData.byteResult)
+			{
+				case RTTY_LETTER_CODE:
+								rttyDecoderData.charSetMode = RTTY_MODE_LETTERS;
+								// System.out.println(" ^L^");
+								break;
+
+				case RTTY_SYMBOL_CODE:
+								rttyDecoderData.charSetMode = RTTY_MODE_SYMBOLS;
+								// System.out.println(" ^F^");
+								break;
+				default:
+								switch (rttyDecoderData.charSetMode)
+								{
+									case RTTY_MODE_LETTERS:
+										charResult = RTTYLetters[rttyDecoderData.byteResult];
+										break;
+
+									case RTTY_MODE_SYMBOLS:
+										charResult = RTTYSymbols[rttyDecoderData.byteResult];
+										break;
+								}
+								UiDriver_TextMsgPutChar(charResult);
 			}
 			rttyDecoderData.state = RTTY_RUN_STATE_WAIT_START;
 		}
@@ -711,30 +710,30 @@ typedef enum
 
 typedef struct
 {
-	uint8_t char_bit_idx;
-	uint16_t char_bits;
-	uint32_t char_bit_samples;
-	uint16_t last_bit;
-	int16_t last_value;
-	uint8_t current_bit;
-	msk_state_t msk_state;
-	rtty_charSetMode_t char_mode;
+	uint8_t             char_bit_idx;
+	uint16_t            char_bits;
+	uint32_t            char_bit_samples;
+	uint16_t            last_bit;
+	int16_t             last_value;
+	uint8_t             current_bit;
+	msk_state_t         msk_state;
+	rtty_charSetMode_t  char_mode;
 
 } rtty_tx_encoder_state_t;
 
 rtty_tx_encoder_state_t  rtty_tx =
 {
-		.last_bit = 1,
+		.last_bit   = 1,
 		.last_value = INT16_MIN,
-		.char_mode = RTTY_MODE_LETTERS,
+		.char_mode  = RTTY_MODE_LETTERS,
 
 };
 
-#define DIGIMODES_TX_BUFFER_SIZE  128
+#define  DIGIMODES_TX_BUFFER_SIZE  128
 
-static __IO uint8_t digimodes_tx_buffer[DIGIMODES_TX_BUFFER_SIZE];
-static __IO int32_t digimodes_tx_buffer_head = 0;
-static __IO int32_t digimodes_tx_tail = 0;
+static __IO uint8_t  digimodes_tx_buffer[DIGIMODES_TX_BUFFER_SIZE];
+static __IO int32_t  digimodes_tx_buffer_head = 0;
+static __IO int32_t  digimodes_tx_tail        = 0;
 
 uint8_t DigiModes_TxBufferHasData()
 {
@@ -748,16 +747,16 @@ int DigiModes_TxBufferRemove(uint8_t* c_ptr)
 
     if (digimodes_tx_buffer_head != digimodes_tx_tail)
     {
-        int c = digimodes_tx_buffer[digimodes_tx_tail];
+        int   c           = digimodes_tx_buffer[digimodes_tx_tail];
         digimodes_tx_tail = (digimodes_tx_tail + 1) % DIGIMODES_TX_BUFFER_SIZE;
-        *c_ptr = (uint8_t)c;
+        *c_ptr            = (uint8_t)c;
         ret++;
     }
     return ret;
 }
 
 /* no room left in the buffer returns 0 */
-int DigiModes_TxBufferPutChar(uint8_t c)
+int  DigiModes_TxBufferPutChar( uint8_t  c )
 {
 	int ret = 0;
     int32_t next_head = (digimodes_tx_buffer_head + 1) % DIGIMODES_TX_BUFFER_SIZE;
@@ -766,13 +765,13 @@ int DigiModes_TxBufferPutChar(uint8_t c)
     {
         /* there is room */
         digimodes_tx_buffer[digimodes_tx_buffer_head] = c;
-        digimodes_tx_buffer_head = next_head;
+        digimodes_tx_buffer_head                      = next_head;
         ret ++;
     }
     return ret;
 }
 
-void DigiModes_TxBufferPutSign(const char* s)
+void  DigiModes_TxBufferPutSign( const char* s )
 {
 	DigiModes_TxBufferPutChar('<');
 	DigiModes_TxBufferPutChar(s[0]);
@@ -787,17 +786,17 @@ void DigiModes_TxBufferReset()
 
 
 #define USE_RTTY_MSK
-#define RTTY_CODE_MODE_MASK (0b100000)
+#define RTTY_CODE_MODE_MASK   (0b100000)
 #define RTTY_CODE_MODE_LETTER (RTTY_CODE_MODE_MASK)
 #define RTTY_CODE_MODE_SYMBOL (0)
 
-static void Rtty_BaudotAdd(uint8_t bits)
+static void Rtty_BaudotAdd( uint8_t bits )
 {
 	uint8_t bitCount = rttyDecoderData.config_p->stopbits == RTTY_STOP_1?7:8;
 
 	bits <<= 1; // add stop bit
 
-	if (bitCount == 7)
+	if ( bitCount == 7 )
 	{
 		bits |= 0b01000000;
 	}
@@ -816,7 +815,7 @@ static void Rtty_BaudotAdd(uint8_t bits)
 
 void Rtty_Modulator_Code2Bits(uint8_t baudot_info)
 {
-	rtty_tx.char_bits = 0;
+	rtty_tx.char_bits    = 0;
 	rtty_tx.char_bit_idx = 0;
 
 	if ((baudot_info & RTTY_CODE_MODE_MASK) == RTTY_CODE_MODE_LETTER)
@@ -841,10 +840,10 @@ void Rtty_Modulator_Code2Bits(uint8_t baudot_info)
 // MUST BE CALLED BEFORE WE START RTTY TX, i.e. in RX Mode !!!
 void Rtty_Modulator_StartTX()
 {
-	rtty_tx.last_bit = 1;
+	rtty_tx.last_bit   = 1;
 	rtty_tx.last_value = INT16_MIN;
-	rtty_tx.char_mode = RTTY_MODE_LETTERS;
-	Rtty_Modulator_Code2Bits(RTTY_LETTER_CODE);
+	rtty_tx.char_mode  = RTTY_MODE_LETTERS;
+	Rtty_Modulator_Code2Bits( RTTY_LETTER_CODE );
 }
 
 const char rtty_test_string[] = " --- UHSDR FIRMWARE RTTY TX TEST DE DB4PLE --- ";
@@ -863,12 +862,12 @@ int16_t Rtty_Modulator_GenSample()
 			bool bitsFilled = false;
 			while (DigiModes_TxBufferHasData() && bitsFilled == false)
 			{
-				uint8_t current_ascii;
+				uint8_t  current_ascii;
 				DigiModes_TxBufferRemove(&current_ascii);
-				uint8_t current_baudot = Ascii2Baudot[current_ascii & 0x7f];
+				uint8_t  current_baudot = Ascii2Baudot[ current_ascii & 0x7f ];
 				if (current_baudot > 0)
 				{ // we have valid baudot code
-					Rtty_Modulator_Code2Bits(current_baudot);
+					Rtty_Modulator_Code2Bits( current_baudot );
 					bitsFilled = true;
 				}
 			}
@@ -894,16 +893,16 @@ int16_t Rtty_Modulator_GenSample()
 		{
 			if (rtty_tx.last_bit == 1)
 			{
-				rtty_tx.msk_state = MSK_WAIT_FOR_NEG;
+				rtty_tx.msk_state   = MSK_WAIT_FOR_NEG;
 				// WAIT_FOR_NEG
 				// WAIT_FOR_ZERO or plus
 				rtty_tx.current_bit = rtty_tx.last_bit;
 			}
 			else
 			{
-				rtty_tx.msk_state = MSK_WAIT_FOR_PLUSGRAD;
-				rtty_tx.current_bit = rtty_tx.last_bit;
-				rtty_tx.last_value = INT16_MIN;
+				rtty_tx.msk_state   =  MSK_WAIT_FOR_PLUSGRAD;
+				rtty_tx.current_bit =  rtty_tx.last_bit;
+				rtty_tx.last_value  =  INT16_MIN;
 				// WAIT_FOR_MAX
 			}
 		}
@@ -914,48 +913,51 @@ int16_t Rtty_Modulator_GenSample()
 
 	rtty_tx.char_bit_samples--;
 
-	int16_t current_value = softdds_nextSample(&rttyDecoderData.tx_dds[rtty_tx.current_bit]);
+	int16_t   current_value = softdds_nextSample(&rttyDecoderData.tx_dds[rtty_tx.current_bit]);
 
-	switch(rtty_tx.msk_state)
+	switch( rtty_tx.msk_state )
 	{
-	case MSK_WAIT_FOR_NEG:
-		if (current_value < 0)
-		{
-			rtty_tx.msk_state = MSK_WAIT_FOR_PLUS;
-		}
-		break;
-	case MSK_WAIT_FOR_PLUS:
-		if (current_value >= 0)
-		{
-			rtty_tx.msk_state = MSK_IDLE;
-			rtty_tx.current_bit = rtty_tx.char_bits&1;
-			rttyDecoderData.tx_dds[rtty_tx.current_bit].acc = rttyDecoderData.tx_dds[rtty_tx.last_bit].acc;
-			rtty_tx.last_bit = rtty_tx.current_bit;
-			current_value = softdds_nextSample(&rttyDecoderData.tx_dds[rtty_tx.current_bit]);
-		}
-		break;
-	case MSK_WAIT_FOR_PLUSGRAD:
-		if (current_value > rtty_tx.last_value)
-		{
-			rtty_tx.msk_state = MSK_WAIT_FOR_MAX;
-		}
-		break;
-	case MSK_WAIT_FOR_MAX:
-		if (current_value >= rtty_tx.last_value)
-		{
-			rtty_tx.last_value = current_value;
-		}
-		else if (current_value < rtty_tx.last_value && rtty_tx.last_value > 0)
-		{
-			rtty_tx.msk_state = MSK_IDLE;
-			rtty_tx.current_bit = rtty_tx.char_bits&1;
-			rttyDecoderData.tx_dds[rtty_tx.current_bit].acc = rttyDecoderData.tx_dds[rtty_tx.last_bit].acc;
-			rtty_tx.last_bit = rtty_tx.current_bit;
-			current_value = softdds_nextSample(&rttyDecoderData.tx_dds[rtty_tx.current_bit]);
-		}
-		break;
-	default:
-		break;
+		case MSK_WAIT_FOR_NEG:
+							if (current_value < 0)
+							{
+								rtty_tx.msk_state = MSK_WAIT_FOR_PLUS;
+							}
+							break;
+
+		case MSK_WAIT_FOR_PLUS:
+							if (current_value >= 0)
+							{
+								rtty_tx.msk_state                               =  MSK_IDLE;
+								rtty_tx.current_bit                             =  rtty_tx.char_bits&1;
+								rttyDecoderData.tx_dds[rtty_tx.current_bit].acc =  rttyDecoderData.tx_dds[rtty_tx.last_bit].acc;
+								rtty_tx.last_bit                                =  rtty_tx.current_bit;
+								current_value                                   =  softdds_nextSample(&rttyDecoderData.tx_dds[rtty_tx.current_bit]);
+							}
+							break;
+
+		case MSK_WAIT_FOR_PLUSGRAD:
+							if (current_value > rtty_tx.last_value)
+							{
+								rtty_tx.msk_state = MSK_WAIT_FOR_MAX;
+							}
+							break;
+
+		case MSK_WAIT_FOR_MAX:
+							if (current_value >= rtty_tx.last_value)
+							{
+								rtty_tx.last_value = current_value;
+							}
+							else if (current_value < rtty_tx.last_value && rtty_tx.last_value > 0)
+							{
+								rtty_tx.msk_state    = MSK_IDLE;
+								rtty_tx.current_bit  = rtty_tx.char_bits&1;
+								rttyDecoderData.tx_dds[rtty_tx.current_bit].acc = rttyDecoderData.tx_dds[rtty_tx.last_bit].acc;
+								rtty_tx.last_bit     = rtty_tx.current_bit;
+								current_value        = softdds_nextSample(&rttyDecoderData.tx_dds[rtty_tx.current_bit]);
+							}
+							break;
+
+		default:  			break;
 	}
 
 	rtty_tx.last_value = current_value;

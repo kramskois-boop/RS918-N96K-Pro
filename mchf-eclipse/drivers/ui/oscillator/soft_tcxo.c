@@ -84,46 +84,34 @@ static int32_t MCP9801_ConvExternalTemp(uint8_t *temp)
  */
 static uint8_t MCP9801_InitExternalTempSensor()
 {
-    uint8_t config, retval = 0;
-    uint16_t res;
+    uint8_t   config, retval = 0;
+    uint16_t  res;
 
-    // Read config reg
-    res = mchf_hw_i2c1_ReadRegister(MCP_ADDR, MCP_CONFIG, &config);
-    if(res != 0)
-    {
-        retval = 1;
-    }
+        res  = mchf_hw_i2c1_ReadRegister(  MCP_ADDR,  MCP_CONFIG, &config );     // Read config reg
+    if( res != 0)  {  retval = 1;  }
     else
     {
-        // Modify resolution
-        config &= ~(3 << MCP_ADC_RES);
-        config |= (MCP_ADC_RES_12 << MCP_ADC_RES);
+        config &= ~( 3              << MCP_ADC_RES);  // Modify resolution
+        config |=  ( MCP_ADC_RES_12 << MCP_ADC_RES);
+        config &= ~( 1            << MCP_SHUTDOWN);   // Modify power mode
+        config |=  ( MCP_POWER_UP << MCP_SHUTDOWN);
 
-        // Modify power mode
-        config &= ~(1 << MCP_SHUTDOWN);
-        config |= (MCP_POWER_UP << MCP_SHUTDOWN);
-
-        // Write config reg
-        res = mchf_hw_i2c1_WriteRegister(MCP_ADDR, MCP_CONFIG, config);
-        if(res != 0)
-        {
-            retval = 2;
-        }
+        res = mchf_hw_i2c1_WriteRegister( MCP_ADDR, MCP_CONFIG, config ); // Write config reg
+        if ( res != 0 )  { retval = 2; }
     }
-    return retval;
+    return   retval;
 }
 
 
-static uint8_t MCP9801_ReadExternalTempSensor(int32_t *temp)
+static uint8_t MCP9801_ReadExternalTempSensor( int32_t *temp )
 {
     uint8_t	data[2];
     uint8_t retval = 0;
 
-
     // Read temperature
-    if(temp != NULL && mchf_hw_i2c1_ReadData(MCP_ADDR, MCP_TEMP, data, 2) == 0)
+    if(temp != NULL && mchf_hw_i2c1_ReadData( MCP_ADDR, MCP_TEMP, data, 2) == 0)
     {
-        *temp = MCP9801_ConvExternalTemp(data);
+        *temp = MCP9801_ConvExternalTemp( data );
     }
     else
     {
@@ -271,10 +259,10 @@ bool SoftTcxo_HandleLoTemperatureDrift()
             if(MCP9801_ReadExternalTempSensor(&temp) == 0)
             {
                 // Get temperature from sensor with its maximum precision
-                dtemp = (float)temp;    // get temperature
-                dtemp /= 10000;         // convert to decimal degrees
-                remain = truncf(dtemp); // get integer portion of temperature
-                remain = dtemp - remain;    // get fractional portion
+                dtemp   =  (float)temp;    // get temperature
+                dtemp  /=  10000;         // convert to decimal degrees
+                remain  =  truncf(dtemp); // get integer portion of temperature
+                remain  =  dtemp - remain;    // get fractional portion
 
                 // Compensate only if enabled
                 if((temp_mode == TCXO_ON))
@@ -288,39 +276,39 @@ bool SoftTcxo_HandleLoTemperatureDrift()
                     if((t_index < 0) || (t_index > 150))        // the temperature sensor function "wraps around" below zero
                     {
                         t_index = 0;                        // point at the bottom of the temperature table
-                        dtemp = 0;                          // zero out fractional calculations
-                        remain = 0;
+                        dtemp   = 0;                          // zero out fractional calculations
+                        remain  = 0;
                     }
                     else if(t_index > TCXO_TBL_SIZE - 2)                   // High temperature - limit to maximum
                     {
-                        t_index = TCXO_TBL_SIZE - 2;                       // Point to (near) top of table
-                        dtemp = 0;                          // zero out fractional calculations
-                        remain = 0;
+                        t_index =  TCXO_TBL_SIZE - 2;                       // Point to (near) top of table
+                        dtemp   =  0;                          // zero out fractional calculations
+                        remain  =  0;
                     }
 
-                    tblp = (uchar)t_index;                      // convert to index
+                    tblp   = (uchar)t_index;                      // convert to index
 
-                    comp = tcxo_table_20m[tblp];                // get the first entry in the table
+                    comp   = tcxo_table_20m[tblp    ];          // get the first entry in the table
                     comp_p = tcxo_table_20m[tblp + 1];          // get the next entry in the table to determine fraction of frequency step
 
                     comp_p = comp_p - comp; //                  // get frequency difference between the two steps
 
-                    dtemp = (float)comp_p;  // change it to float for the calculation
+                    dtemp  = (float)comp_p;  // change it to float for the calculation
                     dtemp *= remain;        // get proportion of temperature difference between the two steps using the fraction
 
-                    comp += (int)dtemp;     // add the compensation value to the lower of the two frequency steps
+                    comp  += (int)dtemp;     // add the compensation value to the lower of the two frequency steps
 
                     // Change needed ?
                     if(lo.comp != comp)         // is it there a difference?
                     {
                         // Update frequency, without reflecting it on the LCD
-                        df.temp_factor = comp;
+                        df.temp_factor         = comp;
                         df.temp_factor_changed = true;
-                        lo.comp = comp;
+                        lo.comp                = comp;
                     }
                 }
                 // Refresh UI
-                retval = true;
+                retval  = true;
                 lo.temp = temp;
             }
         }

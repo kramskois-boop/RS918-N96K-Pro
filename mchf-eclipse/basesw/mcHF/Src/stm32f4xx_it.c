@@ -173,16 +173,15 @@ void PendSV_Handler(void)
 /**
 * @brief This function handles System tick timer.
 */
-void SysTick_Handler(void)
+void SysTick_Handler( void )
 {
-  /* USER CODE BEGIN SysTick_IRQn 0 */
+					  /* USER CODE BEGIN SysTick_IRQn 0 */
+					  /* USER CODE END SysTick_IRQn 0 */
 
-  /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
-  HAL_SYSTICK_IRQHandler();
-  /* USER CODE BEGIN SysTick_IRQn 1 */
-
-  /* USER CODE END SysTick_IRQn 1 */
+	uwTick++;     //        HAL_IncTick();  //
+ //  HAL_SYSTICK_IRQHandler();  // elle est masquée car elle est vide pour notre cas , donc inutile  NIZZZ
+					  /* USER CODE BEGIN SysTick_IRQn 1 */
+					  /* USER CODE END SysTick_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -197,13 +196,11 @@ void SysTick_Handler(void)
 */
 void EXTI0_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI0_IRQn 0 */
-
-  /* USER CODE END EXTI0_IRQn 0 */
+										  /* USER CODE BEGIN EXTI0_IRQn 0 */
+										  /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
-  /* USER CODE BEGIN EXTI0_IRQn 1 */
-
-  /* USER CODE END EXTI0_IRQn 1 */
+										  /* USER CODE BEGIN EXTI0_IRQn 1 */
+										  /* USER CODE END EXTI0_IRQn 1 */
 }
 
 /**

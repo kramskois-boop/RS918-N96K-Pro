@@ -67,17 +67,69 @@
 
 /** @defgroup USBD_DESC_Private_Defines
   * @{
-  */ 
-#define USBD_VID                        0x0483
+  */
+/*
+// code constructeur
+#define USBD_VID                        0x0963      // NIZ96  0x0483 pour 48000 Hz  // 0x0963  pour 96000 Hz  // très important
 #define USBD_LANGID_STRING              1033
-#define USBD_MANUFACTURER_STRING        (uint8_t*)"UHSDR Open Source Community (based on STMicroelectronics Drivers)"
+// #define USBD_MANUFACTURER_STRING     (uint8_t*)"UHSDR based on STMicroelectronics Drivers)"
+#define USBD_MANUFACTURER_STRING        (uint8_t*)"UHSDR Community (based on STM Drivers)"
 #define USBD_PID_FS                     0x5732
 #define USBD_PRODUCT_STRING_FS          (uint8_t*)"USB Interface "TRX_ID
 #define USBD_SERIALNUMBER_STRING_FS     (uint8_t*)"00000000002A"
 #define USBD_CONFIGURATION_STRING_FS    (uint8_t*)"AUDIO/COM Config"
 #define USBD_INTERFACE_STRING_FS        (uint8_t*)TRX_ID" Audio Com"
+#define USB_SIZ_BOS_DESC                0x0C
+*/
 
-#define USB_SIZ_BOS_DESC            0x0C
+
+#define USBD_VID                       0x2341   // 0x1D50 Open Moko
+                                                 // 0x0483 STM teste en 48Khz
+												 // 0x2341 Arduino
+												 // 0x16C0 Teensy
+                                                 // 0x1209 Generic
+												 // 0x0403 FTDI
+                                                 // 0x10C4  Prolab
+                                                 // 0x04D8 Microchip
+												 // 0x04B4 Cypress
+
+
+										// le PID peut etre changé par le menu de configuration
+
+#define USBD_PID_FS                     0x8036   // 0x6000 Open Moko: Win    com/   Audio,  Android No_Com/   Audio
+												 // 0x5732 STM :      Win    com/   Audio,  android    com/   Audio  isochrone trame=1 128 ms
+												 // 0xA3AF STM :      Win    Com/No_Audio,  Android No_Com/No_Audio
+												 // 0x0043 Arduino:   Win    Com/No-Audio,  Android    Com/   Audio  Asynchronouse
+                                                 // 0xA711 Arduino:   Win    com/   Audio,  Android No-com/   Audio  Asynchronouse
+                                                 // 0x8036 Ardino Leo:Win    com/   Audio,  Android    com/   Audio  ca marche bien isochrone bDelay=1 binterval = 128
+												 // 0x0486 Teensy :   Win    com/   Audio,  Android No-com/   Audio
+											     // 0x27DD Teensy :   Win No-com/   Audio,  Android No-Com/   Audio
+                                                 // 0x0001 Generic:   WIN No-com/No-Audio,  Android No-Com/No-Audio   // Nouveau PID pour 96k
+                                                 // 0x6666 Generic:   WIN    com/   Audio,  Android No_Com/   Audio ca marche bien même en isochrone
+												 // 0x6001 FTDI   (FT232R) Android pas de com
+                                                 // 0x6001 FTDI   (FT231X) Android pas de com
+                                                 // 0xEA60 Prolab (CP2102) Android pas de com
+												 // 0x000A Microchip
+												 // 0x0002 Cypress
+#define USBD_LANGID_STRING              1033
+#define USBD_MANUFACTURER_STRING        (uint8_t*)"UHSDR Community"
+#define USBD_PRODUCT_STRING_FS          (uint8_t*)" USB mchf 96KHz "
+#define USBD_SERIALNUMBER_STRING_FS     (uint8_t*)"000000000096"
+#define USBD_CONFIGURATION_STRING_FS    (uint8_t*)"AUDIO/COM Config"
+#define USBD_INTERFACE_STRING_FS        (uint8_t*)" USB mchf 96KHz Com"
+#define USB_SIZ_BOS_DESC                0x0C
+
+/*
+#define USBD_VID                        0x0963      // VID STM NIZ96  0x0483 pour 48000 Hz  // 0x0963  pour 96000 Hz  // très important
+#define USBD_PID_FS                     0x5732      // PID STM
+#define USBD_LANGID_STRING              1033         // Anglais
+#define USBD_MANUFACTURER_STRING        (uint8_t*)"UHSDR based on STMicroelectronics Drivers)"
+#define USBD_PRODUCT_STRING_FS          (uint8_t*)"USB Interface "TRX_ID
+#define USBD_SERIALNUMBER_STRING_FS     (uint8_t*)"00000000002A"
+#define USBD_CONFIGURATION_STRING_FS    (uint8_t*)"AUDIO/COM Config"
+#define USBD_INTERFACE_STRING_FS        (uint8_t*)TRX_ID" Audio Com"
+*/
+
 
 /* USER CODE BEGIN 0 */
 
@@ -96,13 +148,13 @@
 /** @defgroup USBD_DESC_Private_Variables
   * @{
   */ 
-uint8_t *     USBD_FS_DeviceDescriptor( USBD_SpeedTypeDef speed , uint16_t *length);
-uint8_t *     USBD_FS_LangIDStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length);
+uint8_t *     USBD_FS_DeviceDescriptor          ( USBD_SpeedTypeDef speed , uint16_t *length);
+uint8_t *     USBD_FS_LangIDStrDescriptor       ( USBD_SpeedTypeDef speed , uint16_t *length);
 uint8_t *     USBD_FS_ManufacturerStrDescriptor ( USBD_SpeedTypeDef speed , uint16_t *length);
-uint8_t *     USBD_FS_ProductStrDescriptor ( USBD_SpeedTypeDef speed , uint16_t *length);
-uint8_t *     USBD_FS_SerialStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length);
-uint8_t *     USBD_FS_ConfigStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length);
-uint8_t *     USBD_FS_InterfaceStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length);
+uint8_t *     USBD_FS_ProductStrDescriptor      ( USBD_SpeedTypeDef speed , uint16_t *length);
+uint8_t *     USBD_FS_SerialStrDescriptor       ( USBD_SpeedTypeDef speed , uint16_t *length);
+uint8_t *     USBD_FS_ConfigStrDescriptor       ( USBD_SpeedTypeDef speed , uint16_t *length);
+uint8_t *     USBD_FS_InterfaceStrDescriptor    ( USBD_SpeedTypeDef speed , uint16_t *length);
 
 #ifdef USB_SUPPORT_USER_STRING_DESC
 uint8_t *     USBD_FS_USRStringDesc (USBD_SpeedTypeDef speed, uint8_t idx , uint16_t *length);  
@@ -129,26 +181,23 @@ USBD_DescriptorsTypeDef FS_Desc =
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
   #pragma data_alignment=4   
 #endif
+
+
 /* USB Standard Device Descriptor */
 __ALIGN_BEGIN uint8_t USBD_FS_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END =
   {
     0x12,                       /*bLength */
     USB_DESC_TYPE_DEVICE,       /*bDescriptorType*/
-#if (USBD_LPM_ENABLED == 1)
-    0x01,                       /*bcdUSB */ /* changed to USB version 2.01 
-                                               in order to support LPM L1 suspend
-                                               resume test of USBCV3.0*/
-#else  
-    0x00,                       /* bcdUSB */
-#endif
+
+	0x00,        // Changé par Nizar suite recommandation ChatGPT de passer de USB 2.0 vers USB 2.10 0x10
     0x02,
 	/* Typically only the bDeviceClass is set at the device level.
 	 * Most class specifications choose to identify itself at the interface level
 	 * and as a result set the bDeviceClass as 0x00.
 	 * This allows for the one device to support multiple classes. */
-    0x00,                       /*0xEF bDeviceClass*/
-    0x00,                       /*0x02 bDeviceSubClass*/
-    0x01,                       /*bDeviceProtocol*/
+    0x00,                       /*0xEF bDeviceClass    0x00  Niz96 */
+    0x00,                       /*0x02 bDeviceSubClass 0x00  Niz96 */
+    0x01,                       /*bDeviceProtocol      0x01  NIZ96 */
     USB_MAX_EP0_SIZE,          /*bMaxPacketSize*/
     LOBYTE(USBD_VID),           /*idVendor*/
     HIBYTE(USBD_VID),           /*idVendor*/
@@ -227,6 +276,22 @@ __ALIGN_BEGIN uint8_t USBD_StrDesc[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
 uint8_t *  USBD_FS_DeviceDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
   *length = sizeof(USBD_FS_DeviceDesc);
+
+  // Le PID du descripteur composite Audio+comport se trouve a la position 10 et 11 du registre USBD_FS_DeviceDesc
+  // USBD_FS_DeviceDesc[10] = 0x25;   // initial PID (0x8025 Arduino leonardo) du USB com port + composite audio
+
+  if (ts.reverberation_enable & 0x04) {   USBD_FS_DeviceDesc[ 8] = 0x41;   // Android OK avec PID Officiel Arduino LEONARDO 0x2341/0x8036
+										  USBD_FS_DeviceDesc[ 9] = 0x23;
+										  USBD_FS_DeviceDesc[10] = 0x36;
+									      USBD_FS_DeviceDesc[11] = 0x80; }
+
+   else 							   {  USBD_FS_DeviceDesc[ 8] = 0x63;  // Win & Linux OK avec VID/PID arbitraire  0x6195/5735  non existant
+	   	   	   	   	   	   	   	   	   	  USBD_FS_DeviceDesc[ 9] = 0x09;
+	   	   	   	   	   	   	   	   	   	  USBD_FS_DeviceDesc[10] = 0x33;
+	   	   	   	   	   	   	   	   	   	  USBD_FS_DeviceDesc[11] = 0x57;}
+
+
+
   return USBD_FS_DeviceDesc;
 }
 
@@ -237,6 +302,8 @@ uint8_t *  USBD_FS_DeviceDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 * @param  length : pointer to data length variable
 * @retval pointer to descriptor buffer
 */
+
+
 uint8_t *  USBD_FS_LangIDStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
   *length =  sizeof(USBD_LangIDDesc);  
@@ -252,14 +319,8 @@ uint8_t *  USBD_FS_LangIDStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *leng
 */
 uint8_t *  USBD_FS_ProductStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
-  if(speed == 0)
-  {   
-    USBD_GetString (USBD_PRODUCT_STRING_FS, USBD_StrDesc, length);
-  }
-  else
-  {
-    USBD_GetString (USBD_PRODUCT_STRING_FS, USBD_StrDesc, length);    
-  }
+  if(speed == 0) { USBD_GetString (USBD_PRODUCT_STRING_FS, USBD_StrDesc, length); }
+  else  		 { USBD_GetString (USBD_PRODUCT_STRING_FS, USBD_StrDesc, length); }
   return USBD_StrDesc;
 }
 
@@ -272,7 +333,7 @@ uint8_t *  USBD_FS_ProductStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *len
 */
 uint8_t *  USBD_FS_ManufacturerStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
-  USBD_GetString (USBD_MANUFACTURER_STRING, USBD_StrDesc, length);
+  USBD_GetString ( USBD_MANUFACTURER_STRING, USBD_StrDesc, length);
   return USBD_StrDesc;
 }
 
@@ -285,14 +346,8 @@ uint8_t *  USBD_FS_ManufacturerStrDescriptor( USBD_SpeedTypeDef speed , uint16_t
 */
 uint8_t *  USBD_FS_SerialStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
-  if(speed  == USBD_SPEED_HIGH)
-  {    
-    USBD_GetString (USBD_SERIALNUMBER_STRING_FS, USBD_StrDesc, length);
-  }
-  else
-  {
-    USBD_GetString (USBD_SERIALNUMBER_STRING_FS, USBD_StrDesc, length);    
-  }
+  if (speed  == USBD_SPEED_HIGH) { USBD_GetString (USBD_SERIALNUMBER_STRING_FS, USBD_StrDesc, length); }
+  else   						 { USBD_GetString (USBD_SERIALNUMBER_STRING_FS, USBD_StrDesc, length); }
   return USBD_StrDesc;
 }
 
@@ -305,14 +360,8 @@ uint8_t *  USBD_FS_SerialStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *leng
 */
 uint8_t *  USBD_FS_ConfigStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
-  if(speed  == USBD_SPEED_HIGH)
-  {  
-    USBD_GetString (USBD_CONFIGURATION_STRING_FS, USBD_StrDesc, length);
-  }
-  else
-  {
-    USBD_GetString (USBD_CONFIGURATION_STRING_FS, USBD_StrDesc, length); 
-  }
+  if(speed  == USBD_SPEED_HIGH) { USBD_GetString (USBD_CONFIGURATION_STRING_FS, USBD_StrDesc, length); }
+  else                          { USBD_GetString (USBD_CONFIGURATION_STRING_FS, USBD_StrDesc, length); }
   return USBD_StrDesc;  
 }
 
@@ -325,14 +374,8 @@ uint8_t *  USBD_FS_ConfigStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *leng
 */
 uint8_t *  USBD_FS_InterfaceStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
-  if(speed == 0)
-  {
-    USBD_GetString (USBD_INTERFACE_STRING_FS, USBD_StrDesc, length);
-  }
-  else
-  {
-    USBD_GetString (USBD_INTERFACE_STRING_FS, USBD_StrDesc, length);
-  }
+  if(speed == 0)   {  USBD_GetString (USBD_INTERFACE_STRING_FS, USBD_StrDesc, length); }
+  else  		   {  USBD_GetString (USBD_INTERFACE_STRING_FS, USBD_StrDesc, length); }
   return USBD_StrDesc;  
 }
 #if (USBD_LPM_ENABLED == 1)

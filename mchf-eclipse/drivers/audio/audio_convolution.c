@@ -187,7 +187,7 @@ void AudioDriver_CalcConvolutionFilterCoeffs (int N, float32_t f_low, float32_t 
     switch (rtype)
     {
     case 0:
-      cbs.impulse[N >> 1] = scale * 2.0 * ft;
+      cbs.impulse[(N >> 1)] = scale * 2.0 * ft;
       break;
     case 1:
       cbs.impulse[N - 1] = scale * 2.0 * ft;
@@ -497,13 +497,13 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
 #endif
     float post_agc_gain_scaling;
 
-    if (tx_audio_source == TX_AUDIO_DIGIQ)
+    if (tx_audio_source == TX_AUDIO_DIG_IQ)
     {
 
         for(uint32_t i = 0; i < blockSize; i++)
         {
             // 16 bit format - convert to float and increment
-            // we collect our I/Q samples for USB transmission if TX_AUDIO_DIGIQ
+            // we collect our I/Q samples for USB transmission if TX_AUDIO_DIG_IQ
             audio_in_put_buffer(src[i].l);
             audio_in_put_buffer(src[i].r);
         }
@@ -755,12 +755,12 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
 #endif
                 }
 
-                if (ts.dsp_inhibit == false)
+                if (ts.dsp_inhibit == 0)
                 {
                     if((dsp_active & DSP_NOTCH_ENABLE) && (dmod_mode != DEMOD_CW) && !(dmod_mode == DEMOD_SAM && (FilterPathInfo[ts.filter_path].sample_rate_dec) == RX_DECIMATION_RATE_24KHZ))       // No notch in CW
                     {
                         {
-//#ifdef OBSOLETE_NR
+
 #ifdef USE_LMS_AUTONOTCH
                         	AudioDriver_NotchFilter(blockSizeDecim, adb.a_buffer[0]);     // Do notch filter
 #endif
@@ -858,7 +858,7 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
                 }
 
                 // resample back to original sample rate while doing low-pass filtering to minimize audible aliasing effects
-                if (INTERPOLATE_RX[0].phaseLength > 0)
+                if (INTERPOLATE_RX.phaseLength > 0)
                 {
 #ifdef USE_TWO_CHANNEL_AUDIO
                     float32_t temp_buffer[IQ_BLOCK_SIZE];
@@ -867,7 +867,7 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
                         arm_fir_interpolate_f32(&INTERPOLATE_RX[1], adb.a_buffer[1], temp_buffer, blockSizeDecim);
                     }
 #endif
-                    arm_fir_interpolate_f32(&INTERPOLATE_RX[0], adb.a_buffer[0], adb.a_buffer[1], blockSizeDecim);
+                    arm_fir_interpolate_f32(&INTERPOLATE_RX, adb.a_buffer[0], adb.a_buffer[1], blockSizeDecim);
 
 #ifdef USE_TWO_CHANNEL_AUDIO
                     if(use_stereo)
@@ -885,7 +885,7 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
 #ifdef USE_TWO_CHANNEL_AUDIO
                     if(use_stereo)
                     {
-                        arm_iir_lattice_f32(&IIR_AntiAlias[1], adb.a_buffer[0], adb.a_buffer[0], blockSize);
+                        arm_iir_lattice_f32(  &IIR_AntiAlias[1], adb.a_buffer[0], adb.a_buffer[0], blockSize );
                     }
 #endif
                 }
@@ -921,7 +921,7 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
 
     // interpolation
 
-// TODO: at this point we have 128 real audio samples filtered and AGC´ed in the variable 	 (for mono modes)
+// TODO: at this point we have 128 real audio samples filtered and AGCï¿½ed in the variable 	 (for mono modes)
     // for stereo modes (not yet implemented), the other channel is in cob.q_buffer_convolution
 
     // now we have to make blocks of 32 samples out of that for further processing
@@ -931,8 +931,8 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
 
 
     bool do_mute_output =
-            ts.audio_dac_muting_flag
-            || ts.audio_dac_muting_buffer_count > 0
+            ts.audio_dac_output_muting_flag
+            || ts.audio_dac_output_muting_buffer_count > 0
             || (ads.af_disabled)
             || ((dmod_mode == DEMOD_FM) && ads.fm_squelched);
     // this flag is set during rx tx transition, so once this is active we mute our output to the I2S Codec
@@ -943,9 +943,9 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
     {
         arm_fill_f32(0, adb.a_buffer[0], blockSize);
         arm_fill_f32(0, adb.a_buffer[1], blockSize);
-        if (ts.audio_dac_muting_buffer_count > 0)
+        if (ts.audio_dac_output_muting_buffer_count > 0)
         {
-            ts.audio_dac_muting_buffer_count--;
+            ts.audio_dac_output_muting_buffer_count--;
         }
     }
     else
@@ -1012,7 +1012,7 @@ void AudioDriver_RxProcessorConvolution(AudioSample_t * const src, AudioSample_t
         	dst[i].r = adb.a_buffer[0][i];
         }
         // Unless this is DIGITAL I/Q Mode, we sent processed audio
-        if (tx_audio_source != TX_AUDIO_DIGIQ)
+        if (tx_audio_source != TX_AUDIO_DIG_IQ)
         {
         	int16_t vals[2];
 

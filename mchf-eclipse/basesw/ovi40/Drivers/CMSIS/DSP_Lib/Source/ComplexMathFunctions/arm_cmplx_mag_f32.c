@@ -81,10 +81,7 @@
  */
 
 
-void arm_cmplx_mag_f32(
-  float32_t * pSrc,
-  float32_t * pDst,
-  uint32_t numSamples)
+void arm_cmplx_mag_f32(   float32_t * pSrc,  float32_t * pDst,  uint32_t numSamples)
 {
   float32_t realIn, imagIn;                      /* Temporary variables to hold input values */
 

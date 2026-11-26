@@ -93,9 +93,14 @@ typedef enum
     COUPLING_630M,
     COUPLING_160M,
     COUPLING_80M,
+	COUPLING_60M,
     COUPLING_40M,
+	COUPLING_30M,
     COUPLING_20M,
+	COUPLING_17M,
     COUPLING_15M,
+	COUPLING_12M,
+	COUPLING_10M,
     COUPLING_6M,
     COUPLING_2M,
     COUPLING_70CM,
@@ -152,7 +157,7 @@ enum {
     CW_OFFSET_NUM                   // Number of Modes
 };
 
-#define CW_OFFSET_MODE_DEFAULT  CW_OFFSET_USB_TX   // Default CW offset setting
+#define CW_OFFSET_MODE_DEFAULT  CW_OFFSET_USB_RX   // Default CW offset setting
 
 typedef enum {
     CW_SB_USB = 0,
@@ -218,6 +223,7 @@ bool RadioManagement_Tune(bool tune);
 bool RadioManagement_UpdatePowerAndVSWR();
 void RadioManagement_SetHWFiltersForFrequency(ulong freq);
 void RadioManagement_ChangeCodec(uint32_t codec, bool enableCodec);
+void RadioManagement_ChangeBandFilter(uchar band);  // NIZZZ
 bool RadioManagement_ChangeFrequency(bool force_update, uint32_t dial_freq,uint8_t txrx_mode);
 void RadioManagement_HandlePttOnOff();
 void RadioManagement_MuteTemporarilyRxAudio();
@@ -228,13 +234,14 @@ uint32_t RadioManagement_NextAlternativeDemodMode(uint32_t loc_mode);
 Oscillator_ResultCodes_t RadioManagement_ValidateFrequencyForTX(uint32_t dial_freq);
 bool RadioManagement_IsApplicableDemodMode(uint32_t demod_mode);
 void RadioManagement_SwitchTxRx(uint8_t txrx_mode, bool tune_mode);
+void RadioManagement_Check_Initialise_Tx_decimated_filters ( bool tune_now ); // ajouté par NIZZ
 void RadioManagement_SetBandPowerFactor(uchar band);
 bool RadioManagement_LSBActive(uint16_t dmod_mode);
 bool RadioManagement_USBActive(uint16_t dmod_mode);
-void RadioManagement_SetBandPowerFactor(uchar band);
+// void RadioManagement_SetBandPowerFactor(uchar band);
 void RadioManagement_SetPaBias();
 bool RadioManagement_CalculateCWSidebandMode(void);
-void RadioManagement_SetDemodMode(uint8_t new_mode);
+void RadioManagement_SetDemodMode(uint8_t new_mode, bool CW_adjust);
 void RadioManagement_HandleRxIQSignalCodecGain();
 const cw_mode_map_entry_t* RadioManagement_CWConfigValueToModeEntry(uint8_t cw_offset_mode);
 uint8_t RadioManagement_CWModeEntryToConfigValue(const cw_mode_map_entry_t* mode_entry);

@@ -189,8 +189,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_CfgHSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
   0x02,   /* bNumInterfaces: 2 interface */
   0x01,   /* bConfigurationValue: Configuration value */
   0x00,   /* iConfiguration: Index of string descriptor describing the configuration */
-  0xC0,   /* bmAttributes: self powered */
-  0x32,   /* MaxPower 0 mA */
+  0xC0,   /* bmAttributes: 0xC0 = self powered  change en 0x80 = Auto Powred NIZ96 */
+  0x32,   /* bMaxPower 100 mA */
   
   /*---------------------------------------------------------------------------*/
   
@@ -280,13 +280,13 @@ __ALIGN_BEGIN uint8_t USBD_CDC_CfgFSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
   /*Configuration Descriptor*/
   0x09,   /* bLength: Configuration Descriptor size */
   USB_DESC_TYPE_CONFIGURATION,      /* bDescriptorType: Configuration */
-  USB_CDC_CONFIG_DESC_SIZ,                /* wTotalLength:no of returned bytes */
+  USB_CDC_CONFIG_DESC_SIZ,                /* wTotalLength:no of returned bytes 67 */
   0x00,
   0x02,   /* bNumInterfaces: 2 interface */
   0x01,   /* bConfigurationValue: Configuration value */
   0x00,   /* iConfiguration: Index of string descriptor describing the configuration */
-  0xC0,   /* bmAttributes: self powered */
-  0x32,   /* MaxPower 0 mA */
+  0xC0,   /* bmAttributes: 0xC0 = self powered  change en 0x80 = Auto Powred NIZ96 */
+  0x32,   /* bMaxPower 100 mA */
   
   /*---------------------------------------------------------------------------*/
   
@@ -378,8 +378,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_OtherSpeedCfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIG
   0x02,   /* bNumInterfaces: 2 interfaces */
   0x01,   /* bConfigurationValue: */
   0x04,   /* iConfiguration: */
-  0xC0,   /* bmAttributes: */
-  0x32,   /* MaxPower 100 mA */  
+  0xC0,   /* bmAttributes: 0xC0 = self powered  change en 0x80 = Auto Powred NIZ96 */
+  0x32,   /* bMaxPower 100 mA */
   
   /*Interface Descriptor */
   0x09,   /* bLength: Interface Descriptor size */
@@ -837,9 +837,7 @@ uint8_t  USBD_CDC_RegisterInterface  (USBD_HandleTypeDef   *pdev,
   * @param  pbuff: Tx Buffer
   * @retval status
   */
-uint8_t  USBD_CDC_SetTxBuffer  (USBD_HandleTypeDef   *pdev,
-                                uint8_t  *pbuff,
-                                uint16_t length)
+uint8_t  USBD_CDC_SetTxBuffer  (USBD_HandleTypeDef   *pdev,    uint8_t  *pbuff,  uint16_t length)
 {
   USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) pdev->pClassData;
   
@@ -856,8 +854,7 @@ uint8_t  USBD_CDC_SetTxBuffer  (USBD_HandleTypeDef   *pdev,
   * @param  pbuff: Rx Buffer
   * @retval status
   */
-uint8_t  USBD_CDC_SetRxBuffer  (USBD_HandleTypeDef   *pdev,
-                                   uint8_t  *pbuff)
+uint8_t  USBD_CDC_SetRxBuffer  (USBD_HandleTypeDef   *pdev,  uint8_t  *pbuff)
 {
   USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) pdev->pClassData;
   

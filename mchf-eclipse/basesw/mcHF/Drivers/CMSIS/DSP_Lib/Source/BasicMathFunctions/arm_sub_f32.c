@@ -71,22 +71,18 @@
  * @return none.        
  */
 
-void arm_sub_f32(
-  float32_t * pSrcA,
-  float32_t * pSrcB,
-  float32_t * pDst,
-  uint32_t blockSize)
+void arm_sub_f32 (  float32_t * pSrcA,  float32_t * pSrcB,  float32_t * pDst,  uint32_t blockSize)
 {
   uint32_t blkCnt;                               /* loop counter */
 
 #ifndef ARM_MATH_CM0_FAMILY
 
-/* Run the below code for Cortex-M4 and Cortex-M3 */
-  float32_t inA1, inA2, inA3, inA4;              /* temporary variables */
-  float32_t inB1, inB2, inB3, inB4;              /* temporary variables */
+/* Run the below code for Cortex-M4 and Cortex-M3  */
+  float32_t inA1, inA2, inA3, inA4;                /* temporary variables */
+  float32_t inB1, inB2, inB3, inB4;                /* temporary variables */
 
   /*loop Unrolling */
-  blkCnt = blockSize >> 2u;
+  blkCnt = ( blockSize >> 2u );
 
   /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.        
    ** a second loop below computes the remaining 1 to 3 samples. */
@@ -106,7 +102,8 @@ void arm_sub_f32(
 
     /* dst = srcA - srcB */
     /* subtract and store the result */
-    *pDst = inA1 - inB1;
+
+    *pDst       = inA1 - inB1;
     *(pDst + 1) = inA2 - inB2;
     *(pDst + 2) = inA3 - inB3;
     *(pDst + 3) = inA4 - inB4;
@@ -115,7 +112,7 @@ void arm_sub_f32(
     /* Update pointers to process next sampels */
     pSrcA += 4u;
     pSrcB += 4u;
-    pDst += 4u;
+    pDst  += 4u;
 
     /* Decrement the loop counter */
     blkCnt--;
@@ -123,7 +120,7 @@ void arm_sub_f32(
 
   /* If the blockSize is not a multiple of 4, compute any remaining output samples here.        
    ** No loop unrolling is used. */
-  blkCnt = blockSize % 0x4u;
+  blkCnt = blockSize & 0x3u;
 
 #else
 
@@ -138,7 +135,7 @@ void arm_sub_f32(
   {
     /* C = A - B */
     /* Subtract and then store the results in the destination buffer. */
-    *pDst++ = (*pSrcA++) - (*pSrcB++);
+    *pDst++  = (*pSrcA++) - (*pSrcB++);
 
     /* Decrement the loop counter */
     blkCnt--;

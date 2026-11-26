@@ -63,11 +63,7 @@
  * Results outside of the allowable Q31 range[0x80000000 0x7FFFFFFF] will be saturated.    
  */
 
-void arm_mult_q31(
-  q31_t * pSrcA,
-  q31_t * pSrcB,
-  q31_t * pDst,
-  uint32_t blockSize)
+void arm_mult_q31(   q31_t * pSrcA,  q31_t * pSrcB,  q31_t * pDst,  uint32_t blockSize)
 {
   uint32_t blkCnt;                               /* loop counters */
 

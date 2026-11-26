@@ -133,7 +133,7 @@ typedef enum
 
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
-static USB_AUDIO_MACHINE_State_t AudioState = AUDIO_STATE_INACTIVE;
+static USB_AUDIO_MACHINE_State_t    AudioState = AUDIO_STATE_INACTIVE;
 
 typedef enum
 {
@@ -153,32 +153,33 @@ USB_AUDIO_State_t usb_dig_audio_state = USB_DIG_AUDIO_OUT_INIT;
  * @{
  */
 
-#define USB_AUDIO_OUT_NUM_BUF 16
+#define USB_AUDIO_OUT_NUM_BUF    16
 #define USB_AUDIO_OUT_PKT_SIZE   (AUDIO_OUT_PACKET/2)
-#define USB_AUDIO_OUT_BUF_SIZE (USB_AUDIO_OUT_NUM_BUF * USB_AUDIO_OUT_PKT_SIZE)
+#define USB_AUDIO_OUT_BUF_SIZE   (USB_AUDIO_OUT_NUM_BUF * USB_AUDIO_OUT_PKT_SIZE)
 
-static volatile int16_t out_buffer[USB_AUDIO_OUT_BUF_SIZE]; //buffer for filtered PCM data from Recv.
-static volatile uint16_t out_buffer_tail;
-static volatile uint16_t out_buffer_head;
-static volatile uint16_t out_buffer_overflow;
-static volatile uint16_t out_buffer_underflow;
+static  volatile  int16_t   out_buffer[USB_AUDIO_OUT_BUF_SIZE]; //buffer for filtered PCM data from Recv.
+static  volatile  uint16_t  out_buffer_tail;
+static  volatile  uint16_t  out_buffer_head;
+static  volatile  uint16_t  out_buffer_overflow;
+static  volatile  uint16_t  out_buffer_underflow;
 
 static void audio_out_put_buffer(int16_t sample)
 {
 
-    uint32_t next_head = (out_buffer_head + 1) %USB_AUDIO_OUT_BUF_SIZE;
+   //  uint32_t  next_head = (out_buffer_head + 1) % USB_AUDIO_OUT_BUF_SIZE;
 
-    if (next_head != out_buffer_head)
+ // if (next_head != out_buffer_head)
     {
-        out_buffer[out_buffer_head] = sample;
-        out_buffer_head = next_head;
+        out_buffer[ out_buffer_head ] = sample;
+                    out_buffer_head   = (out_buffer_head + 1) % USB_AUDIO_OUT_BUF_SIZE;
     }
-    else
+ /*   else
     {
         // ok. We loose data now, should never ever happen, but so what
         // will cause minor distortion if only a few bytes.
         out_buffer_overflow++;
-    }
+    }*/
+
 }
 
 volatile uint16_t audio_out_buffer_fill()
@@ -203,35 +204,33 @@ static void audio_out_buffer_pop_pkt(volatile int16_t* ptr, uint32_t len)
 {
     if (ptr)
     {
-        // there was data and pkt has been used
-        // free  the space
-        out_buffer_tail = (out_buffer_tail+len)%USB_AUDIO_OUT_BUF_SIZE;
+         out_buffer_tail = ( out_buffer_tail + len ) % USB_AUDIO_OUT_BUF_SIZE; // there was data and pkt has been used  // free  the space
     }
 }
 
-/* len is length in 16 bit samples */
-void audio_out_fill_tx_buffer(int16_t *buffer, uint32_t len)
-{
-    volatile int16_t *pkt = audio_out_buffer_next_pkt(len);
 
-    static uint16_t fill_buffer = 1;
-    if (fill_buffer == 0 && pkt)
+void  audio_out_fill_tx_buffer ( int16_t *buffer, uint32_t len )      // len is length in 16 bit samples
+{
+    volatile  int16_t *pkt = audio_out_buffer_next_pkt ( len );
+
+    static  uint16_t  fill_buffer = 1;
+    if ( fill_buffer == 0 && pkt)
     {
-        uint32_t idx;
-        for (idx = len; idx; idx--)
+        uint32_t  idx;
+        for ( idx = len; idx; idx--)
         {
             *buffer++ = *pkt++;
         }
-        audio_out_buffer_pop_pkt(pkt,len);
+        audio_out_buffer_pop_pkt ( pkt, len );
     }
     else
     {
-        if (fill_buffer == 0)
+        if ( fill_buffer == 0 )
         {
             out_buffer_underflow++;
             fill_buffer = 1;
         }
-        if (audio_out_buffer_next_pkt((USB_AUDIO_OUT_BUF_SIZE*2)/3) != NULL)
+        if ( audio_out_buffer_next_pkt ( (USB_AUDIO_OUT_BUF_SIZE*2)/3) != NULL )
         {
             fill_buffer = 0;
         }
@@ -271,7 +270,10 @@ USBD_AUDIO_ItfTypeDef USBD_AUDIO_fops_FS =
  * @param  options: Reserved for future use
  * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
  */
-static int8_t AUDIO_Init_FS(uint32_t  AudioFreq, uint32_t Volume, uint32_t options)
+
+
+
+static int8_t AUDIO_Init_FS ( uint32_t  AudioFreq, uint32_t Volume, uint32_t options)
 { 
     /* USER CODE BEGIN 0 */
     AudioState = AUDIO_STATE_ACTIVE;
@@ -285,10 +287,11 @@ static int8_t AUDIO_Init_FS(uint32_t  AudioFreq, uint32_t Volume, uint32_t optio
  * @param  options: Reserved for future use
  * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
  */
-static int8_t AUDIO_DeInit_FS(uint32_t options)
+static  int8_t    AUDIO_DeInit_FS( uint32_t  options )
 {
     /* USER CODE BEGIN 1 */
     AudioState = AUDIO_STATE_INACTIVE;
+
     return (USBD_OK);
     /* USER CODE END 1 */
 }
@@ -304,107 +307,115 @@ static int8_t AUDIO_DeInit_FS(uint32_t options)
 
 static uint16_t fill;
 
-static int8_t AUDIO_AudioCmd_FS (uint8_t* pbuf, uint32_t size, uint8_t cmd)
+static int8_t AUDIO_AudioCmd_FS ( uint8_t* pbuf, uint32_t size, uint8_t cmd )
 {
+
     /* USER CODE BEGIN 2 */
     /* Check the current state */
     if ((AudioState == AUDIO_STATE_INACTIVE) || (AudioState == AUDIO_STATE_ERROR))
     {
         AudioState = AUDIO_STATE_ERROR;
+
         return USBD_FAIL;
     }
 
-    switch (cmd)
+    switch ( cmd )
     {
-    /* Process the PLAY command ----------------------------*/
-    case AUDIO_CMD_START:
-    case AUDIO_CMD_PLAY:
-        /* If current state is Active or Stopped */
-        if ((AudioState == AUDIO_STATE_ACTIVE) || \
-                (AudioState == AUDIO_STATE_STOPPED) || \
-                (AudioState == AUDIO_STATE_PAUSED) || \
-                (AudioState == AUDIO_STATE_PLAYING))
-        {
+		/* Process the PLAY command ----------------------------*/
+		case AUDIO_CMD_START:
+		case AUDIO_CMD_PLAY:
+							/* If current state is Active or Stopped */
+							if ((AudioState == AUDIO_STATE_ACTIVE  ) ||
+								(AudioState == AUDIO_STATE_STOPPED ) ||
+								(AudioState == AUDIO_STATE_PAUSED  ) ||
+								(AudioState == AUDIO_STATE_PLAYING))
+							{
 
 
-            if (ts.txrx_mode == TRX_MODE_TX)
-            {
-                uint16_t* pkt = (uint16_t*)pbuf;
-                uint32_t count;
-                static bool too_high = false;
+								if (ts.txrx_mode == TRX_MODE_TX)
+								{
+									uint16_t* pkt = (uint16_t*)pbuf;
+									uint32_t  count;
+									static  bool  too_high = false;
 
-                fill =  audio_out_buffer_fill();
-                // USB_AUDIO_OUT_NUM_BUF * USB_AUDIO_OUT_PKT_SIZE
-                bool is_low_space = fill > (3*(USB_AUDIO_OUT_NUM_BUF/4) * USB_AUDIO_OUT_PKT_SIZE);
-                bool is_high_space = fill < (USB_AUDIO_OUT_NUM_BUF/4 * USB_AUDIO_OUT_PKT_SIZE);
-                bool is_high_ok = fill > (3*(USB_AUDIO_OUT_NUM_BUF/4) * USB_AUDIO_OUT_PKT_SIZE);
-                // bool is_low_ok = fill < ((USB_AUDIO_OUT_NUM_BUF/4) * USB_AUDIO_OUT_PKT_SIZE);
+									fill =  audio_out_buffer_fill();
+									// USB_AUDIO_OUT_NUM_BUF * USB_AUDIO_OUT_PKT_SIZE
+									bool is_low_space  = fill > (3*(USB_AUDIO_OUT_NUM_BUF/4) * USB_AUDIO_OUT_PKT_SIZE);
+									bool is_high_space = fill <    (USB_AUDIO_OUT_NUM_BUF/4  * USB_AUDIO_OUT_PKT_SIZE);
+									bool is_high_ok    = fill > (3*(USB_AUDIO_OUT_NUM_BUF/4) * USB_AUDIO_OUT_PKT_SIZE);
+								 // bool is_low_ok     = fill <   ((USB_AUDIO_OUT_NUM_BUF/4) * USB_AUDIO_OUT_PKT_SIZE);
 
-                uint16_t num_samples = size/2;
+									uint16_t num_samples = size/2;
 
-                if (is_high_ok)
-                {
-                    too_high = false;
-                } else  {
-                    too_high = is_high_space;
-                }
+									if (is_high_ok) 	{	too_high = false;	        }
+									else  				{	too_high = is_high_space;	}
 
 
-                if (is_low_space)
-                {
-                    num_samples-=2;
-                }
-                for (count =0; count < num_samples; count++)
-                {
-                    audio_out_put_buffer(pkt[count]);
-                }
-                if (too_high)
-                {
-                    audio_out_put_buffer(pkt[num_samples-2]);
-                    audio_out_put_buffer(pkt[num_samples-1]);
-                }
+									if (is_low_space)
+									{
+										num_samples-=2;
+									}
+									for (count =0; count < num_samples; count++)
+									{
+										audio_out_put_buffer(pkt[count]);
+									}
+									if (too_high)
+									{
+										audio_out_put_buffer(pkt[num_samples-2]);
+										audio_out_put_buffer(pkt[num_samples-1]);
+									}
 
-            }
-            AudioState = AUDIO_STATE_PLAYING;
-            return USBD_OK;
-        }
-        else /* Not allowed command */
-        {
-            return USBD_FAIL;
-        }
-        break;
+								}
+								AudioState = AUDIO_STATE_PLAYING;
 
-    /* Process the STOP command ----------------------------*/
-    case AUDIO_CMD_STOP:
-        if (AudioState != AUDIO_STATE_PLAYING)
-        {
-            /* Unsupported command */
-            return USBD_FAIL;
-        }
-        else
-        {
-            AudioState = AUDIO_STATE_STOPPED;
-            return USBD_OK;
-        }
+								return USBD_OK;
+							}
+							else /* Not allowed command */
+							{
 
-    /* Process the PAUSE command ---------------------------*/
-    case AUDIO_CMD_PAUSE:
-        if (AudioState != AUDIO_STATE_PLAYING)
-        {
-            /* Unsupported command */
-            return USBD_FAIL;
-        }
-        else
-        {
-            AudioState = AUDIO_STATE_PAUSED;
-            return USBD_OK;
-        }
+								return USBD_FAIL;
+							}
+							break;
 
-    /* Unsupported command ---------------------------------*/
-    default:
-        return USBD_FAIL;
+		/* Process the STOP command ----------------------------*/
+		case AUDIO_CMD_STOP:
+								if (AudioState != AUDIO_STATE_PLAYING)
+								{
+									/* Unsupported command */
+
+									return USBD_FAIL;
+								}
+								else
+								{
+									AudioState = AUDIO_STATE_STOPPED;
+
+									return USBD_OK;
+								}
+
+
+
+							/* Process the PAUSE command ---------------------------*/
+		case AUDIO_CMD_PAUSE:
+								if (AudioState != AUDIO_STATE_PLAYING)
+								{
+									/* Unsupported command */
+
+									return USBD_FAIL;
+								}
+								else
+								{
+									AudioState = AUDIO_STATE_PAUSED;
+
+									return  USBD_OK;
+								}
+
+							/* Unsupported command ---------------------------------*/
+		default:
+
+						return  USBD_FAIL;
     }
-    return USBD_OK;
+
+    return  USBD_OK;
     /* USER CODE END 2 */
 
 }
@@ -417,11 +428,11 @@ static int8_t AUDIO_AudioCmd_FS (uint8_t* pbuf, uint32_t size, uint8_t cmd)
  */
 static int8_t AUDIO_VolumeCtl_FS (uint8_t vol)
 {
-    /* USER CODE BEGIN 3 */
-    uint16_t source = ts.tx_audio_source == TX_AUDIO_DIGIQ?TX_AUDIO_DIGIQ:TX_AUDIO_DIG;
+    				/* USER CODE BEGIN 3 */
+    uint16_t source    = ts.tx_audio_source == TX_AUDIO_DIG_IQ ? TX_AUDIO_DIG_IQ : TX_AUDIO_DIG_EX;
     ts.tx_gain[source] = vol;
-    return (USBD_OK);
-    /* USER CODE END 3 */
+    return ( USBD_OK );
+    				/* USER CODE END 3 */
 }
 
 /**

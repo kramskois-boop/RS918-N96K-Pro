@@ -147,10 +147,11 @@ inline void profileTimedEventStop(const ProfiledEventNames pe)
 inline void profileTimedEventReset(const ProfiledEventNames pe)
 {
 #ifdef PROFILE_EVENTS
-    if (pe<EventProfileMax && pe >= 0) {
-        eventProfile.event[pe].start = 0;
-        eventProfile.event[pe].stop = 0;
-        eventProfile.event[pe].count = 0;
+    if (pe<EventProfileMax && pe >= 0)
+    {
+        eventProfile.event[pe].start    = 0;
+        eventProfile.event[pe].stop     = 0;
+        eventProfile.event[pe].count    = 0;
         eventProfile.event[pe].duration = 0;
     }
 #endif

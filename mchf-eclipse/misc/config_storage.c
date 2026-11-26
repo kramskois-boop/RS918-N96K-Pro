@@ -43,15 +43,17 @@ void ConfigStorage_CopyFlash2Serial(void)
 }
 
 // copy data from serial to virtual EEPROM
-void ConfigStorage_CopySerial2Flash(void)
+void ConfigStorage_CopySerial2Flash ( void )
 {
-    uint16_t count;
-    uint16_t data;
+    uint16_t  count;
+    uint16_t  data;
 
-    for(count=1; count <= MAX_VAR_ADDR; count++)
+    for ( count=1;  count <= MAX_VAR_ADDR; count++ )
     {
-        SerialEEPROM_ReadVariable(count, &data);
-        Flash_UpdateVariable(count, data);
+        if ( SerialEEPROM_ReadVariable ( count, &data ) == HAL_OK )
+		{
+			Flash_UpdateVariable       ( count, data );
+		}
     }
 }
 
@@ -61,15 +63,29 @@ void ConfigStorage_CopySerial2Flash(void)
  * it encounters a difference between flash and I2C
  * Used only for debugging
  */
-static bool ConfigStorage_CheckSameContentSerialAndFlash(void)
+static bool ConfigStorage_CheckSameContentSerialAndFlash ( void )
 {
     bool retval = true;
     for(uint16_t count=1; retval == true && count <= MAX_VAR_ADDR; count++)
     {
-        uint16_t data1, data2;
-        SerialEEPROM_ReadVariable(count, &data1);
-        Flash_ReadVariable(count, &data2);
-        if(data1 != data2)
+        uint16_t  data1,  data2;
+       //  SerialEEPROM_ReadVariable ( count, &data1 );
+       //  Flash_ReadVariable        ( count, &data2 );
+       //  if ( data1 != data2 )
+
+
+
+
+		if ( SerialEEPROM_ReadVariable ( count, &data1 ) == HAL_OK )
+		{
+			Flash_ReadVariable ( count, &data2 );
+			if ( data1 != data2 )
+			{
+				retval = false;
+				ts.configstore_in_use = CONFIGSTORE_IN_USE_ERROR; // mark data copy as faulty
+			}
+		}
+		else
         {
             retval = false;
             ts.configstore_in_use = CONFIGSTORE_IN_USE_ERROR; // mark data copy as faulty
@@ -88,29 +104,30 @@ static bool ConfigStorage_CheckSameContentSerialAndFlash(void)
 uint16_t ConfigStorage_ReadVariable(uint16_t addr, uint16_t *value)
 {
     uint16_t retval;
-    switch(ts.configstore_in_use){
-    case CONFIGSTORE_IN_USE_I2C:
-        retval = SerialEEPROM_ReadVariable(addr, value);
-        break;
-    case CONFIGSTORE_IN_USE_FLASH:
-    case SER_EEPROM_TOO_SMALL:
-        retval = Flash_ReadVariable(addr, value);
-        break;
-    case CONFIGSTORE_IN_USE_RAMCACHE:
+    switch(ts.configstore_in_use)
     {
-        uint8_t lowbyte;
-        uint8_t highbyte;
-        uint16_t data;
+		case CONFIGSTORE_IN_USE_I2C:
+									retval = SerialEEPROM_ReadVariable(addr, value);
+									break;
+		case CONFIGSTORE_IN_USE_FLASH:
+		case SER_EEPROM_TOO_SMALL:
+									retval = Flash_ReadVariable(addr, value);
+									break;
+		case CONFIGSTORE_IN_USE_RAMCACHE:
+									{
+										uint8_t lowbyte;
+										uint8_t highbyte;
+										uint16_t data;
 
-        highbyte = config_ramcache[addr*2];
-        lowbyte = config_ramcache[addr*2+1];
-        data = lowbyte + (highbyte<<8);
-        *value = data;
-        retval = 0;
-        break;
-    }
-    default:
-        retval = 0;
+										highbyte =  config_ramcache[addr*2];
+										lowbyte  =  config_ramcache[addr*2+1];
+										data     =  lowbyte + (highbyte<<8);
+										*value   =  data;
+										retval   =  0;
+										break;
+									}
+		default:
+									retval = 0;
     }
     return retval;
 }
@@ -136,15 +153,15 @@ uint16_t ConfigStorage_WriteVariable(uint16_t addr, uint16_t value)
     {
         status = (Flash_UpdateVariable(addr, value));
     }
-    else if(ts.configstore_in_use == CONFIGSTORE_IN_USE_RAMCACHE)
+    else if ( ts.configstore_in_use == CONFIGSTORE_IN_USE_RAMCACHE )
     {
         uint8_t lowbyte;
         uint8_t highbyte;
 
-        lowbyte = (uint8_t)((0x00FF)&value);
-        highbyte = (uint8_t)((0x00FF)&(value >> 8));
-        config_ramcache[addr*2] = highbyte;
-        config_ramcache[addr*2+1] = lowbyte;
+        lowbyte  = (uint8_t) ((0x00FF)&value);
+        highbyte = (uint8_t) ((0x00FF)&(value >> 8));
+        config_ramcache [addr*2  ] = highbyte;
+        config_ramcache [addr*2+1] = lowbyte;
         status = HAL_OK;
     }
     return status;

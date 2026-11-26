@@ -76,7 +76,7 @@ void		UiConfiguration_UpdateMacroCap(void);
 
 
 #define AUDIO_GAIN_DEFAULT  16      // Default audio gain
-#define AUDIO_GAIN_MAX      30      // Maximum audio gain setting
+#define AUDIO_GAIN_MAX      70      // Maximum audio gain setting  /// NIZZZ
 
 #define DIG_GAIN_MAX        31      // Maximum audio gain setting
 #define DIG_GAIN_DEFAULT    16      // Default audio gain
@@ -84,9 +84,9 @@ void		UiConfiguration_UpdateMacroCap(void);
 //
 // The following are used in the max volume setting in the menu system
 //
-#define MAX_VOLUME_MIN              8       // Minimum setting for maximum volume
+#define MAX_VOLUME_MIN              40      // Minimum setting for maximum volume
 #define MAX_VOLUME_MAX              AUDIO_GAIN_MAX      // Maximum setting for maximum volume
-#define MAX_VOLUME_DEFAULT          AUDIO_GAIN_DEFAULT
+#define MAX_VOLUME_DEFAULT          50      //  AUDIO_GAIN_DEFAULT
 //
 #define MAX_VOLUME_RED_THRESH  10      // "MAX VOLUME" setting at or below which number will be RED to warn user
 #define MAX_VOLUME_YELLOW_THRESH  16  // "MAX VOLUME" setting at or below which number will be YELLOW to warn user
@@ -542,7 +542,7 @@ void		UiConfiguration_UpdateMacroCap(void);
 #define EEPROM_DISPLAY_DBM					359		// dbm display
 #define EEPROM_BASS_GAIN					360		// bass gain lowShelf filter
 #define EEPROM_TREBLE_GAIN					361		// treble gain highShelf filter
-//#define	EEPROM_S_METER						362		// S-Meter configuration
+//#define	EEPROM_S_METER					362		// S-Meter configuration
 #define EEPROM_TX_FILTER					363		// TX_Filter configuration
 #define EEPROM_TX_BASS_GAIN					364		// TX bass gain lowShelf filter
 #define EEPROM_TX_TREBLE_GAIN				365		// TX treble gain highShelf filter
@@ -554,7 +554,7 @@ void		UiConfiguration_UpdateMacroCap(void);
 #define EEPROM_SAM_FADE_LEVELER             371
 #define EEPROM_LINEOUT_GAIN                 372
 #define EEPROM_IQ_AUTO_CORRECTION           373     // Receive IQ auto correction ON/OFF
-//#define EEPROM_AGC_WDSP_SWITCH              374
+//#define EEPROM_AGC_WDSP_SWITCH            374
 #define EEPROM_AGC_WDSP_MODE                375
 #define EEPROM_AGC_WDSP_THRESH              376
 #define EEPROM_AGC_WDSP_SLOPE               377
@@ -568,11 +568,11 @@ void		UiConfiguration_UpdateMacroCap(void);
 #define EEPROM_AGC_WDSP_TAU_DECAY_3         385
 #define EEPROM_AGC_WDSP_TAU_DECAY_4         386
 
-#define EEPROM_LOW_POWER_CONFIG          387
-#define EEPROM_CW_KEYER_WEIGHT           388
-#define EEPROM_DIGI_MODE_CONF			 389
-#define EEPROM_Scope_TRACE_HL_BW			 390
-#define EEPROM_Scope_TRACE_HL_BW_BGR			 391
+#define EEPROM_LOW_POWER_CONFIG                 387
+#define EEPROM_CW_KEYER_WEIGHT                  388
+#define EEPROM_DIGI_MODE_CONF			        389
+#define EEPROM_Scope_TRACE_HL_BW			    390
+#define EEPROM_Scope_TRACE_HL_BW_BGR			391
 #define EEPROM_TScal0_High						392	//callibration data for touchscreen (all data are int32_t divided in two 16bit chunks)
 #define EEPROM_TScal0_Low						393
 #define EEPROM_TScal1_High						394
@@ -587,17 +587,137 @@ void		UiConfiguration_UpdateMacroCap(void);
 #define EEPROM_TScal5_Low						403
 #define EEPROM_CW_DECODER_ENABLE				404
 #define EEPROM_Scope_Graticule_Ypos				405
-#define EEPROM_Freq_Display_Font				406
-#define EEPROM_NUMBER_OF_ENTRIES                407 // this is the index of the config value which holds the number of used config entries
-                                                    // , not the value itself (which is in fact EEPROM_FIRST_UNUSED)
+#define EEPROM_Freq_Display_Font				406 //
+#define EEPROM_NUMBER_OF_ENTRIES                407  // a ne pas changer pour ne pas trop perturber la compatibilit� avec la version UHSDR
+#define EEPROM_DSP_MODE_MASK				    408
+#define EEPROM_ENABLE_PTT_RTS				    409
+#define EEPROM_CW_DECODER_THRESH		        410
+#define EEPROM_CW_DECODER_BLOCKSIZE		        411
 
-#define EEPROM_DSP_MODE_MASK				408
-#define EEPROM_ENABLE_PTT_RTS				409
-#define EEPROM_CW_DECODER_THRESH					410
-#define EEPROM_CW_DECODER_BLOCKSIZE				411
-#define EEPROM_FIRST_UNUSED 				412		// change this if new value ids are introduced, must be correct at any time
 
-#define MAX_VAR_ADDR (EEPROM_FIRST_UNUSED - 1)
+         ///****************************************************************************************************
+         ///**************************   Reserves de memoire EEPROM pour guarder compatibilit� avec UHSDR *****
+         ///****************************************************************************************************
+#define EEPROM_SMETER_ALPHAS                    412
+#define EEPROM_ADJ_TX_IQ_SOMEBANDS	            413     // unused, may be reused due to short usage time in its original
+#define EEPROM_TX_IQ_20M_GAIN_BALANCE           414
+#define EEPROM_TX_IQ_20M_PHASE_BALANCE          415
+#define EEPROM_TX_IQ_15M_GAIN_BALANCE           416
+#define EEPROM_TX_IQ_15M_PHASE_BALANCE          417
+
+#define EEPROM_TX_IQ_10M_UP_GAIN_BALANCE		    418
+#define EEPROM_TX_IQ_10M_UP_PHASE_BALANCE		    419
+#define EEPROM_TX_IQ_20M_GAIN_BALANCE_TRANS_OFF		420
+#define EEPROM_TX_IQ_20M_PHASE_BALANCE_TRANS_OFF	421
+#define EEPROM_TX_IQ_15M_GAIN_BALANCE_TRANS_OFF		422
+#define EEPROM_TX_IQ_15M_PHASE_BALANCE_TRANS_OFF	423
+#define EEPROM_TX_IQ_10M_UP_GAIN_BALANCE_TRANS_OFF	424
+#define EEPROM_TX_IQ_10M_UP_PHASE_BALANCE_TRANS_OFF	425
+#define EEPROM_VSWR_PROTECTION_THRESHOLD            426
+#define EEPROM_EXPFLAGS1                            427     // Flags for options in Debug/Expert menu - see variable "expflags1"
+#define EEPROM_XVERTER_OFFSET_TX_HIGH               428     // Secondary frequency by which the display is offset for transverter use, high word
+#define EEPROM_XVERTER_OFFSET_TX_LOW                429     // Secondary frequency by which the display is offset for transverter use, low word
+#define EEPROM_FUTURE_RESERVE0                      430
+#define EEPROM_FUTURE_RESERVE1                      431
+#define EEPROM_FUTURE_RESERVE2                      432
+#define EEPROM_FUTURE_RESERVE3                      433
+#define EEPROM_FUTURE_RESERVE4                      434
+#define EEPROM_FUTURE_RESERVE5                      435
+#define EEPROM_FUTURE_RESERVE6                      436
+#define EEPROM_FUTURE_RESERVE7                      437
+#define EEPROM_FUTURE_RESERVE8                      438
+#define EEPROM_FUTURE_RESERVE9                      439
+#define EEPROM_FUTURE_RESERVE10                      440
+#define EEPROM_FUTURE_RESERVE11                      441
+#define EEPROM_FUTURE_RESERVE12                      442
+#define EEPROM_FUTURE_RESERVE13                      443
+#define EEPROM_FUTURE_RESERVE14                      444
+#define EEPROM_FUTURE_RESERVE15                      445
+#define EEPROM_FUTURE_RESERVE16                      446
+#define EEPROM_FUTURE_RESERVE17                      447
+#define EEPROM_FUTURE_RESERVE18                      448
+#define EEPROM_FUTURE_RESERVE19                      449
+                ///*****************************************************************************************************
+#define EEPROM_LCD_BRIGHTNESS 				    450
+#define EEPROM_AGC_WDSP_HANG_THRESH             451
+#define EEPROM_AGC_WDSP_ATTACK                  452
+#define EEPROM_AGC_WDSP_HANG_TIME               453
+#define EEPROM_TX_BASS_EQUAL_FREQ               454
+#define EEPROM_TX_BASS_EQUAL_BW                 455
+#define EEPROM_TX_TREB_EQUAL_FREQ               456
+#define EEPROM_TX_TREB_EQUAL_BW                 457
+#define EEPROM_RX_IQ_160M_GAIN_BALANCE		    458
+#define EEPROM_RX_IQ_160M_PHASE_BALANCE		    459
+#define EEPROM_RX_IQ_60M_GAIN_BALANCE		    460
+#define EEPROM_RX_IQ_60M_PHASE_BALANCE		    461
+#define EEPROM_RX_IQ_40M_GAIN_BALANCE			462
+#define EEPROM_RX_IQ_40M_PHASE_BALANCE			463
+#define EEPROM_RX_IQ_30M_GAIN_BALANCE		    464
+#define EEPROM_RX_IQ_30M_PHASE_BALANCE		    465
+#define EEPROM_RX_IQ_20M_GAIN_BALANCE			466
+#define EEPROM_RX_IQ_20M_PHASE_BALANCE			467
+#define EEPROM_RX_IQ_15M_GAIN_BALANCE		    468
+#define EEPROM_RX_IQ_15M_PHASE_BALANCE		    469
+#define EEPROM_RX_IQ_17M_GAIN_BALANCE		    470
+#define EEPROM_RX_IQ_17M_PHASE_BALANCE		    471
+#define EEPROM_RX_IQ_12M_GAIN_BALANCE		    472
+#define EEPROM_RX_IQ_12M_PHASE_BALANCE		    473
+#define EEPROM_TX_IQ_160M_GAIN_BALANCE          474
+#define EEPROM_TX_IQ_160M_PHASE_BALANCE         475
+#define EEPROM_TX_IQ_60M_GAIN_BALANCE           476
+#define EEPROM_TX_IQ_60M_PHASE_BALANCE          477
+#define EEPROM_TX_IQ_40M_GAIN_BALANCE           478
+#define EEPROM_TX_IQ_40M_PHASE_BALANCE          479
+#define EEPROM_TX_IQ_30M_GAIN_BALANCE           480
+#define EEPROM_TX_IQ_30M_PHASE_BALANCE          481
+#define EEPROM_TX_IQ_17M_GAIN_BALANCE           482
+#define EEPROM_TX_IQ_17M_PHASE_BALANCE          483
+#define EEPROM_TX_IQ_12M_GAIN_BALANCE           484
+#define EEPROM_TX_IQ_12M_PHASE_BALANCE          485
+#define EEPROM_TX_CODEC_GAIN_ENABLE             486
+#define EEPROM_TX_COMPRESS_OUT_GAIN             487
+#define EEPROM_RX_HP_AUDIO_FILTER               488
+#define EEPROM_RX_BASS_EQUAL_FREQ               489
+#define EEPROM_RX_BASS_EQUAL_BW                 490
+#define EEPROM_RX_TREBL_EQUAL_FREQ              491
+#define EEPROM_RX_TREBL_EQUAL_BW                492
+#define EEPROM_TX_BASS_SHEEFT                   493
+#define EEPROM_MIC_NOISE_GATE_THRESH            494
+#define EEPROM_MIC_REVERBARATION_ENABL          495
+#define EEPROM_MIC_REVERBARATION_RATE           496
+#define EEPROM_MIC_REVERBARATION_DELAY          497
+#define EEPROM_Scope_BAKGRD_HL_BW               498
+#define EEPROM_DETECTOR_COUPLING_COEFF_60M      499
+#define EEPROM_DETECTOR_COUPLING_COEFF_30M      500
+#define EEPROM_DETECTOR_COUPLING_COEFF_17M      501
+#define EEPROM_DETECTOR_COUPLING_COEFF_12M      502
+#define EEPROM_DETECTOR_COUPLING_COEFF_10M      503
+#define EEPROM_TX_MEDIUM_EQUAL_FREQ             504
+#define EEPROM_TX_MEDIUM_GAIN                   505
+#define EEPROM_TX_MEDIUM_EQUAL_BW               506
+#define EEPROM_TX_HPF_FILTER                    507
+#define EEPROM_SPECTRUM_BACKGROUND_COL          508
+#define EEPROM_SPECTRUM_BACKGROUND_TRANSP       509
+#define EEPROM_DIGITAL_NOISE_REDUCTION_COEFF    510
+#define EEPROM_DIG_EX_INPUT_GAIN                511
+
+#define EEPROM_TX_IQ_160M_GAIN_BALANCE_TRANS_OFF  512
+#define EEPROM_TX_IQ_160M_PHASE_BALANCE_TRANS_OFF 513
+#define EEPROM_TX_IQ_60M_GAIN_BALANCE_TRANS_OFF	  514
+#define EEPROM_TX_IQ_60M_PHASE_BALANCE_TRANS_OFF  515
+#define EEPROM_TX_IQ_40M_GAIN_BALANCE_TRANS_OFF	  516
+#define EEPROM_TX_IQ_40M_PHASE_BALANCE_TRANS_OFF  517
+#define EEPROM_TX_IQ_30M_GAIN_BALANCE_TRANS_OFF	  518
+#define EEPROM_TX_IQ_30M_PHASE_BALANCE_TRANS_OFF  519
+#define EEPROM_TX_IQ_17M_GAIN_BALANCE_TRANS_OFF	  520
+#define EEPROM_TX_IQ_17M_PHASE_BALANCE_TRANS_OFF  521
+#define EEPROM_TX_IQ_12M_GAIN_BALANCE_TRANS_OFF	  522
+#define EEPROM_TX_IQ_12M_PHASE_BALANCE_TRANS_OFF  523
+
+#define EEPROM_FIRST_UNUSED 				      524  // this is the index of the config value which holds the number of used config entries
+													   // , not the value itself (which is in fact EEPROM_FIRST_UNUSED)
+													   // change this if new value ids are introduced, must be correct at any time
+#define  MAX_VAR_ADDR  ( EEPROM_FIRST_UNUSED - 1 )
 
 
 #if (MAX_VAR_ADDR > NB_OF_VAR)

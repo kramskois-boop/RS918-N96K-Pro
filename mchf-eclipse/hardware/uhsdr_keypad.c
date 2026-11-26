@@ -15,7 +15,8 @@
 // Constant declaration of the buttons map across ports
 // - update if moving buttons around !!!
 // the order in this array is not relevant for functional aspects
-const Keypad_KeyPhys_t bm_set_normal_arr[] =
+
+const  Keypad_KeyPhys_t  bm_set_normal_arr[] =
 {
         {BUTTON_M2_PIO,     BUTTON_M2,      BUTTON_M2_PRESSED,      "S3"},
         {BUTTON_G3_PIO,     BUTTON_G3,      BUTTON_G3_PRESSED,      "S2"},
@@ -48,10 +49,10 @@ const Keypad_KeyPhys_t bm_set_normal_arr[] =
         {NULL,              0,              0,                      NULL}
 };
 
-const Keypad_KeyPhys_t* bm_set_normal = &bm_set_normal_arr[0];
+const  Keypad_KeyPhys_t* bm_set_normal = &bm_set_normal_arr[0];
 
 #ifdef UI_BRD_MCHF
-const Keypad_KeyPhys_t bm_set_rtc_arr[] =
+const  Keypad_KeyPhys_t  bm_set_rtc_arr[] =
 
 {
         // alternative mapping for RTC Modification
@@ -84,7 +85,7 @@ const Keypad_KeyPhys_t* bm_set_rtc = &bm_set_rtc_arr[0];
 // all supported logical buttons
 // the order in this list must be identical to the order
 // in the enum
-const UhsdrButtonLogical_t buttons[BUTTON_NUM] =
+const  UhsdrButtonLogical_t  buttons[BUTTON_NUM] =
 {
         {BUTTON_M2_PRESSED,     "M2"},     // 0 / S3
         {BUTTON_G3_PRESSED,     "G3"},     // 1 / S2
@@ -157,9 +158,9 @@ void Keypad_KeypadInit(UhsdrHwKey_t* keyMap)
     GPIO_InitTypeDef GPIO_InitStructure;
 
     // Common init
-    GPIO_InitStructure.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStructure.Mode  = GPIO_MODE_INPUT;
     GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStructure.Pull = GPIO_PULLUP;
+    GPIO_InitStructure.Pull  = GPIO_PULLUP;
 
     // Init all hw gpio from public struct declaration
     for(keyMap->num = 0; keyMap->map[keyMap->num].keyPort != NULL; keyMap->num++)
@@ -175,7 +176,7 @@ void Keypad_KeypadInit(UhsdrHwKey_t* keyMap)
  */
 static bool Keypad_GetKeyGPIOState(const Keypad_KeyPhys_t* key)
 {
-    return HAL_GPIO_ReadPin(key->keyPort, key->keyPin) == 0;
+    return HAL_GPIO_ReadPin ( key->keyPort, key->keyPin ) == 0;
 }
 
 /*
@@ -190,12 +191,12 @@ void Keypad_Scan()
         {
             // in normal mode - return key value
             buttonStates |= (1 << hwKeys.map[key_num].button_id);
-            keyStates |= (1 << key_num);
+            keyStates    |= (1 << key_num);
         }
         else
         {
             buttonStates &= ~(1 << hwKeys.map[key_num].button_id);
-            keyStates &= ~(1 << key_num);
+            keyStates    &= ~(1 << key_num);
 
         }
     }

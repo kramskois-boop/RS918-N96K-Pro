@@ -91,10 +91,9 @@
 /** @defgroup USBD_DFU_Private_Macros
   * @{
   */ 
-#define DFU_SAMPLE_FREQ(frq)      (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
+#define DFU_SAMPLE_FREQ(frq)      (uint8_t)((uint32_t)frq<<1),(uint8_t)(((uint32_t)frq>>7)),(uint8_t)(((uint32_t)frq>>15))
 
-#define DFU_PACKET_SZE(frq)          (uint8_t)(((frq * 2 * 2)/1000) & 0xFF), \
-                                       (uint8_t)((((frq * 2 * 2)/1000) >> 8) & 0xFF)
+#define DFU_PACKET_SZE(frq)       (uint8_t)((((uint32_t)frq*2*2)/1000)&0xFF),(uint8_t)(((((uint32_t)frq*2*2)/1000)>>8)&0xFF)
                                          
 /**
   * @}

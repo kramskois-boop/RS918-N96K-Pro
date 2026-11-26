@@ -53,12 +53,12 @@ typedef struct
 	VKeyRedrawFunc RedrawFunct;	//pointer to callback function for redraw
 } VKeypad;
 
-#define UiVk_MaxKeyCount 24
+#define UiVk_MaxKeyCount    24
 
-#define Vbtn_State_Normal 0
+#define Vbtn_State_Normal   0
 #define Vbtn_State_Selected 1
 #define Vbtn_State_Disabled 2
-#define Vbtn_State_Pressed 8
+#define Vbtn_State_Pressed  8
 
 enum Vkey_Group_ {Vkey_Group_OneAllowed=0, Vkey_Group_MultipleAllowed};
 
@@ -67,7 +67,11 @@ enum Vkey_Group_ {Vkey_Group_OneAllowed=0, Vkey_Group_MultipleAllowed};
 bool UiVk_Process_VirtualKeypad(bool LongPress);
 void UiVk_Redraw();
 
-void UiVk_DSPVirtualKeys();
+void  UiVk_DSPVirtualKeys();
+
+void  UiVk_BW_TouchScreen();
+void  UiVk_HPF_UP_TouchScreen();
+
 
 //void UiVk_RedrawBndSelVirtualKeys();
 void UiVk_BndSelVirtualKeys();

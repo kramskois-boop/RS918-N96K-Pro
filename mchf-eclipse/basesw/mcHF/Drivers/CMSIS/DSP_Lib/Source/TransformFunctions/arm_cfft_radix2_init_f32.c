@@ -73,85 +73,87 @@
 * \par   
 * This Function also initializes Twiddle factor table pointer and Bit reversal table pointer.   
 */
+
+/*
 arm_status arm_cfft_radix2_init_f32(
   arm_cfft_radix2_instance_f32 * S,
   uint16_t fftLen,
   uint8_t ifftFlag,
   uint8_t bitReverseFlag)
 {
-  /*  Initialise the default arm status */
+  //  Initialise the default arm status
   arm_status status = ARM_MATH_SUCCESS;
 
-  /*  Initialise the FFT length */
+  //  Initialise the FFT length
   S->fftLen = fftLen;
 
-  /*  Initialise the Twiddle coefficient pointer */
+  // Initialise the Twiddle coefficient pointer
   S->pTwiddle = (float32_t *) twiddleCoef;
 
-  /*  Initialise the Flag for selection of CFFT or CIFFT */
+  //  Initialise the Flag for selection of CFFT or CIFFT
   S->ifftFlag = ifftFlag;
 
-  /*  Initialise the Flag for calculation Bit reversal or not */
+  //  Initialise the Flag for calculation Bit reversal or not
   S->bitReverseFlag = bitReverseFlag;
 
-  /*  Initializations of structure parameters depending on the FFT length */
+  //  Initializations of structure parameters depending on the FFT length
   switch (S->fftLen)
   {
 
   case 4096u:
-    /*  Initializations of structure parameters for 4096 point FFT */
+    //  Initializations of structure parameters for 4096 point FFT
 
-    /*  Initialise the twiddle coef modifier value */
+    //  Initialise the twiddle coef modifier value
     S->twidCoefModifier = 1u;
-    /*  Initialise the bit reversal table modifier */
+    //  Initialise the bit reversal table modifier
     S->bitRevFactor = 1u;
-    /*  Initialise the bit reversal table pointer */
+    //  Initialise the bit reversal table pointer
     S->pBitRevTable = (uint16_t *) armBitRevTable;
-    /*  Initialise the 1/fftLen Value */
+    //  Initialise the 1/fftLen Value
     S->onebyfftLen = 0.000244140625;
     break;
 
   case 2048u:
-    /*  Initializations of structure parameters for 2048 point FFT */
+    //  Initializations of structure parameters for 2048 point FFT
 
-    /*  Initialise the twiddle coef modifier value */
+    //  Initialise the twiddle coef modifier value
     S->twidCoefModifier = 2u;
-    /*  Initialise the bit reversal table modifier */
+    //  Initialise the bit reversal table modifier
     S->bitRevFactor = 2u;
-    /*  Initialise the bit reversal table pointer */
+    //  Initialise the bit reversal table pointer
     S->pBitRevTable = (uint16_t *) & armBitRevTable[1];
-    /*  Initialise the 1/fftLen Value */
+    //  Initialise the 1/fftLen Value
     S->onebyfftLen = 0.00048828125;
     break;
 
   case 1024u:
-    /*  Initializations of structure parameters for 1024 point FFT */
+    //  Initializations of structure parameters for 1024 point FFT
 
-    /*  Initialise the twiddle coef modifier value */
+    //  Initialise the twiddle coef modifier value
     S->twidCoefModifier = 4u;
-    /*  Initialise the bit reversal table modifier */
+    //  Initialise the bit reversal table modifier
     S->bitRevFactor = 4u;
-    /*  Initialise the bit reversal table pointer */
+    //  Initialise the bit reversal table pointer
     S->pBitRevTable = (uint16_t *) & armBitRevTable[3];
-    /*  Initialise the 1/fftLen Value */
+    //  Initialise the 1/fftLen Value
     S->onebyfftLen = 0.0009765625f;
     break;
 
   case 512u:
-    /*  Initializations of structure parameters for 512 point FFT */
+    //  Initializations of structure parameters for 512 point FFT
 
-    /*  Initialise the twiddle coef modifier value */
+    //  Initialise the twiddle coef modifier value
     S->twidCoefModifier = 8u;
-    /*  Initialise the bit reversal table modifier */
+    //  Initialise the bit reversal table modifier
     S->bitRevFactor = 8u;
-    /*  Initialise the bit reversal table pointer */
+    //  Initialise the bit reversal table pointer
     S->pBitRevTable = (uint16_t *) & armBitRevTable[7];
-    /*  Initialise the 1/fftLen Value */
+    //  Initialise the 1/fftLen Value
     S->onebyfftLen = 0.001953125;
     break;
 
   case 256u:
-    /*  Initializations of structure parameters for 256 point FFT */
+    //  Initializations of structure parameters for 256 point FFT
     S->twidCoefModifier = 16u;
     S->bitRevFactor = 16u;
     S->pBitRevTable = (uint16_t *) & armBitRevTable[15];
@@ -159,7 +161,7 @@ arm_status arm_cfft_radix2_init_f32(
     break;
 
   case 128u:
-    /*  Initializations of structure parameters for 128 point FFT */
+    //  Initializations of structure parameters for 128 point FFT
     S->twidCoefModifier = 32u;
     S->bitRevFactor = 32u;
     S->pBitRevTable = (uint16_t *) & armBitRevTable[31];
@@ -167,7 +169,7 @@ arm_status arm_cfft_radix2_init_f32(
     break;
 
   case 64u:
-    /*  Initializations of structure parameters for 64 point FFT */
+    //  Initializations of structure parameters for 64 point FFT
     S->twidCoefModifier = 64u;
     S->bitRevFactor = 64u;
     S->pBitRevTable = (uint16_t *) & armBitRevTable[63];
@@ -175,7 +177,7 @@ arm_status arm_cfft_radix2_init_f32(
     break;
 
   case 32u:
-    /*  Initializations of structure parameters for 64 point FFT */
+    //  Initializations of structure parameters for 64 point FFT
     S->twidCoefModifier = 128u;
     S->bitRevFactor = 128u;
     S->pBitRevTable = (uint16_t *) & armBitRevTable[127];
@@ -183,7 +185,7 @@ arm_status arm_cfft_radix2_init_f32(
     break;
 
   case 16u:
-    /*  Initializations of structure parameters for 16 point FFT */
+    //  Initializations of structure parameters for 16 point FFT
     S->twidCoefModifier = 256u;
     S->bitRevFactor = 256u;
     S->pBitRevTable = (uint16_t *) & armBitRevTable[255];
@@ -192,13 +194,16 @@ arm_status arm_cfft_radix2_init_f32(
 
 
   default:
-    /*  Reporting argument error if fftSize is not valid value */
+    //  Reporting argument error if fftSize is not valid value
     status = ARM_MATH_ARGUMENT_ERROR;
     break;
   }
 
   return (status);
 }
+
+*/
+
 
 /**   
  * @} end of ComplexFFT group   

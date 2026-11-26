@@ -30,13 +30,16 @@ typedef struct
     UiArea_t wfall;
 } SpectrumAreas_t;
 
-
+//int32_t UISpectrum_track_optimal_USB_Tune( int32_t tune_position );
+//int32_t UISpectrum_track_optimal_LSB_Tune( int32_t tune_position );
+  int32_t UISpectrum_track_optimal_SSB_Tune( int32_t tune_position );
 void UiSpectrum_Init();
 void UiSpectrum_Clear();
 void UiSpectrum_Redraw();
 void UiSpectrum_WaterfallClearData();
 void UiSpectrum_CalculateDisplayFilterBW(float32_t* width_pixel_, float32_t* left_filter_border_pos_);
 void UiSpectrum_DisplayFilterBW();
+
 
 void UiSpectrum_InitCwSnapDisplay (bool visible);
 void UiSpectrum_ResetSpectrum(void);
@@ -136,13 +139,13 @@ enum
 
 // Spectrum scope operational constants
 
-#define SPECTRUM_SCOPE_SPEED_MIN			0	// minimum spectrum scope speed
-#define SPECTRUM_SCOPE_SPEED_MAX			30	// maximum spectrum scope speed
-#define SPECTRUM_SCOPE_SPEED_DEFAULT		5
+#define SPECTRUM_SCOPE_SPEED_MIN			 1   // 0	// minimum spectrum scope speed  nizou
+#define SPECTRUM_SCOPE_SPEED_MAX			 30  // 30	// maximum spectrum scope speed
+#define SPECTRUM_SCOPE_SPEED_DEFAULT		 17
 //
-#define SPECTRUM_FILTER_MIN			1	// minimum filter setting
-#define	SPECTRUM_FILTER_MAX			20	// maximum filter setting
-#define SPECTRUM_FILTER_DEFAULT		4	// default filter setting
+#define SPECTRUM_FILTER_MIN			10  //  1	// minimum filter setting    nizou
+#define	SPECTRUM_FILTER_MAX			22	// maximum filter setting
+#define SPECTRUM_FILTER_DEFAULT		12	// default filter setting
 //
 #define	SPECTRUM_SCOPE_AGC_MIN				1	// minimum spectrum scope AGC rate setting
 #define	SPECTRUM_SCOPE_AGC_MAX				50	// maximum spectrum scope AGC rate setting
@@ -150,7 +153,7 @@ enum
 //
 #define SPECTRUM_SCOPE_NOSIG_ADJUST_MIN		10
 #define SPECTRUM_SCOPE_NOSIG_ADJUST_MAX		30
-#define	SPECTRUM_SCOPE_NOSIG_ADJUST_DEFAULT		20
+#define	SPECTRUM_SCOPE_NOSIG_ADJUST_DEFAULT	20
 
 
 #define	SPECTRUM_AGC_SCALING				25	// scaling factor by which the on-screen Spec. AGC Adj. is divided for adjustment.
@@ -189,13 +192,13 @@ enum
 typedef struct SpectrumDisplay
 {
     // Samples buffer
-    float32_t   FFT_RingBuffer[FFT_IQ_BUFF_LEN];
-    float32_t   FFT_Samples[FFT_IQ_BUFF_LEN];
-    float32_t   FFT_MagData[SPEC_BUFF_LEN];
-    float32_t   FFT_AVGData[SPEC_BUFF_LEN];     // IIR low-pass filtered FFT buffer data
+    float32_t   FFT_RingBuffer [ FFT_IQ_BUFF_LEN ];
+    float32_t   FFT_Samples    [ FFT_IQ_BUFF_LEN ];
+    float32_t   FFT_MagData    [ SPEC_BUFF_LEN   ];
+    float32_t   FFT_AVGData    [ SPEC_BUFF_LEN   ];     // IIR low-pass filtered FFT buffer data
     uint32_t    FFT_frequency; // center frequency of stored FFT
     // scope pixel data
-    uint16_t    Old_PosData[SPECTRUM_WIDTH_MAX];
+    uint16_t    Old_PosData[ SPECTRUM_WIDTH_MAX ];
 
     // Current data ptr
     ulong   samp_ptr;
@@ -209,7 +212,7 @@ typedef struct SpectrumDisplay
 
 
     // Addresses of vertical grid lines on x axis
-    ushort  vert_grid_id[SPECTRUM_SCOPE_GRID_VERT_COUNT-1];
+    ushort   vert_grid_id [ SPECTRUM_SCOPE_GRID_VERT_COUNT-1 ];
     uint16_t vert_grid; // distance between vert grid lines
 
     // Addresses of horizontal grid lines on x axis
@@ -251,9 +254,11 @@ typedef struct SpectrumDisplay
     uint16_t scope_size;
     uint16_t scope_ystart;
 
-    float32_t hz_per_pixel;        // how many Hertz is one pixel in the spectrum
+    float32_t hz_per_fft_bin;    // how many Hertz is one bin in the FFT-512 or FFT1024  spectrum
+    float32_t hz_per_pixel;  // screen pixel
     float32_t rx_carrier_pos;      // where is the current receiving frequency carrier (in pixels)
     float32_t marker_offset[SPECTRUM_MAX_MARKER];   // how is the current transmitting frequency carrier offset from rx carrier (in pixels)
+    float32_t line_offset;  // utile pour le curseur de LO
 
     float32_t marker_pos[SPECTRUM_MAX_MARKER];      // where is the current transmitting frequency carrier (in pixels)
     uint16_t  marker_line_pos_prev[SPECTRUM_MAX_MARKER]; // previous x-axis location of carrier line in screen coordinates, 0xffff indicates off screen

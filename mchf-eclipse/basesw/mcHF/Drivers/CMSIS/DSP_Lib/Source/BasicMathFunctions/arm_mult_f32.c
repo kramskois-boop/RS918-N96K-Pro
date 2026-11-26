@@ -70,78 +70,46 @@
  * @return none.        
  */
 
-void arm_mult_f32(
-  float32_t * pSrcA,
-  float32_t * pSrcB,
-  float32_t * pDst,
-  uint32_t blockSize)
+void arm_mult_f32 (   float32_t * pSrcA,  float32_t * pSrcB,  float32_t * pDst,  uint32_t blockSize)
 {
   uint32_t blkCnt;                               /* loop counters */
 #ifndef ARM_MATH_CM0_FAMILY
 
-  /* Run the below code for Cortex-M4 and Cortex-M3 */
-  float32_t inA1, inA2, inA3, inA4;              /* temporary input variables */
-  float32_t inB1, inB2, inB3, inB4;              /* temporary input variables */
-  float32_t out1, out2, out3, out4;              /* temporary output variables */
 
-  /* loop Unrolling */
+  float32_t   inA1, inA2, inA3, inA4;              /* temporary input variables */
+  float32_t   inB1, inB2, inB3, inB4;              /* temporary input variables */
+  float32_t   out1, out2, out3, out4;              /* temporary output variables */
+
+
   blkCnt = blockSize >> 2u;
 
-  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.        
-   ** a second loop below computes the remaining 1 to 3 samples. */
   while(blkCnt > 0u)
   {
-    /* C = A * B */
-    /* Multiply the inputs and store the results in output buffer */
-    /* read sample from sourceA */
-    inA1 = *pSrcA;
-    /* read sample from sourceB */
-    inB1 = *pSrcB;
-    /* read sample from sourceA */
-    inA2 = *(pSrcA + 1);
-    /* read sample from sourceB */
-    inB2 = *(pSrcB + 1);
-
-    /* out = sourceA * sourceB */
-    out1 = inA1 * inB1;
-
-    /* read sample from sourceA */
-    inA3 = *(pSrcA + 2);
-    /* read sample from sourceB */
-    inB3 = *(pSrcB + 2);
-
-    /* out = sourceA * sourceB */
-    out2 = inA2 * inB2;
-
-    /* read sample from sourceA */
-    inA4 = *(pSrcA + 3);
-
-    /* store result to destination buffer */
-    *pDst = out1;
-
-    /* read sample from sourceB */
-    inB4 = *(pSrcB + 3);
-
-    /* out = sourceA * sourceB */
-    out3 = inA3 * inB3;
-
-    /* store result to destination buffer */
-    *(pDst + 1) = out2;
-
-    /* out = sourceA * sourceB */
-    out4 = inA4 * inB4;
-    /* store result to destination buffer */
-    *(pDst + 2) = out3;
-    /* store result to destination buffer */
-    *(pDst + 3) = out4;
+    inA1        = * pSrcA;
+    inB1        = * pSrcB;
+    inA2        = *(pSrcA + 1u);
+    inB2        = *(pSrcB + 1u);
+    out1        =   inA1 * inB1;
 
 
-    /* update pointers to process next samples */
-    pSrcA += 4u;
-    pSrcB += 4u;
-    pDst += 4u;
+    inA3        = *(pSrcA + 2u);
+    inB3        = *(pSrcB + 2u);
+    out2        =   inA2 * inB2;
+    inA4        = *(pSrcA + 3u);
+    *pDst       =   out1;
 
-    /* Decrement the blockSize loop counter */
+    inB4        = *(pSrcB + 3u);
+    out3        =  inA3 * inB3;
+    *(pDst + 1u) = out2;
+
+    out4        = inA4 * inB4;
+    *(pDst + 2u) = out3;
+    *(pDst + 3u) = out4;
+
+    pSrcA      += 4u;
+    pSrcB      += 4u;
+    pDst       += 4u;
+
     blkCnt--;
   }
 

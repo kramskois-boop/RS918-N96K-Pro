@@ -34,7 +34,7 @@ static void OscDummy_SetPPM(float32_t ppm)
 
 }
 
-static Oscillator_ResultCodes_t OscDummy_PrepareNextFrequency(ulong freq, int temp_factor)
+static Oscillator_ResultCodes_t OscDummy_PrepareNextFrequency( ulong freq, int temp_factor)
 {
 	return OSC_OK;
 }
@@ -50,12 +50,12 @@ static bool              OscDummy_IsNextStepLarge()
 
 const OscillatorInterface_t osc_dummy =
 {
-		.init = OscDummy_Init,
-		.isPresent = OscDummy_IsPresent,
-		.setPPM = OscDummy_SetPPM,
-		.prepareNextFrequency = OscDummy_PrepareNextFrequency,
+		.init                  = OscDummy_Init,
+		.isPresent             = OscDummy_IsPresent,
+		.setPPM                = OscDummy_SetPPM,
+		.prepareNextFrequency  = OscDummy_PrepareNextFrequency,
 		.changeToNextFrequency = OscDummy_ChangeToNextFrequency,
-		.isNextStepLarge = OscDummy_IsNextStepLarge
+		.isNextStepLarge       = OscDummy_IsNextStepLarge
 };
 
 static void OscDummy_Init()

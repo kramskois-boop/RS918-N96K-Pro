@@ -71,11 +71,11 @@ static uint16_t UiLcdHy28_ReadDisplayId_SSD1289()
     uint16_t retval = UiLcdHy28_ReadReg(0x00);
     switch (retval)
     {
-    case 0x8989: // HY28A - SPI interface only (ILI9320 controller)
-        mchf_display.reg_info = &ssd1289_regs;
-        break;
-    default:
-        retval = 0;
+	    case 0x8989: // HY28A - SPI interface only (ILI9320 controller)
+			        mchf_display.reg_info = &ssd1289_regs;
+			        break;
+			        
+	    default:    retval = 0;
     }
     return retval;
 }

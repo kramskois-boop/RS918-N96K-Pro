@@ -34,20 +34,26 @@ extern arm_fir_instance_f32    Fir_TxFreeDV_Interpolate_I;
 extern arm_fir_decimate_instance_f32 FirDecim_RxSam_I;
 extern arm_fir_decimate_instance_f32 FirDecim_RxSam_Q;
 
-void 	AudioFilter_InitRxHilbertFIR(uint8_t dmod_mode);
-void 	AudioFilter_InitTxHilbertFIR(void);
+void 	AudioFilter_Init_Rx_Hilbert_FIR(uint8_t dmod_mode);
+void 	AudioFilter_Init_Tx_Hilbert_FIR(void);
 
 enum
 {
-    AUDIO_300HZ = 0,
+	AUDIO_100HZ = 0,
+	AUDIO_150HZ,
+    AUDIO_300HZ,
     AUDIO_500HZ,
+	AUDIO_600HZ,
     AUDIO_1P4KHZ,
     AUDIO_1P6KHZ,
     AUDIO_1P8KHZ,
     AUDIO_2P1KHZ,
     AUDIO_2P3KHZ,
     AUDIO_2P5KHZ,
+	AUDIO_2P6KHZ,
     AUDIO_2P7KHZ,
+	AUDIO_2P75KHZ,
+	AUDIO_2P8KHZ,
     AUDIO_2P9KHZ,
     AUDIO_3P2KHZ,
     AUDIO_3P4KHZ,
@@ -96,36 +102,36 @@ enum
 
 typedef struct FilterDescriptor_s
 {
-    const uint8_t id;
-    const char* const name;
-    const uint16_t width;
+    const uint8_t      id;
+    const char* const  name;
+    const uint16_t     width;
 } FilterDescriptor;
 
-extern const FilterDescriptor FilterInfo[AUDIO_FILTER_NUM];
-extern uint16_t filterpath_mode_map[FILTER_MODE_MAX];
+extern const FilterDescriptor FilterInfo [ AUDIO_FILTER_NUM ];
+extern uint16_t      filterpath_mode_map [ FILTER_MODE_MAX  ];
 
 typedef struct FilterPathDescriptor_s
 {
-    const uint8_t id;
-    const char* name;
+    const uint8_t  id;
+    const char*    name;
     const uint16_t mode;
-    const uint8_t filter_select_id;
+    const uint8_t  filter_select_id;
 
 
     // arm_fir_instance_f32*
     const uint16_t FIR_numTaps;
-    const float *FIR_I_coeff_file;
+    const float   *FIR_I_coeff_file;
     // arm_fir_instance_f32*
-    const float *FIR_Q_coeff_file;
+    const float   *FIR_Q_coeff_file;
 
     // arm_fir_decimate_instance_f32*
     const arm_fir_decimate_instance_f32* dec;
 
     const uint8_t sample_rate_dec;
 
-    const arm_iir_lattice_instance_f32* pre_instance;
-    const arm_fir_interpolate_instance_f32* interpolate;
-    const arm_iir_lattice_instance_f32* iir_instance;
+    const arm_iir_lattice_instance_f32*      pre_instance;
+    const arm_fir_interpolate_instance_f32*  interpolate;
+    const arm_iir_lattice_instance_f32*      iir_instance;
 //  const arm_biquad_casd_df1_inst_f32* notch_instance;
 
     const uint16_t offset; // how much offset in Hz has the center frequency of the filter from base frequency.
@@ -135,26 +141,26 @@ typedef struct FilterPathDescriptor_s
 } FilterPathDescriptor;
 
 
-#define AUDIO_FILTER_PATH_NUM 87
+#define  AUDIO_FILTER_PATH_NUM   93    // 88      // 93   // 89    // 88    // 87 NIZZ
 
-extern const FilterPathDescriptor FilterPathInfo[AUDIO_FILTER_PATH_NUM];
+extern  const  FilterPathDescriptor  FilterPathInfo[ AUDIO_FILTER_PATH_NUM ];
 
 enum
 {
-    PATH_ALL_APPLICABLE = 0,
-    PATH_NEXT_BANDWIDTH = 1,
-    PATH_SAME_BANDWITH =2,
-    PATH_UP = 4,
-    PATH_DOWN = 8,
-    PATH_USE_RULES = 16,
+    PATH_ALL_APPLICABLE    = 0,
+    PATH_NEXT_BANDWIDTH    = 1,
+    PATH_SAME_BANDWITH     = 2,
+    PATH_UP                = 4,
+    PATH_DOWN              = 8,
+    PATH_USE_RULES         = 16,
     PATH_LAST_USED_IN_MODE = 32,
-    PATH_DONT_STORE = 64,
+    PATH_DONT_STORE        = 64,
 };
 
-uint8_t  AudioFilter_NextApplicableFilterPath(const uint16_t query, const uint16_t filter_mode, const uint8_t current_path);
-bool     AudioFilter_IsApplicableFilterPath(const uint16_t query, const uint16_t filter_mode, const uint8_t filter_path);
-void     AudioFilter_GetNamesOfFilterPath(uint16_t filter_path,const char** filter_names);
-uint16_t AudioFilter_GetFilterModeFromDemodMode(uint8_t dmod_mode);
+uint8_t  AudioFilter_NextApplicableFilterPath  ( const    uint16_t query, const uint16_t filter_mode, const uint8_t current_path);
+bool     AudioFilter_IsApplicableFilterPath    ( const    uint16_t query, const uint16_t filter_mode, const uint8_t filter_path);
+void     AudioFilter_GetNamesOfFilterPath      ( uint16_t filter_path   , const char**   filter_names);
+uint16_t AudioFilter_GetFilterModeFromDemodMode( uint8_t  dmod_mode);
 uint8_t  AudioFilter_NextApplicableFilter();
 void     AudioFilter_SetDefaultMemories();
 
@@ -170,8 +176,8 @@ typedef struct
 } Goertzel;
 
 
-void AudioFilter_CalcGoertzel(Goertzel* g, float32_t freq, const uint32_t size, const float goertzel_coeff, float32_t samplerate);
-void AudioFilter_GoertzelInput(Goertzel* goertzel, float32_t in);
+void AudioFilter_CalcGoertzel  ( Goertzel* g, float32_t freq, const uint32_t size, const float goertzel_coeff, float32_t samplerate);
+void AudioFilter_GoertzelInput ( Goertzel* goertzel, float32_t in);
 float32_t AudioFilter_GoertzelEnergy(Goertzel* goertzel);
 
 
