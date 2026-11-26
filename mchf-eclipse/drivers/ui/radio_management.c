@@ -72,13 +72,19 @@
 #define LOW_POWER_CALC_THRESHOLD        0.05    // voltage from sensor below which we use the "low power" calculations, above
 
 // N96K P0-4: VSWR foldback protection (audit U3, adapted from upstream 2.12.2 dcbebe5f)
+// N96K P1-3: own measurement counters, no dependency on the TX display settle counter (audit R1/R5)
 #define VSWR_MAX_CALC_VALUE             49.0f   // cap for (nearly) infinite mismatch: avoids inf/NaN readings
 #define VSWR_PROTECTION_HYSTERESIS      0.5f    // foldback is released only below (threshold - hysteresis)
-#define VSWR_PROTECTION_RECOVERY_CNT    10      // consecutive good readings (~0.5 s) before the PA output is restored
-#define VSWR_PROTECTION_SETTLE_COUNTER  2       // let TX settle before acting, same criterion as the SWR meter display
+// N96K P1-3: number of 10 ms measurement ticks (ADC sample pairs) after the start of a transmission
+// before the protection may act. RadioManagement_UpdatePowerAndVSWR() is called every 10 ms, so this
+// is ~30 ms - the old code waited ~190 ms via ts.dynamic_tune_activ_counter and any tuning action
+// could suppress the protection completely (audit R1/R5). A complete VSWR measurement is averaged over
+// SWR_SAMPLES_CNT (5) samples, therefore the first possible foldback decision is taken after ~60 ms.
+#define VSWR_PROTECTION_ARM_CNT         3
+#define VSWR_PROTECTION_RECOVERY_CNT    10      // consecutive good measurements (~0.6 s) before the PA output is restored
+#define VSWR_PROTECTION_RETRY_CNT       8       // measurements between two recovery trials (~0.5 s)
 
-// N96K P0-4: VSWR protection threshold in VSWR units, values <= 1 disable the protection
-uint8_t                     vswr_protection_threshold = VSWR_PROTECTION_THRESHOLD_DEFAULT;
+// N96K P1-1: the VSWR protection threshold is a run-time configuration value, see ts.vswr_protection_threshold
 
 // SWR/Power meter
 SWRMeter                    swrm;
@@ -1786,12 +1792,18 @@ static void RadioManagement_PowerFromADCValue( float val, float sensor_null, flo
 
 /*
  * N96K P0-4: VSWR foldback protection for the PA (audit U3, adapted from upstream 2.12.2 dcbebe5f).
- * All adjustments are done while transmitting, but only after the TX has settled and no TX/RX
- * transition is pending, so the power is never switched at the TX transition itself.
+ * N96K P1-3: the protection no longer depends on the TX display settle counter (audit R1/R5). It uses
+ * its own counters of valid measurements, keeps the PA bias off and the drive at the minimum while
+ * folded back and restores the user power only after a confirmed recovery at minimal drive, so full
+ * power is never applied into a bad load (audit R3).
+ * All power/bias changes are done while transmitting and only when no TX/RX transition is pending.
  */
-static bool     vswr_foldback_active   = false;
-static uint8_t  vswr_foldback_recovery = 0;
-static float    vswr_foldback_avg      = 0.0f;
+static bool     vswr_foldback_active    = false;    // foldback engaged: PA bias off, drive minimal
+static bool     vswr_foldback_trial     = false;    // recovery trial: PA bias on, drive minimal, measuring
+static uint8_t  vswr_foldback_retry     = 0;        // measurements since the last recovery trial
+static uint8_t  vswr_foldback_recovery  = 0;        // consecutive good measurements during a recovery trial
+static uint8_t  vswr_settle_cnt         = 0;        // 10 ms measurement ticks since the TX start (settle window)
+static float    vswr_foldback_avg       = 0.0f;     // dampened VSWR value
 
 /**
  * @brief N96K P0-4: reduce the TX power factor to the minimal level. The user's power level
@@ -1809,10 +1821,14 @@ static void RadioManagement_SetMinimalTxPowerFactor()
 
 /**
  * @brief N96K P0-4: release the VSWR foldback, restore the PA bias and the user's power factor.
+ * N96K P1-3: called only for a confirmed recovery (N good measurements at minimal drive) or if the
+ * protection has been disabled at run time, so full power is never restored while the load is bad.
  */
 static void RadioManagement_VswrFoldbackRelease()
 {
     vswr_foldback_active    = false;
+    vswr_foldback_trial     = false;
+    vswr_foldback_retry     = 0;
     vswr_foldback_recovery  = 0;
     vswr_foldback_avg       = 0.0f;
     swrm.high_vswr_detected = false;
@@ -1828,84 +1844,142 @@ static void RadioManagement_VswrFoldbackRelease()
 
 /**
  * @brief N96K P0-4: clear the VSWR foldback state when returning to RX.
+ * N96K P1-3: also clears the measurement counters, so every new TX starts with a fresh settle window.
  */
 static void RadioManagement_VswrFoldbackReset()
 {
     vswr_foldback_active    = false;
+    vswr_foldback_trial     = false;
+    vswr_foldback_retry     = 0;
     vswr_foldback_recovery  = 0;
+    vswr_settle_cnt         = 0;
     vswr_foldback_avg       = 0.0f;
     swrm.high_vswr_detected = false;
 }
 
 /**
  * @brief N96K P0-4: fold the PA back if the transmitted VSWR exceeds the threshold.
- * The measured value is dampened (fast attack, slow decay) and a hysteresis is applied on the
- * release, so the PA does not oscillate between full and minimal output power.
- * Must be called after a valid power measurement only.
+ * N96K P1-3: state machine (audit R1/R3/R5):
+ *   normal -> (ARM_CNT measurement ticks, ~30 ms) -> trip on dampened VSWR > threshold
+ *   foldback: PA bias off + minimal drive, held every measurement (a PWR change by the user is
+ *             overridden, so the PA never gets full drive while folded back)
+ *   every RETRY_CNT measurements one recovery trial: PA bias on but MINIMAL drive, so a bad load
+ *             is measured at safe power only; a bad trial mutes the PA again
+ *   RECOVERY_CNT consecutive good measurements below (threshold - hysteresis) -> release: restore the
+ *             user power and the PA bias
+ * The dampened value uses fast attack / slow decay, so the PA does not oscillate.
+ * Must be called after a power measurement only.
  */
 static void RadioManagement_CheckVswrProtection()
 {
-    if (ts.txrx_mode != TRX_MODE_TX)                                     { return; }
-    if (vswr_protection_threshold <= 1)                                  { return; }   // protection disabled
-    if (ts.dynamic_tune_activ_counter >= VSWR_PROTECTION_SETTLE_COUNTER) { return; }   // TX not settled yet
-    if (ts.ptt_req || ts.tx_immediate_stop_req)                          { return; }   // TX/RX transition pending
+    if (ts.txrx_mode != TRX_MODE_TX)            { return; }
+    if (ts.ptt_req || ts.tx_immediate_stop_req) { return; }   // never switch power on a TX/RX transition
 
-    if (swrm.fwd_pwr < SWR_MIN_CALC_POWER)      // not enough forward power for a valid VSWR measurement
+    if (ts.vswr_protection_threshold <= VSWR_PROTECTION_THRESHOLD_OFF)  // protection disabled at run time
     {
-        // If the PA is folded back, the drive is minimal and/or the PA bias is off, so the forward
-        // power may be too low to measure the VSWR at all. Retry after a while with the PA bias back
-        // on but with the minimal drive kept: this is safe and allows the protection to detect that
-        // the VSWR has normalized again without applying full power into a possibly bad load.
-        if (vswr_foldback_active && (++vswr_foldback_recovery >= VSWR_PROTECTION_RECOVERY_CNT))
+        if (vswr_foldback_active)
         {
-            vswr_foldback_recovery = 0;
-            vswr_foldback_avg      = 0.0f;      // first valid reading will initialize the integrator
-            if (ts.txrx_mode == TRX_MODE_TX)
-            {
-                RadioManagement_SetPaBias();
-            }
+            RadioManagement_VswrFoldbackRelease();  // do not leave the PA muted when the user switches it off
         }
         return;
     }
 
-    // fast attack, slow decay, the hysteresis is applied on this dampened value
-    if ((vswr_foldback_avg < 1.0f) || (swrm.vswr > vswr_foldback_avg))
+    // N96K P1-3: own settle window counted in 10 ms measurement ticks (audit R1) - neither the TX
+    // display settle counter nor any tuning action may suppress the protection (audit R5).
+    if (vswr_settle_cnt < VSWR_PROTECTION_ARM_CNT)
     {
-        vswr_foldback_avg = swrm.vswr;
+        return;
     }
-    else
+
+    bool  valid_vswr = (swrm.fwd_pwr >= SWR_MIN_CALC_POWER);  // enough forward power for a valid VSWR measurement
+
+    if (valid_vswr)
     {
-        vswr_foldback_avg = vswr_foldback_avg * (1 - VSWR_DAMPENING_FACTOR) + swrm.vswr * VSWR_DAMPENING_FACTOR;
+        // fast attack, slow decay, the hysteresis is applied on this dampened value
+        if ((vswr_foldback_avg < 1.0f) || (swrm.vswr > vswr_foldback_avg))
+        {
+            vswr_foldback_avg = swrm.vswr;
+        }
+        else
+        {
+            vswr_foldback_avg = vswr_foldback_avg * (1 - VSWR_DAMPENING_FACTOR) + swrm.vswr * VSWR_DAMPENING_FACTOR;
+        }
     }
 
     if (vswr_foldback_active == false)
     {
-        if (vswr_foldback_avg > (float)vswr_protection_threshold)
+        if (valid_vswr == false)
+        {
+            return;                                 // nothing to protect against (yet)
+        }
+        if (vswr_foldback_avg > (float)ts.vswr_protection_threshold)
         {
             RadioManagement_DisablePaBias();            // mute the PA immediately
             RadioManagement_SetMinimalTxPowerFactor();  // and reduce the drive to the minimum
             swrm.high_vswr_detected = true;
             vswr_foldback_active    = true;
+            vswr_foldback_trial     = false;
+            vswr_foldback_retry     = 0;
             vswr_foldback_recovery  = 0;
         }
+        return;
     }
-    else if (vswr_foldback_avg > (float)vswr_protection_threshold)
+
+    // ---------------- foldback is active ----------------
+    // Keep the drive at the minimum in every foldback state: a power level change by the user while
+    // transmitting must not be able to re-apply full drive (audit R3).
+    RadioManagement_SetMinimalTxPowerFactor();
+
+    if (vswr_foldback_trial == false)
     {
-        RadioManagement_DisablePaBias();                // still too high: keep the PA muted
-        vswr_foldback_recovery = 0;
+        RadioManagement_DisablePaBias();            // hold the PA muted while waiting for a recovery trial
+        if (++vswr_foldback_retry < VSWR_PROTECTION_RETRY_CNT)
+        {
+            return;
+        }
+        // start a recovery trial: the PA bias comes back but the drive stays minimal, so a bad load
+        // is only measured at safe power (no burst of full power, audit R3)
+        vswr_foldback_retry = 0;
+        vswr_foldback_avg   = 0.0f;                 // first trial reading initializes the integrator
+        vswr_foldback_trial = true;
+        RadioManagement_SetMinimalTxPowerFactor();
+        RadioManagement_SetPaBias();
+        return;
     }
-    else if (vswr_foldback_avg < ((float)vswr_protection_threshold - VSWR_PROTECTION_HYSTERESIS))
+
+    if (valid_vswr == false)                        // the trial did not produce a valid reading
+    {
+        if (++vswr_foldback_retry >= VSWR_PROTECTION_RETRY_CNT)
+        {
+            vswr_foldback_trial = false;            // abort the trial, mute the PA and try again later
+            vswr_foldback_retry = 0;
+            RadioManagement_DisablePaBias();
+        }
+        return;
+    }
+
+    if (vswr_foldback_avg > (float)ts.vswr_protection_threshold)
+    {
+        // still a bad load: mute the PA again, the next trial follows after VSWR_PROTECTION_RETRY_CNT
+        RadioManagement_DisablePaBias();
+        vswr_foldback_trial     = false;
+        vswr_foldback_retry     = 0;
+        vswr_foldback_recovery  = 0;
+        return;
+    }
+
+    if (vswr_foldback_avg < ((float)ts.vswr_protection_threshold - VSWR_PROTECTION_HYSTERESIS))
     {
         if (++vswr_foldback_recovery >= VSWR_PROTECTION_RECOVERY_CNT)
         {
-            RadioManagement_VswrFoldbackRelease();
+            RadioManagement_VswrFoldbackRelease();  // load is good again: restore bias and user power
         }
+        return;
     }
-    else
-    {
-        vswr_foldback_recovery = 0;
-    }
+
+    vswr_foldback_recovery = 0;                     // inside the hysteresis band: keep the trial running
 }
+
 
 /*
  * @brief Measures and calculates TX Power Output and SWR, has to be called regularly
@@ -1938,6 +2012,12 @@ bool  RadioManagement_UpdatePowerAndVSWR()
         swrm.rev_calc += val_s;
 
         swrm.p_curr++;
+
+        // N96K P1-3: count the measurement ticks of the current TX for the VSWR protection settle window
+        if (vswr_settle_cnt < 255)
+        {
+            vswr_settle_cnt++;
+        }
     }
     else
     {

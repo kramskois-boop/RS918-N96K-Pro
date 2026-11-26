@@ -837,6 +837,11 @@ typedef struct TransceiverState
 
     uint8_t	   power_level;
 
+    // N96K P1-1: VSWR foldback protection threshold in VSWR units, stored in the EEPROM slot
+    // EEPROM_VSWR_PROTECTION_THRESHOLD (ui_configuration.c ConfigEntry, default 3, range 1..10).
+    // Values <= VSWR_PROTECTION_THRESHOLD_OFF (1) disable the PA protection (upstream 2.12.2 style).
+    uint8_t    vswr_protection_threshold;
+
     uint8_t    tx_audio_source;
     ulong	   tx_mic_gain_mult;
     uint8_t	   tx_gain[ TX_AUDIO_NUM ];

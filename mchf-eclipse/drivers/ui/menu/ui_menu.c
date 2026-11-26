@@ -2628,6 +2628,22 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 						var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_TX_OUTSIDE_BANDS);
 						break;
 
+    case CONFIG_VSWR_PROTECTION_THRESHOLD:  // N96K P1-1: VSWR foldback protection threshold (1 = OFF)
+						var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.vswr_protection_threshold,
+															  VSWR_PROTECTION_THRESHOLD_MIN,
+															  VSWR_PROTECTION_THRESHOLD_MAX,
+															  VSWR_PROTECTION_THRESHOLD_DEFAULT,
+															  1);
+						if (ts.vswr_protection_threshold <= VSWR_PROTECTION_THRESHOLD_OFF)
+						{
+							txt_ptr = "OFF";
+						}
+						else
+						{
+							snprintf(options, 32, "     %d", ts.vswr_protection_threshold);
+						}
+						break;
+
     case CONFIG_AUDIO_MAIN_SCREEN_MENU_SWITCH:  // AFG/(STG/CMP) and RIT/(WPM/MIC/LIN) are to change automatically with TX/RX
 						var_change = UiDriverMenuItemChangeEnableOnOffFlag(var, mode, &ts.flags1,0,options,&clr, FLAGS1_TX_AUTOSWITCH_UI_DISABLE);
 						break;

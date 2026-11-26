@@ -118,6 +118,9 @@ const MenuDescriptor confGroup[] =
     // N96K P0-5: restored menu item (audit U4) - OFF = TX outside the ham bands is blocked,
     // ON = allowed at reduced power (see RadioManagement_ValidateFrequencyForTX/SetBandPowerFactor)
     { MENU_CONF, MENU_ITEM, CONFIG_TX_OUT_ENABLE                , NULL, "TX on Out-Of-Band Freq.", UiMenuDesc("Permit low power transmission even if the frequency is out of the official ham bands. When OFF, transmission outside the official ham bands is blocked. DO NOT USE WITH CONNECTED ANTENNA! Use a dummy load!") },
+    // N96K P1-1: VSWR foldback protection threshold, ported from upstream 2.12.2 (dcbebe5f).
+    // 1 = protection OFF, 2..10 = trip threshold in VSWR units.
+    { MENU_CONF, MENU_ITEM, CONFIG_VSWR_PROTECTION_THRESHOLD    , NULL, "VSWR Protection"       , UiMenuDesc("PA protection: if not OFF, the PA bias is switched off and the drive is reduced to the minimum when the transmitted VSWR exceeds this value. 1 = OFF, 2..10 = VSWR threshold.") },
     { MENU_CONF, MENU_ITEM, CONFIG_TX_DISABLE                   , NULL, "Transmit Disable"       , UiMenuDesc("Disable all transmissions unconditionally. In CW you will be able to hear a sidetone but no transmission is made.") },
     { MENU_CONF, MENU_ITEM, CONFIG_AUDIO_MAIN_SCREEN_MENU_SWITCH, NULL, "Menu SW on TX disable"  , UiMenuDesc("Control if the screen automatically adapts Encoder value focus when switching between RX and TX.") },
 

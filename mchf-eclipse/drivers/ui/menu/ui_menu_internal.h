@@ -368,6 +368,7 @@ enum
     MENU_DIGITAL_MODE_SELECT,
     MENU_DEBUG_CW_OFFSET_SHIFT_KEEP_SIGNAL,
 	MENU_POWER_METER_SCALE,
+    CONFIG_VSWR_PROTECTION_THRESHOLD,   // N96K P1-1: VSWR foldback protection threshold (1 = OFF)
     MAX_RADIO_CONFIG_ITEM   // Number of radio configuration menu items - This must ALWAYS remain as the LAST item!
 };
 

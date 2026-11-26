@@ -207,14 +207,15 @@ extern const cw_mode_map_entry_t cw_mode_map[];
 // SWR/Power meter
 extern SWRMeter                    swrm;
 
-// N96K P0-4: PA VSWR foldback protection (audit U3, adapted from upstream 2.12.2 dcbebe5f).
-// Threshold is in VSWR units, values <= 1 disable the protection (upstream compatible).
-// The runtime threshold has to be stored in the EEPROM slot EEPROM_VSWR_PROTECTION_THRESHOLD
-// (ui_configuration.h:616) - the ConfigEntry binding itself belongs to ui_configuration.c which
-// is outside of the file scope of this patch, so a safe compile-time default is used for now.
-#define PA_LEVEL_MINIMAL                    PA_LEVEL_0_5W
-#define VSWR_PROTECTION_THRESHOLD_DEFAULT   3
-extern uint8_t vswr_protection_threshold;
+// N96K P0-4/P1-1: PA VSWR foldback protection (audit U3/R2, adapted from upstream 2.12.2 dcbebe5f).
+// The threshold is in VSWR units and lives in ts.vswr_protection_threshold, stored in the EEPROM slot
+// EEPROM_VSWR_PROTECTION_THRESHOLD (ConfigEntry in ui_configuration.c, menu item in the configuration
+// menu). Values <= VSWR_PROTECTION_THRESHOLD_OFF (1) disable the protection (upstream compatible: 1 = OFF).
+#define PA_LEVEL_MINIMAL                          PA_LEVEL_0_5W
+#define VSWR_PROTECTION_THRESHOLD_OFF             1
+#define VSWR_PROTECTION_THRESHOLD_MIN             VSWR_PROTECTION_THRESHOLD_OFF
+#define VSWR_PROTECTION_THRESHOLD_MAX             10
+#define VSWR_PROTECTION_THRESHOLD_DEFAULT         3
 
 inline bool RadioManagement_IsTxDisabled()
 {

@@ -347,6 +347,10 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
 	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_15M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_15M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
 	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_12M_GAIN_BALANCE_TRANS_OFF ,&ts.tx_iq_gain_balance[IQ_12M].value[IQ_TRANS_OFF],0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
 	{ ConfigEntry_Int32_16, EEPROM_TX_IQ_12M_PHASE_BALANCE_TRANS_OFF,&ts.tx_iq_phase_balance[IQ_12M].value[IQ_TRANS_OFF],0,  MIN_IQ_PHASE_BALANCE, MAX_IQ_PHASE_BALANCE},
+	// N96K P1-1: VSWR foldback protection threshold (VSWR units, 1 = protection OFF).
+	// EEPROM slot 426 is reserved for this value in the fork's map (upstream 2.12.2 uses the same
+	// slot) and is not referenced by any other ConfigEntry, so no existing EEPROM address changes.
+	{ ConfigEntry_UInt8    , EEPROM_VSWR_PROTECTION_THRESHOLD, &ts.vswr_protection_threshold, VSWR_PROTECTION_THRESHOLD_DEFAULT, VSWR_PROTECTION_THRESHOLD_MIN, VSWR_PROTECTION_THRESHOLD_MAX},
 
 	/*	{ ConfigEntry_UInt8x2, EEPROM_SMETER_ALPHAS           , &buf_val_16 , 0, 0,  0},
 
@@ -407,6 +411,11 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8 ( uint16_t addr
             *val_ptr = default_val;
         }
     }
+    else
+    {
+        // N96K P1-4: upstream 2.12.2 fallback (audit R7) - do not leave the caller with an undefined value
+        *val_ptr = default_val;
+    }
 }
 
 static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8x2(uint16_t addr, volatile uint16_t* val_ptr, uint16_t default_val, uint16_t min_val, uint16_t max_val )
@@ -427,6 +436,11 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8x2(uint16_t addr
             *val_ptr = (*val_ptr & 0xff00) | (default_val & 0x00ff);
         }
     }
+    else
+    {
+        // N96K P1-4: upstream 2.12.2 fallback (audit R7) - do not leave the caller with an undefined value
+        *val_ptr = default_val;
+    }
 }
 
 
@@ -441,6 +455,11 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt16(uint16_t addr,
             *val_ptr = default_val;
         }
     }
+    else
+    {
+        // N96K P1-4: upstream 2.12.2 fallback (audit R7) - do not leave the caller with an undefined value
+        *val_ptr = default_val;
+    }
 }
 
 static void __attribute__ ((noinline)) UiReadSettingEEPROM_Int16(uint16_t addr, volatile int16_t* val_ptr, int16_t default_val, int16_t min_val, int16_t max_val )
@@ -453,6 +472,11 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_Int16(uint16_t addr, 
         {
             *val_ptr = default_val;
         }
+    }
+    else
+    {
+        // N96K P1-4: upstream 2.12.2 fallback (audit R7) - do not leave the caller with an undefined value
+        *val_ptr = default_val;
     }
 }
 
@@ -468,6 +492,11 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt32_16(uint16_t ad
             *val_ptr = default_val;
         }
     }
+    else
+    {
+        // N96K P1-4: upstream 2.12.2 fallback (audit R7) - do not leave the caller with an undefined value
+        *val_ptr = default_val;
+    }
 }
 
 static void __attribute__ ((noinline)) UiReadSettingEEPROM_Int32_16(uint16_t addr, volatile int32_t* val_ptr, int default_val, int min_val, int max_val )
@@ -480,6 +509,11 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_Int32_16(uint16_t add
         {
             *val_ptr = default_val;
         }
+    }
+    else
+    {
+        // N96K P1-4: upstream 2.12.2 fallback (audit R7) - do not leave the caller with an undefined value
+        *val_ptr = default_val;
     }
 }
 
@@ -497,6 +531,11 @@ static void UiReadSettingEEPROM_UInt32(uint16_t addrH, uint16_t addrL, volatile 
         {
             *val_ptr = default_val;
         }
+    }
+    else
+    {
+        // N96K P1-4: upstream 2.12.2 fallback (audit R7) - do not leave the caller with an undefined value
+        *val_ptr = default_val;
     }
 }
 

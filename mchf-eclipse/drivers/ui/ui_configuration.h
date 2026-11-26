@@ -613,6 +613,9 @@ void		UiConfiguration_UpdateMacroCap(void);
 #define EEPROM_TX_IQ_15M_PHASE_BALANCE_TRANS_OFF	423
 #define EEPROM_TX_IQ_10M_UP_GAIN_BALANCE_TRANS_OFF	424
 #define EEPROM_TX_IQ_10M_UP_PHASE_BALANCE_TRANS_OFF	425
+// N96K P1-1: VSWR foldback protection threshold (VSWR units, 1 = protection OFF).
+// Slot 426 was reserved by the fork/upstream 2.12.2 and is unused by any other configuration
+// entry: no EEPROM layout change is required (see docs/PATCHES.md, patch P1-1).
 #define EEPROM_VSWR_PROTECTION_THRESHOLD            426
 #define EEPROM_EXPFLAGS1                            427     // Flags for options in Debug/Expert menu - see variable "expflags1"
 #define EEPROM_XVERTER_OFFSET_TX_HIGH               428     // Secondary frequency by which the display is offset for transverter use, high word

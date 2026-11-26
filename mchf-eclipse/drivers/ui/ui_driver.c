@@ -2130,6 +2130,9 @@ static void UiDriver_DrawSMeterLabels()
 static bool  SWR_Zoom1 = false;  ///  NIZZZ pour indiquer si on est en mode Zoom de la barre du SWR
 static bool  SWR_Zoom2 = false;  ///  NIZZZ pour indiquer si on est en mode Zoom de la barre du SWR
 
+// N96K P1-2: TRUE while the "SWR!" VSWR-foldback indication is drawn in the power level box (audit R4)
+static bool  SWR_Indicator_Drawn = false;
+
 
 
 static void UiDriver_CreateMeters()
@@ -4740,6 +4743,13 @@ static void UiDriver_HandleSMeter  ()   // (bool  IQCodecGain_Execute)  // chaqu
 	// Only in RX mode
 	if(ts.txrx_mode == TRX_MODE_RX)
 	{
+		// N96K P1-2: restore the power level box after a TX VSWR foldback indication (audit R4)
+		if (SWR_Indicator_Drawn)
+		{
+			UiDriver_DisplayPowerLevel();
+			SWR_Indicator_Drawn = false;
+		}
+
 
 
 		// ONLY UI CODE BELOW
@@ -4814,6 +4824,46 @@ static void UiDriver_HandleTXMeters()
 	else
 	{
 		static uint8_t    old_power_level = 99;
+
+		// N96K P1-2: visible indication when the VSWR foldback protection has tripped (audit R4).
+		// The power level box is shared with UiDriver_DisplayPowerLevel(), so "SWR!" blinks there:
+		// the on phase shows the red warning, the off phase restores the power level. The meter
+		// handler runs every ~40 ms, the phase is toggled every 4th call (~3 Hz) - clearly visible,
+		// no full screen flicker, all other indications are left untouched.
+		{
+			static uint8_t vswr_ind_cnt   = 0;
+			static uint8_t vswr_ind_phase = 1;
+			static uint8_t vswr_ind_drawn = 0;
+
+			if (swrm.high_vswr_detected)
+			{
+				if (++vswr_ind_cnt >= 4)
+				{
+					vswr_ind_cnt    = 0;
+					vswr_ind_phase ^= 1;
+				}
+				if (vswr_ind_phase != vswr_ind_drawn)
+				{
+					if (vswr_ind_phase)
+					{
+						UiLcdHy28_PrintTextCentered(ts.Layout->PW_IND.x, ts.Layout->PW_IND.y + 1, ts.Layout->PW_IND.w, "SWR!", Red, Blue, 0);
+					}
+					else
+					{
+						UiDriver_DisplayPowerLevel();   // off phase: normal power level display
+					}
+					vswr_ind_drawn = vswr_ind_phase;
+				}
+			}
+			else if (vswr_ind_drawn)                    // foldback released: restore the normal display
+			{
+				UiDriver_DisplayPowerLevel();
+				vswr_ind_drawn = 0;
+				vswr_ind_phase = 1;                     // next activation shows "SWR!" immediately
+				vswr_ind_cnt   = 0;
+			}
+			SWR_Indicator_Drawn = (vswr_ind_drawn != 0);
+		}
 
 		// display FWD, REV power, in milliwatts - used for calibration - IF ENABLED
 		if(swrm.pwr_meter_disp)
