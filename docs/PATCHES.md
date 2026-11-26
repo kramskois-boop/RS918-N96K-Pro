@@ -1,31 +1,62 @@
 # Каталог патчей RS918 N96K-Pro
 
-Источники: аудит исходного дерева Nizar (`_audit/REPORT.md` и `_audit/parts/*`), план
-[PLAN-DEV.md](../PLAN-DEV.md). Нумерация: **P0** — исправления до любого применения прошивки,
-**P1** — качество и сопровождение, **P2** — развитие после v1.0 (вне этой итерации).
+Источники: аудит исходного дерева Nizar (`_audit/REPORT.md`, `_audit/parts/*`), план
+[PLAN-DEV.md](../PLAN-DEV.md) и отчёты исполнителей в `_audit/dev/*` (вне репозитория).
 
-Правила: каждое изменение помечено в коде комментарием `// N96K P0-x: <кратко> (audit <ref>)`;
+Нумерация: **P0** — исправления до любого применения прошивки (вошли в v1.0); **P1** — качество,
+безопасность и конфигурация (v1.1); **P2** — бэкпорты upstream и инфраструктура (v1.1).
+Историческое замечание: в PLAN-DEV.md патч гигиены репозитория носил номер P1-1; в v1.1 номера
+P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающая с маркерами в коде, а патч гигиены ниже
+для однозначности называется **P1-H**.
+
+Правила: каждое изменение помечено в коде комментарием `// N96K P0-x / P1-x / P2: <кратко>`;
 диффы минимальные; поведение и алгоритмы Nizar не меняются — только исправление дефекта или
 добавление защиты.
 
-Статусы ниже — срез на 2026-11-26 (этап S2: все патчи закоммичены, прошивка и загрузчик собраны
-GCC 15.2.1 из чистого дерева; лог и размеры — `_audit/dev/p-build.md`). «Применён» = маркер в коде
-и дифф в дереве; «сборка подтверждена» = код компилируется и линкуется в оба таргета
-(`fw-mchf.bin` + `bl-mchf.bin`).
+Срез статусов — 2026-11-26, HEAD `1e352326`; тег **v1.0** = `82056486` (P0-патчи и воспроизводимая
+сборка). Финальная релизная сборка v1.1 и артефакты `release/v1.1` ещё не сделаны, поэтому цифры
+с пометкой «**проверяется финальной сборкой**» взяты из проверочных сборок рабочего дерева
+(`_tmp/build-p2-docs` — HEAD + bump версии; `_tmp/build-p2-backports` — с P2-4), остальные — из
+`release/v1.0` и [BUILD.md](BUILD.md). Статусы:
+«реализовано» = код в дереве; «сборка подтверждена» = `python tools/build.py firmware` завершился
+с exit 0; «на железе не проверялось» = полевых испытаний не было.
+
+Независимое ревью v1.1 (S3c, агент p-verify2) на момент среза ещё не завершено: его замечания
+могут скорректировать статусы/риски ниже; отчёт — `_audit/dev/` (вне репозитория).
+
+Проверенные размеры: **v1.0** — `fw-mchf.bin` 320 024 Б (32,6 %), RAM 42 616 Б, CCM 63 476/65 536;
+`bl-mchf.bin` 31 496 Б (загрузчик 4.1.2). **v1.1 (ожидается)** — `fw-mchf.bin` 321 128 Б
+(32,7 %; **проверяется финальной сборкой**), RAM 42 616 Б, CCM 63 476/65 536; `bl-mchf.bin`
+31 620 Б (загрузчик 5.0.4, 96,5 %, запас 1 148 Б). Предупреждений: v1.0 — 80 строк; v1.1 — 70 строк
+(61 компилятор + 9 newlib-линковки; **проверяется финальной сборкой**).
 
 ## Сводная таблица
 
+### v1.0 — тег `v1.0` (закрыто)
+
 | ID | Тема | Файлы | Источник в аудите | Статус |
 |---|---|---|---|---|
-| P0-1 | EEPROM/конфигурация: мёртвая проверка диапазона, ошибки ConfigStorage, клампы | `drivers/ui/ui_configuration.c`, `misc/config_storage.c` | REPORT §7 U2 | применён |
-| P0-2 | Сборка: файлы фильтров в `*.mak`, CLI-сборка, блокеры GCC 10+ | `files.mak`, `f4-files.mak`, `Makefile`, `tools/build.py` + 10 файлов правок GCC 15 | REPORT §7 U1, §9 | готово (сборка подтверждена) |
-| P0-3 | Аудио: NR-буфер, UB в реверберации, `abs()` → `fabsf()` | `drivers/audio/audio_driver.c/.h` | REPORT §7 A1–A3 | применён, сборка подтверждена |
-| P0-4 | PA/КСВ: guard деления на ноль + foldback по КСВ | `drivers/ui/radio_management.c/.h` | REPORT §7 U3, §6.5 п.1–2 | применён, сборка подтверждена |
-| P0-5 | TX-безопасность: CAT при передаче, запрет TX вне бэндов | `cat_driver.c`, `radio_management.c`, `ui_menu_structure.c` | REPORT §7 U4 | применён, сборка подтверждена |
-| P0-6 | Идентификация/брендинг: `UHSDR_REPO`, строки продукта, README/docs | `src/uhsdr_version.h`, `README.md`, `docs/**` | REPORT §6.3, §10 п.9 | применён |
-| P1-1 | Гигиена репозитория: `.gitattributes`, кодировки/EOL | `.gitattributes`, `.editorconfig`, `iir_2_8k.c`, `iir_2_9k.c` | REPORT §7 U7 | применён |
-| P2-1 | Бэкпорты upstream (FreeDV 4121, Hamlib 4.3, AGC/Tune/CW/DMA) | — | REPORT §6.5, §10 п.14 | вне v1.0 |
-| P2-2 | CI, фиксированный тулчейн, контроль бюджета flash/CCM | — | REPORT §9, §10 п.16 | вне v1.0 |
+| P0-1 | EEPROM/конфигурация: мёртвая проверка диапазона, ошибки ConfigStorage, клампы | `drivers/ui/ui_configuration.c`, `misc/config_storage.c` | REPORT §7 U2 | закрыт в v1.0 |
+| P0-2 | Сборка: файлы фильтров в `*.mak`, CLI-сборка, блокеры GCC 10+ | `files.mak`, `f4-files.mak`, `Makefile`, `tools/build.py` + 10 файлов правок GCC 15 | REPORT §7 U1, §9 | закрыт в v1.0 |
+| P0-3 | Аудио: NR-буфер, UB в реверберации, `abs()` → `fabsf()` | `drivers/audio/audio_driver.c/.h` | REPORT §7 A1–A3 | закрыт в v1.0 |
+| P0-4 | PA/КСВ: guard деления на ноль + foldback по КСВ | `drivers/ui/radio_management.c/.h` | REPORT §7 U3, §6.5 п.1–2 | закрыт в v1.0 (порог/индикация/retry — P1-1…P1-3) |
+| P0-5 | TX-безопасность: CAT при передаче, запрет TX вне бэндов | `cat_driver.c`, `radio_management.c`, `ui_menu_structure.c` | REPORT §7 U4 | закрыт в v1.0 (остаток CAT — P1-5) |
+| P0-6 | Идентификация/брендинг: `UHSDR_REPO`, строки продукта, README/docs | `src/uhsdr_version.h`, `README.md`, `docs/**` | REPORT §6.3, §10 п.9 | закрыт в v1.0 (версия/загрузчик — v1.1) |
+| P1-H | Гигиена репозитория: `.gitattributes`, кодировки/EOL (в PLAN-DEV.md — P1-1) | `.gitattributes`, `.editorconfig`, `iir_2_8k.c`, `iir_2_9k.c` | REPORT §7 U7 | закрыт в v1.0 |
+
+### v1.1 — тег планируется (P1/P2)
+
+| ID | Тема | Файлы (основные) | Источник | Статус |
+|---|---|---|---|---|
+| P1-1 | VSWR-порог в EEPROM (слот 426) + пункт меню Configuration | `hardware/uhsdr_board.h`, `drivers/ui/radio_management.h/.c`, `ui_configuration.c/.h`, `menu/ui_menu*.c/.h` | audit R2 | реализовано; сборка и host-tests — PASS; на железе нет |
+| P1-2 | Индикация foldback: мигающее `SWR!` в боксе PWR | `drivers/ui/ui_driver.c` | audit R4 | реализовано; сборка — PASS; вид на LCD не проверен |
+| P1-3 | Быстрый foldback: свои 10-мс счётчики, safe retry, независимость от dynamic tune | `drivers/ui/radio_management.c/.h` | audit R1/R3/R5 | реализовано; модель 8 сценариев + сборка — PASS; на железе нет |
+| P1-4 | EEPROM read fallback (закрыт UB `value16`) | `drivers/ui/ui_configuration.c` | audit R7 | реализовано; сборка — PASS |
+| P1-5/CAT | Закрыты EEPROM-VFO-select и clone RX `df.tune_new` при TX; эмуляция 0x65; поправка про get_vfo | `drivers/cat/cat_driver.c` | audit R8, Hamlib 4.3 | реализовано; сборка из чистого HEAD — PASS; с Hamlib/WSJT-X/железом не проверено |
+| P2-1 | Загрузчик upstream 5.0.4: 8 файлов, совместимость API и SBLA/SBLS | `src/bootloader/*`, `src/uhsdr_version.h`, docs/BUILD.md, docs/SAFETY.md | upstream 2.12.2 | реализовано; оба таргета собираются; загрузчик не прошивался |
+| P2-2 | FreeDV/Codec2 rev 4121 + фикс #1749 | `drivers/freedv/**`, files.mak, tools/build.py, Makefile | upstream 2.12.2 | vendor синхронизирован; сборка — PASS; интеграционный слой не пересинхронизирован |
+| P2-3 | CI/Docker с pinned toolchain + host-тесты ЦОС | `Dockerfile`, `docker/verify_artifacts.py`, `.github/workflows/build.yml`, `tests/**`, docs/CI.md | audit §9 | реализовано; host-tests 1134/0/3 — PASS; docker build не запускался |
+| P2-4 | Бэкпорты AGC restore #1730, Tune Power #1750, CW-decoder #1881 | см. раздел P2-4 | upstream 2.12.2 | порт выполнен; сборка/тесты — PASS; на железе нет |
 
 ---
 
@@ -94,14 +125,17 @@ band/demod/decode ограничиваются допустимыми перед
 мощности при высоком КСВ нет (в upstream foldback появился в 2018-12).
 
 **Исправление.** Guard: расчёт КСВ только при `fwd_pwr >= SWR_MIN_CALC_POWER` (иначе безопасное
-значение); портирован upstream foldback PA по КСВ с гистерезисом. Порог — константа
-`VSWR_PROTECTION_THRESHOLD_DEFAULT = 3` в единицах КСВ; привязка порога к EEPROM-слоту
-`EEPROM_VSWR_PROTECTION_THRESHOLD` и меню — **не сделана** (P2-backlog). Отключение защиты — пересборка
-со значением <= 1.
+значение); портирован upstream foldback PA по КСВ с гистерезисом. В v1.0 порог был константой
+`VSWR_PROTECTION_THRESHOLD_DEFAULT = 3` в единицах КСВ, привязки к EEPROM/меню не было
+(P1-backlog); **в v1.1 недоделка закрыта — см. P1-1 ниже**. Отключение защиты в v1.0 требовало
+пересборки со значением <= 1.
 
 **Проверка.** Нет деления на ноль/NaN; при имитации высокого КСВ мощность снижается, при
 нормальном КСВ поведение TX не меняется; проверка на железе в эквиваленте нагрузки.
 Компиляция/линковка в прошивку GCC 15.2.1 **подтверждена** (`_audit/dev/p-build.md`); на железе — S3.
+
+**Обновлено в v1.1:** порог вынесен в EEPROM и меню (P1-1), добавлена индикация `SWR!` (P1-2),
+убрано окно ~190 мс и retry-бурст (P1-3); см. разделы ниже.
 
 ## P0-5 — TX-безопасность
 
@@ -125,21 +159,22 @@ band/demod/decode ограничиваются допустимыми перед
 
 **Исправление.**
 `src/uhsdr_version.h`: восстановлен `UHSDR_REPO` (`github.com/df8oe/UHSDR`); добавлены
-`UHSDR_PRODUCT_NAME` = `"RS918 N96K-Pro"`, `UHSDR_PRODUCT_VERSION` = `"2.9.48-n96kp1"`,
-`UHSDR_PRODUCT_REPO` (пусто — публичного репозитория продукта нет). `UHSDR_VERSION` остаётся
-производной: `"fwv-" UHSDR_PRODUCT_VERSION` — на экране «System Info» отображается
-`2.9.48-n96kp1`. Числовая версия `UHSDR_VER_MAJOR/MINOR/RELEASE` = 2.9.48 **не изменялась**
-(её разбирает `mchf-eclipse/Makefile` и использует логика версий/EEPROM). `UHSDR_BOOT_VERS` =
-4.1.2 не изменялся. README заменён на продуктовый; добавлены `docs/PATCHES.md`,
-`docs/CHANGELOG.md`, `docs/SAFETY.md`, `docs/CREDITS.md`. Код вне `uhsdr_version.h` не менялся,
-`LICENCE.md` не трогался.
+`UHSDR_PRODUCT_NAME` = `"RS918 N96K-Pro"`, `UHSDR_PRODUCT_VERSION` = `"2.9.48-n96kp1"`
+(на момент v1.0), `UHSDR_PRODUCT_REPO` (пусто — публичного репозитория продукта нет).
+`UHSDR_VERSION` остаётся производной: `"fwv-" UHSDR_PRODUCT_VERSION` — на экране «System Info»
+отображается `2.9.48-n96kp1`. Числовая версия `UHSDR_VER_MAJOR/MINOR/RELEASE` = 2.9.48
+**не изменялась** (её разбирает `mchf-eclipse/Makefile` и использует логика версий/EEPROM).
+`UHSDR_BOOT_VERS` = 4.1.2 на момент v1.0 (в v1.1 обновлён до 5.0.4 — см. P2-1, а версия продукта
+поднята до `2.9.48-n96kp2` — см. «Проверка документации и версии» в конце). README заменён на
+продуктовый; добавлены `docs/PATCHES.md`, `docs/CHANGELOG.md`, `docs/SAFETY.md`,
+`docs/CREDITS.md`. Код вне `uhsdr_version.h` не менялся, `LICENCE.md` не трогался.
 
 **Проверка.** Препроцессинг заголовка компилятором arm-none-eabi-gcc: макросы синтаксически
 корректны, `UHSDR_VERSION` = `"fwv-2.9.48-n96kp1"`, смещение `+4` даёт `"2.9.48-n96kp1"`
 (13 символов, буфер меню 32); `atoi(UHSDR_VER_*)` возвращает 2/9/48 как раньше. `UHSDR_REPO` в
 коде нигде не используется (grep).
 
-## P1-1 — Гигиена репозитория
+## P1-H — Гигиена репозитория (в PLAN-DEV.md — P1-1)
 
 **Проблема (U7).** Нет `.gitattributes` при требовании `.editorconfig` UTF-8/LF; `iir_2_8k.c`
 в Latin-1/CRLF, `iir_2_9k.c` с битыми байтами; смешанные EOL → псевдо-диффы и риск порчи патчей.
@@ -151,17 +186,341 @@ band/demod/decode ограничиваются допустимыми перед
 **Проверка.** `git diff` без псевдо-изменений EOL; файлы фильтров читаются компилятором (только
 комментарии/таблицы, значения не менялись).
 
-## P2 — после v1.0 (в эту итерацию не входит)
+## P1-1 — Порог VSWR в EEPROM и меню Configuration (R2)
 
-- **P2-1. Бэкпорты upstream:** Hamlib 4.3 `get_vfo`/фиксы CAT, FreeDV/Codec2 rev 4121 и #1749,
-  AGC restore #1730, Tune Power #1750, CW-декодер #1881, EEPROM signature #1675, DMA size #1664.
-  Каждый — отдельным коммитом с пометкой SHA. (VSWR-защита уже закрыта в P0-4.)
-- **P2-2. Инфраструктура:** CI (Docker/фиксированный тулчейн), контроль бюджета flash/CCM,
-  предупреждения компилятора как артефакт, вторая цель сборки на современном GCC.
+**Проблема.** В v1.0 порог foldback был жёстко зашит константой `VSWR_PROTECTION_THRESHOLD_DEFAULT = 3`
+в `radio_management.h`; слот `EEPROM_VSWR_PROTECTION_THRESHOLD` (426) был объявлен, но не входил в
+ConfigEntry-таблицу, пункта меню не было. Изменить или отключить защиту без пересборки было нельзя;
+на антеннах с высоким КСВ на краях диапазонов это давало ложные срабатывания, а документация v1.0
+при этом утверждала, что порог в EEPROM (риск R2 ревью S3b; там же отмечено расхождение
+документации с кодом).
+
+**Исправление (порт из upstream 2.12.2 `dcbebe5f`, маркер `N96K P1-1`).**
+- `hardware/uhsdr_board.h:838-843` — поле `uint8_t ts.vswr_protection_threshold` в ConfigData-части
+  `TransceiverState` (на раскладку EEPROM не влияет: адреса задают только ConfigEntry).
+- `drivers/ui/radio_management.h:210-218` — макросы `VSWR_PROTECTION_THRESHOLD_OFF = 1` (`MIN`),
+  `MAX = 10`, `DEFAULT = 3`; внешняя глобальная переменная порога удалена.
+- `drivers/ui/ui_configuration.c:350-353` — ConfigEntry `ConfigEntry_UInt8,
+  EEPROM_VSWR_PROTECTION_THRESHOLD, &ts.vswr_protection_threshold, 3, 1, 10`.
+- `drivers/ui/ui_configuration.h:616-619` — слот **426** задокументирован как используемый.
+- `drivers/ui/menu/ui_menu_internal.h:371` — `CONFIG_VSWR_PROTECTION_THRESHOLD` добавлен **в конец**
+  enum перед `MAX_RADIO_CONFIG_ITEM`: численные значения существующих `CONFIG_*`/`MENU_*` не изменились.
+- `drivers/ui/menu/ui_menu_structure.c:121-123` — пункт `"VSWR Protection"` в меню **Configuration**
+  (в upstream он в PA-меню; перенос — одна строка, если lead решит иначе).
+- `drivers/ui/menu/ui_menu.c:2631-2646` — обработчик `UiDriverMenuItemChangeUInt8(1..10)`; значение 1
+  показывается как `"OFF"`, 2..10 — числом.
+- `drivers/ui/radio_management.c:1876,1913,1959,1969` — порог читается из
+  `ts.vswr_protection_threshold`; при `<= 1` защита выключена, и если она была активна, PA отпускается
+  (нет «залипания» mute).
+
+**EEPROM-раскладка (доказательство отсутствия сдвига).** Скриптом сверены все `#define EEPROM_*`
+рабочей версии и `git show HEAD` (v1.0-база): 464 = 464, ни один адрес не изменён/добавлен/удалён;
+`EEPROM_FIRST_UNUSED = 524`, `MAX_VAR_ADDR = 523`, `NB_OF_VAR = 530` не тронуты; слот 426 в базе
+свободен и теперь встречается в ConfigEntry-таблице ровно один раз; `config_ramcache[MAX_VAR_ADDR*2+2]`
+не расширяется. Старые EEPROM: слот 426 ранее не записывался → мусор/0xFFFF отбрасывается
+range-check'ом (1..10) и fallback'ом P1-4 → default 3; существующие настройки не сдвигаются.
+(Позже, в P2-4, добавлены ещё слоты 430 и 524 — существующие адреса при этом тоже не сдвинуты;
+`EEPROM_FIRST_UNUSED` 524 → 525, см. P2-4.)
+
+**Проверки.** `-fsyntax-only` по флагам `release/v1.0/compile_commands.json` (GCC 15.2.1):
+`radio_management.c`, `ui_configuration.c`, `ui_menu.c`, `ui_menu_structure.c`, `ui_driver.c` — rc=0,
+новых предупреждений на добавленных строках нет. Приватная полная сборка — exit 0. Host-тесты:
+`eeprom` 425 проверок PASS на момент P1-1 (после слотов P2-4 — 426; `MAX_VAR_ADDR < NB_OF_VAR`,
+уникальность адресов, guard, ссылки).
+
+**Риски/ограничения.** Default 3 ≠ upstream default 1 (OFF): по требованию задачи защита включена
+по умолчанию — для обновления с v1.0 поведение меняется; пользователь может поднять порог или
+выключить. Пункт меню — в Configuration, а не в PA (в upstream — PA). Вид на реальном LCD не проверен.
+На некалиброванном датчике КСВ возможны ложные срабатывания.
+
+## P1-2 — Индикация срабатывания foldback (R4)
+
+**Проблема.** Флаг `swrm.high_vswr_detected` писался при срабатывании и сбрасывался при release/reset,
+но нигде не читался: пользователь видел только падение мощности без причины.
+
+**Исправление (маркер `N96K P1-2`, `drivers/ui/ui_driver.c`).**
+- `2133-2134` — файловый флаг `SWR_Indicator_Drawn`.
+- `4826-4866` (в `UiDriver_HandleTXMeters()`, TX-ветка) — в боксе уровня мощности `ts.Layout->PW_IND`
+  (тот же, где штатно `UiDriver_DisplayPowerLevel()`) мигает красное `"SWR!"` на синем фоне: фаза
+  меняется каждый 4-й вызов обработчика (метры обновляются каждые 40 мс → ~3 Гц), чётная фаза
+  возвращает штатное значение мощности. Другие индикаторы (S-метр, ALC, AUD, полосы) не затронуты.
+- Сброс: при выходе из foldback (`4858-4864`; release очищает `high_vswr_detected`) и в RX-обработчике
+  `UiDriver_HandleSMeter()` (`4746-4750`) — после TX→RX бокс перерисовывается штатно, `"SWR!"` не
+  остаётся на RX-экране.
+
+**Проверки.** `-fsyntax-only` rc=0; полная сборка exit 0; других писателей `high_vswr_detected` нет
+(grep: только release/reset в `radio_management.c`). На железе вид/координаты не проверялись
+(расчётно 4 символа font 0 в боксе w=41 совпадают с `"0.5W"`).
+
+**Риски.** Пока защита активна, в боксе PWR виден минимальный power factor (PWR 0.5 W), затем
+штатное значение — ожидаемое поведение; индикация не заменяет разбор причины высокого КСВ.
+
+## P1-3 — Быстрый foldback: свои счётчики, безопасный retry, независимость от dynamic tune (R1/R3/R5)
+
+**Проблема.** В v1.0 защита просыпалась по счётчику `ts.dynamic_tune_activ_counter` (порог `>= 2`):
+первые ~190 мс TX шли на полной мощности без защиты (R1); любое вращение ручки в TX ставило счётчик
+35/42/48 → защита глушилась до ~480 мс (R5); retry включал bias, не проверяя фактор мощности — при
+ручной регулировке PWR возможен бурст полной мощности до ~50 мс (R3).
+
+**Исправление (маркер `N96K P1-3`, `drivers/ui/radio_management.c/.h`).**
+- Константы (`74-85`): `VSWR_PROTECTION_ARM_CNT = 3` (тики измерений по 10 мс ≈ 30 мс),
+  `VSWR_PROTECTION_RETRY_CNT = 8` (~0,5 с), `VSWR_PROTECTION_RECOVERY_CNT = 10` (~0,6 с),
+  гистерезис 0,5.
+- Состояние (`1799-1808`): `vswr_foldback_active`, `vswr_foldback_trial`, `vswr_foldback_retry`,
+  `vswr_foldback_recovery`, `vswr_settle_cnt`, `vswr_foldback_avg`.
+- `RadioManagement_UpdatePowerAndVSWR()` (`2013-2021`) инкрементирует `vswr_settle_cnt` на каждом
+  10-мс тике (насыщение 255) — собственный счётчик, не связанный с dynamic tune; обнуляется в
+  `VswrFoldbackReset()` (`1861`), т.е. на каждый новый TX.
+- `RadioManagement_CheckVswrProtection()` (`1864-1980`): guard'ы (не TX / TX-переход / `ptt_req` →
+  нет переключений); ожидание `vswr_settle_cnt < 3`; измерение валидно только при
+  `swrm.fwd_pwr >= SWR_MIN_CALC_POWER` (0,25 Вт); trip — `DisablePaBias()` +
+  `SetMinimalTxPowerFactor()` (PA_LEVEL_0_5W; пользовательский `ts.power_level` не портится) +
+  `high_vswr_detected = true`; в foldback на **каждом** измерении повторно выставляются bias off и
+  минимальный drive (ручка PWR не возвращает полную мощность); recovery-trial раз в 8 измерений
+  включает bias **только на минимальном drive**, при высоком КСВ/невалидном измерении немедленно
+  прерывается; release — только после **10 подряд** хороших измерений ниже (порог − 0,5) на
+  минимальной мощности, затем восстанавливаются bias и пользовательский power factor.
+- Зависимость от `ts.dynamic_tune_activ_counter` удалена из `radio_management.c` (grep: обращение
+  осталось только в отрисовке SWR-метра `ui_driver.c:4870` — Nizar-дисплей, намеренно не тронут).
+
+**Тайминг (честно).** Одно полное измерение = `SWR_SAMPLES_CNT = 5` пар АЦП + расчёт ≈ 60 мс
+(константа Nizar не менялась). «Свои 10-мс счётчики» дают settle-окно ~30 мс, а первая защитная
+реакция физически возможна только на первом полном измерении — **~60 мс вместо ~190–240 мс
+(ускорение ≈ 3×)**. После восстановления нагрузки защита держит минимальную мощность до ~1,1 с
+(8 retry-измерений + 10 подтверждающих) — осознанный запас; при полевых жалобах
+`RETRY`/`RECOVERY` можно уменьшить.
+
+**Проверки.** Модель состояния: скриптовая транслитерация `CheckVswrProtection()` /
+`UpdatePowerAndVSWR()` на 8 сценариях (хорошая антенна; КЗ с начала TX; восстановление нагрузки;
+ручка PWR в foldback; зона гистерезиса; выключение защиты; TX-переход; dynamic tune) — инвариант
+«полная мощность при bias ON во время foldback» = **False** во всех. Отсутствие OOB/деления на 0:
+новых индексаций и делений не добавлено, guard P0-4 сохранён. Сборка exit 0; `-fsyntax-only` rc=0.
+
+**Риски.** 60 мс — физический минимум при 5 выборках; ускорять дальше = менять метр Nizar или
+быстрый путь по сырым выборкам (риск ложных срабатываний на фронте TX) — не делалось. «Залипание»
+на минимальной мощности до ~1,1 с. На железе с эквивалентом/КЗ не проверялось.
+
+
+## P1-4 — Fallback при ошибке чтения EEPROM (R7)
+
+**Проблема.** В `UiReadSettingEEPROM_*` при `ConfigStorage_ReadVariable() != 0` не было ветки `else`:
+вызывающий читал неинициализированную локаль (`value16` в `UiReadSettingsBandMode`/`LoadEepromValues` →
+`ts.band`, `ts.dmod_mode`, `df.tune_new`). Клампы P0-1 ограничивали последствия, но формально это UB.
+
+**Исправление (маркер `N96K P1-4`, `drivers/ui/ui_configuration.c:411-539`).** Порт 1:1 из upstream
+2.12.2: во все 7 функций добавлена ветка `else { *val_ptr = default_val; }` —
+`UiReadSettingEEPROM_UInt8` (411-418), `..._UInt8x2` (436-443 — именно `value16`), `..._UInt16`
+(455-462), `..._Int16` (473-480), `..._UInt32_16` (492-499), `..._Int32_16` (510-517), `..._UInt32`
+(532-539). Ветка успешного чтения не изменена ни на строку (клампы/маски P0-1 на месте);
+`UiReadSettingEEPROM_Bool` остаётся закомментированной, как в upstream.
+
+**Проверки.** Полная сборка exit 0; при успешном чтении поведение идентично v1.0; UB-чтение
+`value16` закрыто (по коду/grep ветка есть во всех 7 функциях).
+
+## P1-5/CAT — Лазейки R8 и эмуляция 0x65 (FT-817/Hamlib 4.3)
+
+**Проблема (R8).** Гейт P0-5 закрывал `SET_FREQ`, `MODE_SET`, `TOGGLE_VFO`, `SPLIT`, но оставались
+два пути смены band/частоты в обход проверки TX: (1) FT-817 `EEPROM_WRITE 0xbc, addr 0x55` —
+VFO-select вызывает `UiAction_ToggleVfoAB()` и меняет активный VFO/частоту/band/фильтры; (2) clone-in
+block 8 писал `df.tune_new`, главный цикл применял частоту → `SetHWFiltersForFrequency` →
+`Board_SelectLpfBpf` под мощностью.
+
+**Исправление (маркер `N96K P1`, `drivers/cat/cat_driver.c`; +27/−6).**
+- `559-568` — VFO-select в EEPROM-эмуляции выполняется только при
+  `CatDriver_IsChangeBandModeAllowed()` (тот же хелпер P0-5: `!TX && !tune && !ptt_req`); при TX
+  ответ всё равно ACK `0x00`, переключение не применяется.
+- `782-790` — clone-in block 8: блок принимается и ACK-ается (`0x06`), но `df.tune_new` не
+  присваивается, пока запрещено; клонирование не ломается.
+- `603-609` и `658` — добавлена эмуляция EEPROM `0x65` из upstream `b71ccd98` (#1594, требуется
+  WSJT-X): `EEPROM_READ 0x65` отдаёт 2 байта `[USER-L/USER-U (0x60/0x80), 0]` как реальный FT-817;
+  write-ветка не делает ничего, как в upstream (маркер `N96K P2-1` в коде — см. примечание о
+  нумерации в шапке).
+- Read-путь (`0x54`/`0x55`) и PTT не блокируются; внутрибэндовый `SET_FREQ` в TX сохранён (WSJT-X
+  Fake It).
+
+**ВАЖНАЯ ПОПРАВКА к аудиту.** Утверждение `_audit/parts/upstream-delta.md` (§4 п.5-7, §6 п.5) и
+`_audit/REPORT.md` о том, что фиксы Hamlib 4.3 `get_vfo` **отсутствуют**, — **неверно**: все три
+уже были в базе Nizar (проверено по исходной архивной папке и `git show HEAD`):
+- `5a9f9821` (get_vfo Hamlib 4.3.x) — запись `0x54 = 0xFF` в `ft817_eeprom[]` есть (архив стр. 629,
+  HEAD стр. 641);
+- `2c9e3d6d` (FT817EE_FUNC → FT817EE_DATA) — в форке уже `DATA` (финальное состояние);
+- `1ebbdd87` (#1891 WINTEST) — `PTT_STATE 0xF7` в RX возвращает `0xff`, бита `0x80` нет (архив
+  стр. 1205-1207, HEAD стр. 1237-1239).
+Портить для `get_vfo` было нечего: read-handler на `0x54` возвращает 2 байта `[0xFF, 0x80/0x81]`
+(после чтения `0x54` дочитывается `addr+1 = 0x55`) — это и есть контракт `get_vfo`. Единственным
+реальным остатком FT-817-эмуляции 2.12.2 был `0x65`; он и портирован.
+
+**Проверки.** `-fsyntax-only` с точными флагами `compile_commands.json` на чистом дереве HEAD —
+rc=0, вывод пуст. Приватная сборка из чистого HEAD+патч — exit 0, `fw-mchf.bin` 320 136 Б
+(+112 Б к v1.0 = 0,011 %), CCM 63 476/65 536 без изменений, 70 предупреждений (как в v1.0-классе),
+0 в `cat_driver.c`. Байтовая целостность: UTF-8/LF, 2 предсуществующих U+FFFD (стр. 1065) сохранены,
+новых не добавлено.
+
+**Риски.** С Hamlib/WSJT-X/HRD и на железе не проверялось. «Тихий ACK» при TX для VFO-select:
+модель состояния логгера может разойтись до следующего опроса (то же решение, что в P0-5).
+`EEPROM_WRITE > 0x7FFF` во время TX остаётся разрешённым — runtime-состояние не меняется
+(`config_storage.c`), но возможны износ/задержка flash (P2-остаток). Гонка «SET_FREQ в RX →
+немедленный PTT» — вне `cat_driver.c` (отмечена в P0-5). `0x65` теперь отдаёт 2 байта вместо 1 —
+как реальный FT-817/upstream, аддитивно.
+
+## P2-1 — Загрузчик UHSDR 5.0.4
+
+**Проблема.** v1.0 работал на загрузчике 4.1.2 (UHSDR 2.9.48). Upstream 2.12.2 содержит 5.0.4:
+переименования API, «чистый» переход в прошивку/DFU, исправления сброса MCU. Обновление важно для
+надёжности старта прошивки и совместимости с upstream.
+
+**Исправление (маркер `N96K P2`, 8 файлов из upstream 2.12.2 `dcbebe5f`, суммарно +164/−103 строк).**
+`bootloader_main.c/.h`, `command.c/.h`, `flash_if.c/.h`, `uhsdr_boot_hw.c/.h`. 6/8 файлов байт-в-байт
+с upstream (mod EOL); 2 файла — upstream + адаптации: `bootloader_main.h` (+7 строк) — псевдонимы
+старых точек входа (`bootloader_main`, `BL_Application`, `mchfBl_CheckAndGoForDfuBoot`), т.к.
+`basesw/mcHF/Src/main.c` вне зоны; `bootloader_main.c` (+10 строк) — сохранён признак SBLA/SBLS в
+SRAM2 (upstream 5.0.4 его удалил, но прошивка 2.9.48 читает `SRAM2_BASE+5 == 0x29` в
+`drivers/audio/freedv_uhsdr.c:464`). `UHSDR_BOOT_VERS` 4.1.2 → **5.0.4**.
+Поведение 5.0.4: `UhsdrBl_JumpToApplication()` (отключение IRQ, `HAL_SuspendTick()`,
+`HAL_RCC_DeInit()`, сброс NVIC) перед прыжком в прошивку/DFU; enum `BOOT_REBOOT = 0x55`,
+`BOOT_DFU = 0x99`, `BOOT_FIRMWARE = 0x66993300` — «проводные» значения 0x55/0x99 совместимы с
+прежним протоколом; `__DSB()` перед сбросом MCU; `BootFail_Handler(3)` и валидация прошивки.
+
+**Проверки.** `python tools/build.py bootloader --build-dir …` — exit 0 (116 units, 7,2 с):
+`bl-mchf.bin` **31 620 / 32 768 Б = 96,5 %**, запас **1 148 Б**; `.text` 31 488 @ 0x08000000,
+`.data` 132, `.bss` 39 568, `.ccm` 0; строка `Version: 5.0.4` в `.bin` (offset 27 503), `4.1.2`
+отсутствует; карта `rom 0x08000000 length 0x8000`; SHA-256 `bl-mchf.bin` =
+`b1fe331c02cf7cf2b36b03e2e996d58f9619ea765980ba76dc28ccf40d3d9b9a`. Рост +124 Б к 4.1.2
+(31 496 Б). Прошивка с новым заголовком собирается; `-fsyntax-only` с `-DSBLA`, `-DSBLS`,
+`-DSBLA -DSBLS` — OK. 8 предупреждений — все предсуществующие (USB/LL, LCD, newlib).
+
+**Ограничения/остаётся.** Загрузчик **не прошивался** и на железе не испытывался: экран/кнопки,
+USB-диск (дамп/запись `fw-mchf.bin`), вход в DFU (BAND+) проверены только сборкой. `release/v1.0`
+не пересобирался (там старый bl 31 496); артефакты 5.0.4 — в `_tmp/build-bl`; в `release/v1.1`
+включать после аппаратной проверки. Загрузчик 4.1.2 с этой прошивкой совместим.
+
+## P2-2 — FreeDV/Codec2 rev 4121 + фикс #1749
+
+**Проблема.** Vendor-дерево `drivers/freedv/**` соответствовало Codec2 времён 2.9.48; в upstream
+2.12.2 — rev 4121, плюс фикс #1749 («FreeDV crashes on mcHF/STM32F4», upstream `750551fc`):
+в Makefile не хватало `-DFDV_ARM_MATH` (оптимизация Codec2 через CMSIS-DSP).
+
+**Исправление (маркеры `N96K P2`).**
+- Vendor-дерево приведено к upstream `dcbebe5f` **побайтово**: **56 M / 14 A / 4 D**, итого 193 файла
+  (192/193 совпадают по git-blob; единственное отличие — локальный compat-блок в `freedv_api.h`).
+- `files.mak`: +`codebooknewamp2.c`, +`codebooknewamp2_energy.c`, `fifo.c`→`filter.c`,
+  +`HRA_112_112.c`, +`HRAb_396_504.c`, +`newamp2.c`, `octave.c` удалён, +`phi0.c`.
+- `-DFDV_ARM_MATH` добавлен в `tools/build.py` (`COMPILEFLAGS_BASE`) и `mchf-eclipse/Makefile`
+  (`COMPILEFLAGS`) — это и есть фикс #1749.
+- `drivers/freedv/freedv_api.h` (+25 строк, `N96K P2`): compat-блок `#ifdef __MCHF_BOARD_H` с
+  `#undef I/bool/true/false` — новые заголовки Codec2 тянут `<complex.h>`/`<stdbool.h>`, а база
+  2.9.48 использует `typedef int bool` и члены с именем `I`; без блока сборка падает.
+- **Интеграционный слой Nizar НЕ пересинхронизирован** (осознанно): `drivers/audio/freedv_uhsdr.c/.h`
+  остались на API 2.9.48; новый API 2.12.2 требует портирования `audio_driver.c`,
+  `radio_management.c`, `ui_menu.c`. Старая обвязка компилируется и линкуется с новым vendor-кодом;
+  режимы/96k/12k/callback-сообщения Nizar не тронуты.
+
+**Проверки.** Полная приватная сборка — exit 0 (533 объекта; новые собраны, fifo/octave исчезли);
+`fw-mchf.bin` 320 136 Б (+112 Б = +0,035 % к v1.0), CCM 63 476 — байт-в-байт как baseline;
+предупреждений 70 (в v1.0 — 80), новых классов нет.
+
+**Ограничения/follow-up.** Runtime (FreeDV TX/RX) не проверялся — только компиляция/линковка.
+Mode-флаги 2.12.2 F4-конфига (`-DFREEDV_MODE_EN_DEFAULT=0` и др.) не добавлены. NR+FreeDV фиксы
+2.12.2 (`df9ef3f9` — тишина после FreeDV+NR, `27945d8b` — запрет NR/NB при FreeDV) не портированы:
+в продукте более старая реализация `audio_nr.c`, патчи не ложатся аддитивно — отдельная задача.
+Новый API (700D, squelch, выбор режима из меню) не включён. Compat-блок нужно переносить при
+следующем обновлении Codec2. Vendor-файлы в рабочем дереве CRLF (git нормализует при коммите).
+
+## P2-3 — CI/Docker с фиксированным тулчейном + host-тесты ЦОС
+
+**Проблема (аудит §9).** Сборка зависела от локального Eclipse/тулчейна, не было автоматического
+контроля бюджета flash/RAM/CCM и хостовых проверок ЦОС-таблиц; предупреждения компилятора не
+фиксировались.
+
+**Исправление.**
+- `Dockerfile` (79 строк) — 2 стадии: pinned xPack **GNU Arm Embedded GCC 15.2.1-1.1** (URL +
+  SHA-256 `da6a49ad4003944b823c6c93702a8787c922ab34bd7e918ec0eaf6933a9b1ff6`);
+  `python3 tools/build.py all` + тесты + проверка артефактов.
+- `docker/verify_artifacts.py` (180 строк) — наличие/размеры артефактов, бюджеты flash/RAM/CCM,
+  запись `SHA256SUMS.txt`.
+- `.github/workflows/build.yml` — job `host-tests` (python) + `docker-build` (buildx, gha-кэш,
+  `docker cp`, upload artifacts).
+- `docs/CI.md` — как собирать в Docker, как гонять тесты, что проверяет CI, ограничения.
+- `tests/**` — ~2,4 тыс. строк только на stdlib: `run_all.py`, `cparse.py` (мини-парсер C),
+  `checkbase.py`, `check_filters.py`, `check_iq.py`, `check_files_mak.py`, `check_versions.py`,
+  `check_eeprom.py`, `check_audio.py`, `known_issues.py`, `README.md`.
+
+**Проверки (host).** `python tests/run_all.py` — exit 0: **1133 проверки** на момент P2-3
+(после слотов P2-4 — **1134**, 0 failed, 3 known, 0 skipped); `filters` 490, `iq` 176,
+`files.mak` 4, `version` 12 (включая 2.9.48 и `UHSDR_BOOT_VERS = 5.0.4`), `eeprom` 425 (426 после
+P2-4), `audio_instances` 26. Проверки: (a) FIR-дескрипторы, (b) IIR-lattice, (c) IQ-таблицы
+Nizar, (d) все 46 `.c` фильтров в `files.mak`, (e) версия/продукт/загрузчик/лицензия/атрибуция,
+(f) карта EEPROM (`MAX_VAR_ADDR < NB_OF_VAR`, уникальность адресов, guard).
+`verify_artifacts.py` проверен на реальных артефактах v1.0 — exit 0 (и негативный тест — exit 1).
+
+**Известные KNOWN-дефекты (не блокируют, задокументированы в `tests/known_issues.py`).**
+`iir_3k.c:IIR_3k` — `numStages = 10`, а `pkCoeffs` 11 элементов (мёртвый код); `audio_driver.c`
+`IIR_biquad_Zoom_FFT_I/_Q` — placeholder-инициализатор (10 вместо 20 `pCoeffs`; заменяется в runtime
+до первого запуска, но латентный UB/OOB-read).
+
+**Ограничения.** `docker build` **не запускался** (на машине разработки нет Docker);
+GitHub Actions не запускался (нет remote/раннера); проверены только статически (YAML/PyYAML, разбор
+Dockerfile, `verify_artifacts.py` на артефактах v1.0). Первая сборка в Docker качает ~307 МБ; образ
+`ubuntu:22.04` прибит тегом, не digest. Прошивка не воспроизводима побайтно (`__DATE__/__TIME__`) —
+CI контролирует размеры/бюджеты/наличие, а не SHA. Бюджет-гейт bl (32 768) при 31 620 даёт запас
+1 148 Б — следующий рост кода загрузчика может не влезть.
+
+## P2-4 — Бэкпорты AGC #1730, Tune Power #1750, CW-decoder #1881
+
+**Проблема.** В базе 2.9.48 отсутствовали исправления upstream, важные для повседневной работы:
+после перезагрузки не восстанавливалась часть AGC-настроек (#1730, в частности «Clarity»/pop ratio),
+Tune Power не выставлялся и не восстанавливался, если отличался от текущей TX-мощности (#1750),
+не сохранялась конфигурация CW-декодера (#1881).
+
+**Исправление (порт upstream 2.12.2; маркер `N96K P2`; статус — порт выполнен).**
+
+| Upstream SHA | Тема | Что сделано в продукте |
+|---|---|---|
+| `cfbaae73` | AGC values are not restored (#1730) | В форке AGC WDSP реализован в `audio_driver.c` (а не в `audio_agc.c`), и upstream-дефект «инициализация затирает загруженные EEPROM-значения» структурно отсутствует — параметры живут в `ts.agc_*` и грузятся до `AudioDriver_Init()`. Добавлено: EEPROM-слот **524** для AGC «Clarity» (`ts.agc_wdsp_pop_thres` — единственный AGC-параметр меню, который не сохранялся), пересчёт производного `ts.float_agc_wdsp_pop_thres` после загрузки EEPROM и в `AudioDriver_SetupAgcWdsp()`, регресс-комментарий по `cfbaae73`. `EEPROM_FIRST_UNUSED` 524 → 525. |
+| `684a04c1` + `6d7efe50` + `de6b5e0d` + `eb40e0dc` | Tune Power #1750 | `radio_management.c`, `RadioManagement_Tune`: статический `tune_power_overridden` — восстановление не зависит от текущего значения пункта меню Tune Power; при выходе из Tune восстанавливаются `ts.power_level`, `tx_power_factor` и `current_pwr_adj/PWR`; при отказе TX — откат override. Nizar dynamic tune/`current_pwr_adj` и код VSWR P0-4/P1 не тронуты. |
+| `528aa185` | CW Decoder Config Save (#1881) | `cw_decoder.c/.h` (union/bitfields флагов, `CW_DECODER_FLAGS_DEFAULT`), `ui_menu.c` (временные `bool` для битфилдов), `ui_configuration.c/.h`: `ConfigEntry_UInt16 EEPROM_CW_DECODER_FLAGS = 430` — тот же ID, что в upstream 2.12.2 (бывший `EEPROM_FUTURE_RESERVE0`), существующие слоты не сдвигаются, `EEPROM_FIRST_UNUSED` не менялся. Nizar-настройка `show_CW_LED` остаётся в `FLAGS2` (`EEPROM_FLAGS2`), бит в `flags` синхронизируется через union. |
+
+**EEPROM.** Существующие адреса **не сдвинуты**: 430 был зарезервирован и теперь используется
+(CW flags), 524 — новый слот (AGC Clarity); `EEPROM_FIRST_UNUSED` 524 → 525,
+`MAX_VAR_ADDR` 523 → 524; `NB_OF_VAR` = 530 не менялся. На старых EEPROM новые поля читаются
+как мусор → range-check/default (P1-1/P1-4). Раскладка продукта уже не совпадает с upstream
+2.12.2 (`EEPROM_FIRST_UNUSED` 525 против 432 у upstream) — совместимость только внутри продукта.
+
+**Проверки.** `-fsyntax-only` 5 TU — OK; приватная сборка
+`python tools/build.py firmware --build-dir _tmp/build-p2-backports` — exit 0, `fw-mchf.bin` =
+**321 128 Б** (+304 Б к сборке до P2-4; +0,345 % к v1.0), CCM 63 476 — идентично baseline,
+предупреждений 70 — как без P2-4; `tests/run_all.py` — PASS: **1134 проверки, 0 failed, 3 known**,
+eeprom — **426 проверок** PASS (карта EEPROM, адреса 430/524 уникальны,
+`MAX_VAR_ADDR = 524 < NB_OF_VAR = 530`). Полный отчёт — `_audit/dev/p2-backports.md` (вне
+репозитория); финальная сборка `release/v1.1` — **проверяется финальной сборкой**.
+
+**Риски/ограничения.** Runtime на железе не проверялся: восстановление AGC после ребута, Tune Power
+и сохранение CW-настроек подтверждены код-трассировкой сценариев, сборкой и host-тестами. Новые
+EEPROM-поля: при откате на v1.0 настройки Clarity/CW-флагов будут проигнорированы старым кодом
+(безопасная деградация — default). Раскладка EEPROM по-прежнему несовместима с другими сборками
+UHSDR. Это последняя серия бэкпортов v1.1; EEPROM signature #1675 и DMA size #1664 не переносились.
+
+## Проверка документации и версии (v1.1)
+
+- Версия продукта: `UHSDR_PRODUCT_VERSION = "2.9.48-n96kp2"`; числовые `UHSDR_VER_* = 2.9.48` не
+  менялись; `UHSDR_BOOT_VERS = 5.0.4`. Строка на устройстве: `UHSDR_VERSION = "fwv-2.9.48-n96kp2"`,
+  отображение `UHSDR_VERSION+4` = `2.9.48-n96kp2` (13 символов; буферы UI — `snprintf(out, 32, …)`
+  в `ui_menu.c:723-728`, запас большой).
+- `tests/check_versions.py` ждёт `2.9.48-n96kp2`; `python tests/run_all.py` — PASS
+  (1134 проверки, 0 failed, 3 known).
+- Все цифры v1.1 сверяются с `build/build-summary.json` / `release/v1.1` финальной сборкой
+  (**проверяется финальной сборкой**); проверочные сборки: `_tmp/build-p2-docs` (HEAD + bump
+  версии) и `_tmp/build-p2-backports` (с P2-4: fw 321 128 Б) — артефакты не входят в релиз.
 
 ## Что не менялось
 
-- Алгоритмы и параметры Nizar (ЦОС-коэффициенты, фильтры, дефолты меню) — не изменялись.
+- Алгоритмы и параметры Nizar (ЦОС-коэффициенты, фильтры, дефолты меню, отрисовка SWR-метра) —
+  не изменялись; маркеры авторства NIZZ/NIZ96/NIZ32 сохранены.
 - `LICENCE.md` (GNU GPLv3) — не изменялся.
-- Сторонние/вендорные библиотеки (CMSIS, HAL, FreeDV) — не переписывались, кроме ранее
-  существующих правок форка.
+- Числовые `UHSDR_VER_*` = 2.9.48 — не менялись. **Существующие адреса EEPROM не сдвигались**;
+  новые записи добавлены в свободные/резервные id: 426 (P1-1), 430 и 524 (P2-4),
+  `EEPROM_FIRST_UNUSED` 524 → 525, `MAX_VAR_ADDR` 523 → 524 (см. P2-4).
+- CMSIS/HAL и прочие вендорные библиотеки — не переписывались; Codec2/FreeDV обновлён только
+  в P2-2 (до upstream rev 4121, с одним задокументированным compat-блоком).
+- Доработки Nizar не откатывались: изменения v1.1 — аддитивные (новые поля/пункты/enum в конец,
+  новые ветки), а заменённый в P1-3 блок foldback — код самого v1.0-патча P0-4, не Nizar.
