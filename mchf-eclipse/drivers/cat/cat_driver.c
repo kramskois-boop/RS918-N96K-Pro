@@ -556,9 +556,16 @@ bool CatDriver_Ft817_EEPROM_RW_Func(bool readEEPROM, uint16_t addr, uint8_t* dat
                     (vfo_selection == 0x80 && is_vfo_b() == true)
             )
             {
-                // we have to switch active vfo
-                UiAction_ToggleVfoAB();
-                retval = true;
+                // N96K P1 (audit R8): selecting the other VFO also changes the active tuning frequency and
+                // may move RX/TX to another band. It must obey the same rule as SET_FREQ/MODE_SET: while
+                // transmitting, in TUNE or with a pending CAT PTT the request is ACKed by the caller
+                // (FT817_EEPROM_WRITE always answers 0x00) but the VFO switch is not applied.
+                if (CatDriver_IsChangeBandModeAllowed())
+                {
+                    // we have to switch active vfo
+                    UiAction_ToggleVfoAB();
+                    retval = true;
+                }
             }
             break;
         }
@@ -593,6 +600,13 @@ bool CatDriver_Ft817_EEPROM_RW_Func(bool readEEPROM, uint16_t addr, uint8_t* dat
 							// TODO: If memmode gets implmented, we need more complex handling here
 							retval = true;
 							break;
+			case 0x65:
+						// N96K P2-1 (Hamlib 4.3.x / FT-817 backport, upstream 0x65 emulation, table context of 5a9f9821):
+						// digital mode reported to WSJT-X/Hamlib. Bits 5-7: 011 -> USER-L, 100 -> USER-U.
+						// We always report USER-U/USER-L for the selected digi sideband, as on a real FT-817.
+						*data_p = RadioManagement_LSBActive(DEMOD_DIGI) ? 0x60 : 0x80;
+						retval = true;
+						break;
 			case 0x79:
 						{
 							// Used by: HRD
@@ -641,6 +655,7 @@ static const ft817_eeprom_emul_t ft817_eeprom[] =
 		{ .type = FT817EE_DATA,     .start = 0x54,  .end = 0x54,    .content.value = 0xFF   }, // this is just to make HAMLIB happy when reading 0x55 by requesting 0x54
         { .type = FT817EE_FUNC,     .start = 0x55,  .end = 0x55,    .content.funcPtr = CatDriver_Ft817_EEPROM_RW_Func }, // VOX Delay and other stuff, fixed value, required by WSJT-X
         { .type = FT817EE_DATA,     .start = 0x64,  .end = 0x64,    .content.value = 0x00 }, // VOX Delay and other stuff, fixed value, required by WSJT-X
+        { .type = FT817EE_FUNC,     .start = 0x65,  .end = 0x65,    .content.funcPtr = CatDriver_Ft817_EEPROM_RW_Func }, // APO and Dig Mode setting, fixed value, required by WSJT-X (upstream 0x65 emulation)
         { .type = FT817EE_FUNC,     .start = 0x79,  .end = 0x79,    .content.funcPtr = CatDriver_Ft817_EEPROM_RW_Func }, // VOX Delay and other stuff, fixed value, required by WSJT-X
         { .type = FT817EE_FUNC,     .start = 0x7A,  .end = 0x7A,    .content.funcPtr = CatDriver_Ft817_EEPROM_RW_Func }, // VOX Delay and other stuff, fixed value, required by WSJT-X
         { .type = FT817EE_DATA,     .start = 0x7B,  .end = 0x7B,    .content.value = 0x00 }, // Chg related, not supported
@@ -764,9 +779,15 @@ bool  CatDriver_BlockRecv( uint8_t  num, uint8_t  idx, uint8_t  rpt, uint8_t*  b
     {
         if (num == 8)
         {
-            // we simply set the dial frequency here just for the show!
-            ft817_memory_t* mem = (ft817_memory_t*)&buf[1];
-            df.tune_new         = __builtin_bswap32(mem[0].freq) * (10 );
+            // N96K P1 (audit R8): receiving the clone block 8 also sets the dial frequency, which retunes
+            // the radio later (LPF/BPF relays). Treat it like a CAT band change: while TXing, in TUNE or
+            // with a pending CAT PTT the block is still accepted/ACKed, but the frequency is not applied.
+            if (CatDriver_IsChangeBandModeAllowed())
+            {
+                // we simply set the dial frequency here just for the show!
+                ft817_memory_t* mem = (ft817_memory_t*)&buf[1];
+                df.tune_new         = __builtin_bswap32(mem[0].freq) * (10 );
+            }
         }
         retval = true;
     }
