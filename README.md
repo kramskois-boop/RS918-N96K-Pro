@@ -1,47 +1,190 @@
-<div align="center"><h1><b>The UHSDR Project</b></h1></div>
+# RS918 N96K-Pro
 
-UHSDR stands for **U**niversal**H**am**S**oftware**D**efined**R**adio.
-The project provides  the firmware to run standalone HAM transceivers.
-It currently supports STM32F4 and STM32F7 MCU based QSD designs. The
-current firmware provides receive and transmit for various analog modes
-(SSB,AM, FM) including modes like Synchronous AM, plus digital modes
-like FreeDV, RTTY  and of course CW (including Iambic/Ultimatic keyer).
-An USB CAT and audio interface is part of the firmware as well. The
-bootloader, which is another part of the project, permits to update the
-firmware and bootloader using various means like USB disk or USB cable.
+**Прошивка SDR-трансиверов mcHF / RS-918** на базе UHSDR 2.9.48 с доработками Nizar (3V8MN):
+приём 96 кГц и передача 12 кГц с целочисленными преобразованиями, расширенный ЦОС-тракт, меню и
+спектр — плюс патчи качества и безопасности (P0-1…P0-6), закрывающие критичные дефекты аудита
+исходного дерева.
 
-The base of the firmware was started by Chris, M0NKA, and Clint, KA7OEI
-as part of the [mcHF](http://www.m0nka.co.uk/) project. In February 2017
-both agreed to change firmware license to GPLv3. Because of this the mcHF
-firmware has been extended in this project with new functionality
-and also with support for use on different transceiver hardware. For
-clarifying different license models on mcHF hardware and mcHF firmware the
-name of the firmware changed to UHSDR.
+| Параметр | Значение |
+|---|---|
+| Продукт | **RS918 N96K-Pro** |
+| Строка версии продукта | `2.9.48-n96kp1` (`UHSDR_PRODUCT_VERSION`, видна на устройстве) |
+| Числовая версия прошивки | 2.9.48 (сохранена для совместимости EEPROM и логики версий) |
+| База | UHSDR v2.9.48, [github.com/df8oe/UHSDR](https://github.com/df8oe/UHSDR), коммит `ae93edf6` |
+| Исходные доработки | Nizar (3V8MN), «Tx 12KHz / Rx 96KHz integer» |
+| Аппаратная цель | mcHF / RS-918 rev.1: STM32F407, 1 МиБ flash, 128 КиБ RAM + 64 КиБ CCM |
+| Загрузчик | UHSDR bootloader 4.1.2 (`UHSDR_BOOT_VERS`) |
+| Репозиторий продукта | локальное git-дерево, публичного remote пока нет |
+| Лицензия | GNU GPLv3 — [LICENCE.md](LICENCE.md), атрибуция — [docs/CREDITS.md](docs/CREDITS.md) |
+| Состояние | полевые испытания, версия v1.0 готовится; см. дисклеймер ниже |
 
-The intent of this project is to give full support for mcHF [(and all
-other known and listed hardware platforms)](https://github.com/df8oe/UHSDR/wiki/Supported-Hardware) as long as there are
-contributors willing to support the given hardware.
+> Это **не** официальный UHSDR и не сборка DF8OE. Это самостоятельный форк для конкретного
+> железа; всё, что связано с передатчиком, антенной и питанием — на ответственности оператора.
 
-So this is the best place to start with up-2-date developed firmware and
-bootloader for mcHF.
+---
 
-Binaries of actual development are available as "bleeding edge builds".
-Since 08-19-2017 all binaries which are populated are archived and can
-accessed at GitHub startup page (see link a few lines down).
+## Что это
 
-If you want to see the recent progress of the project, have a look [at
-the commits here](https://github.com/df8oe/mchf-github/commits/active-devel).
+UHSDR 2.9.48 — официальная прошивка для SDR-трансиверов на STM32F4/F7 (SSB/AM/FM/CW, цифровые
+виды, USB CAT и аудио). Nizar (3V8MN) доработал её для mcHF/RS-918: две частоты дискретизации
+(96 кГц на приём, 12 кГц на передачу) с целочисленной децимацией/интерполяцией, собственный
+ЦОС-слой, новые фильтры, переработанный аудио-тракт и UI.
 
-You can find descriptions of menus and operating hints at [our WIKI](https://github.com/df8oe/UHSDR/wiki/)
-All this is bundled in [startup page](https://df8oe.github.io/UHSDR/).
+**RS918 N96K-Pro** — качественная сборка этого дерева: вся функциональность Nizar сохранена
+без откатов, добавлены исправления критичных дефектов (EEPROM, аудио, защита PA, TX-безопасность),
+восстановлена идентификация версии и оформлена документация. Полный merge на upstream 2.12.2
+в v1.0 **не** входит (см. «Ограничения»).
 
-Have fun - Open-Source opens possibilities!
+## Аппаратная цель
 
-M0NKA, Chris<br/>
-KA7OEI, Clint<br/>
-DF8OE, Andreas<br/>
-DB4PLE, Danilo<br/>
-DD4WH, Frank<br/>
-DL2FW, Michael<br/>
-SP9BSL, Slawek<br/>
-and the complete UHSDR community
+- mcHF / RS-918 первой ревизии: MCU **STM32F407** (F4), 1 МиБ flash, 128 КиБ RAM, 64 КиБ CCM.
+- QSD-тракт: **RX 96 кГц** (32-битный I2S), обработка 48 кГц сохранена как в upstream;
+  **TX 12 кГц** с целочисленной децимацией/интерполяцией 4:1.
+- UHSDR bootloader **4.1.2** — первые 32 КиБ flash; обновление прошивки через загрузчик
+  (USB-диск) либо DFU (ROM STM32).
+- USB-аудио 96 кГц, USB CAT (включая FT-817 SET_FREQ от Nizar).
+- Расширенная таблица диапазонов (80…2 м, 160/2200/630 м, 70/23 см, GEN) и per-band режимы
+  в EEPROM — как в форке Nizar.
+- **Не поддерживается в этом дереве:** OVI40 (F7) и OVI40-H7 (H7) — вендорные каталоги и их
+  сборочные файлы удалены при чистке; сборка и поддержка только F4 (mcHF/RS-918).
+
+## Отличия от официального UHSDR
+
+### От 2.9.48 — доработки Nizar (сохранены)
+
+- **RX 96 кГц / TX 12 кГц integer**: две частоты дискретизации, 32-битный I2S на 96 кГц,
+  целочисленная TX-децимация 48→12 и интерполяция 12→48/96.
+- **Собственный ЦОС-слой**: 8 функций `*_Nizar` (FIR, FIR-decimate/interpolate, IIR-lattice,
+  biquad, scale+interpolate, half-decimate) в доработанных копиях CMSIS DSP.
+- **Новые фильтры**: 2 новых файла (`iir_2_8k.c` — RX LPF 2,8 кГц; `iir_16k5_96ks.c` —
+  TX LPF 16,5/16,1/16,8 кГц @96k) и обновлённые таблицы коэффициентов для 96k/12k.
+- **Аудио-тракт**: переработанное шумопонижение (FFT 256, NR2), TX-реверберация, noise gate,
+  RX/TX-эквалайзеры, ручные notch/peak, AGC WDSP с расширенными параметрами, компрессор/ALC.
+- **UI/UX**: 8 новых групп меню, zoom/FFT-спектр с цветами и водопадом, S-метр dBm/PEP,
+  индикация RFG/AFG/PWR/ALC, виртуальная клавиатура, Dynamic Tune, переработанные шкалы.
+- **USB/CAT/конфигурация**: USB-аудио 96 кГц (дескрипторы «USB mchf 96KHz»), CAT FT-817 SET_FREQ,
+  расширенная таблица бэндов, per-band decode/digital в EEPROM (+112 записей, 412→524).
+- Маркеры авторства Nizar (`NIZZ`/`NIZ96`/`NIZ32`, ~389 вхождений) в коде сохранены.
+  Подробный разбор вклада — [docs/CREDITS.md](docs/CREDITS.md); полная инвентаризация доработок — во внешнем отчёте аудита (вне этого репозитория).
+
+### От 2.12.2 (официальный tip active-devel, 2021) — чего нет или иначе
+
+| Область | Upstream 2.12.2 | RS918 N96K-Pro |
+|---|---|---|
+| 96 кГц RX / 12 кГц TX, DSP `*_Nizar`, расширенный UI | нет | **есть** (доработки Nizar) |
+| Защита PA по КСВ (VSWR foldback), guard `fwd_pwr` | есть (с 2018-12) | портировано патчем **P0-4** |
+| TX только в любительских бэндах, блокировка CAT при TX | частично | закрыто патчем **P0-5** |
+| Bootloader | 5.0.4 | **4.1.2** (соответствует 2.9.48) |
+| FreeDV/Codec2 rev 4121, фикс #1749 | есть | нет (P2, вне v1.0) |
+| CAT/Hamlib 4.3: `get_vfo`, фиксы FT-817/WINTEST | есть | только FT-817 SET_FREQ форка (P2) |
+| AGC restore #1730, Tune Power #1750, CW-декодер #1881, EEPROM signature #1675, DMA #1664 | есть | нет (P2) |
+| Раскладка EEPROM | 2.11–2.12 | расширенная Nizar (+112 записей) — **несовместима** |
+| Полный merge на 2.12.2 | — | не планируется в v1.0: 73 конфликтных файла, смена bootloader и EEPROM. Стратегия — точечные бэкпорты (P2) |
+
+Уточнение: «2.12.2» — версия ежедневной сборки (daily build) официального active-devel, не git-тег;
+последний тег upstream — 2.10.0. База этого продукта — 2.9.48, история совместима.
+
+## Патчи качества и безопасности
+
+Каждый патч помечен в коде комментарием `// N96K P0-x: …`. Принципы: минимальный дифф, поведение
+Nizar не меняется, только исправление дефекта или добавление защиты.
+
+| ID | Тема | Что исправляет |
+|---|---|---|
+| P0-1 | EEPROM/конфигурация | мёртвая проверка диапазона (`&&` вместо `&`), обработка ошибок ConfigStorage, клампы band/demod/decod |
+| P0-2 | Сборка | недостающие `iir_2_8k.c` и `iir_16k5_96ks.c` в `*.mak`, CLI-сборка (`tools/build.py`), блокеры GCC 10+ |
+| P0-3 | Аудио | инициализация NR-буфера, UB в реверберации, `abs()` → `fabsf()` |
+| P0-4 | PA/КСВ | guard деления на ноль при измерении КСВ, foldback PA по КСВ (порт из upstream) |
+| P0-5 | TX-безопасность | запрет CAT-смены бэнда/фильтра во время передачи, рабочий запрет TX вне бэндов |
+| P0-6 | Идентификация | `UHSDR_REPO`, строки продукта, README/docs, лицензионная атрибуция |
+
+Полный каталог (файлы, обоснование, статус, проверка) — **[docs/PATCHES.md](docs/PATCHES.md)**.
+История версий — [docs/CHANGELOG.md](docs/CHANGELOG.md).
+
+## Сборка
+
+- **Eclipse**: проект CDT в каталоге [mchf-eclipse/](mchf-eclipse/) — конфигурации F4, как в upstream.
+- **CLI**: драйвер сборки [tools/build.py](tools/build.py); пошаговая инструкция, требования
+  (arm-none-eabi-gcc, проверенный тулчейн) и разбор артефактов — **[docs/BUILD.md](docs/BUILD.md)**.
+  Команды здесь намеренно не дублируются — единственный источник: docs/BUILD.md.
+- Результаты: `build/fw-mchf.bin` (прошивка), `build/bl-mchf.bin` (загрузчик),
+  а также `.elf`/`.hex`/`.map` и `warnings.log`.
+- Собирается **только F4** (RS-918/mcHF). `.dfu` и handbook CLI-скриптом не генерируются.
+- Побайтовая воспроизводимость между сборками не гарантируется: в прошивку вшивается дата и
+  время сборки (`UHSDR_BUILD_DAT`). Повторная линковка без изменения исходников даёт тот же `.bin`.
+
+## Прошивка
+
+- **Перед первой прошивкой сделайте резервную копию** текущей прошивки и запишите значения меню,
+  которые важны (раскладка EEPROM в форке расширена — настройки от другого firmware могут
+  не прочитаться). Подробно — [docs/SAFETY.md](docs/SAFETY.md).
+- Загрузчик — **UHSDR 4.1.2**; он соответствует прошивке 2.9.48. Обновляйте загрузчик только при
+  необходимости и только программатором (SWD/DFU): неудачная запись загрузчика — риск «кирпича»
+  (восстановление через ROM DFU STM32).
+- Порядок прошивки (USB-диск через загрузчик, режимы DFU, диагностика) — **[docs/BUILD.md](docs/BUILD.md)**,
+  раздел «Как прошивать».
+- Восстановление при сбое: загрузчик хранит предыдущую прошивку на диске при обновлении; аппаратный
+  ROM-DFU STM32 доступен комбинацией кнопок при включении (см. docs/BUILD.md).
+
+## Безопасность
+
+- **КСВ и PA.** В v1.0 включён foldback по КСВ (P0-4) и guard измерения: при высоком КСВ мощность
+  автоматически снижается/снимается. Это программная защита, а не разрешение работать с плохой
+  антенной: проверяйте согласование до передачи, при настройке используйте эквивалент нагрузки.
+- **TX вне любительских диапазонов.** В v1.0 работает программный запрет (P0-5) и блокировка
+  смены бэнда/фильтра по CAT во время передачи. Не полагайтесь на это как на единственную защиту:
+  вне диапазонов передача может быть незаконной и опасной для PA.
+- **CCM почти заполнена.** По отчёту аудита занято ~97 % (96,9 % в исходной сборке), в проверенной
+  сборке GCC 15.2.1 — 99,7 % (свободно 204 байта). Новые CCM-буферы без пересчёта карты памяти
+  приведут к ошибке линковки; прошивайте только проверенные сборки.
+- **Питание.** Не отключайте питание во время записи прошивки/загрузчика. При сбое прошивки
+  устройство поднимается через ROM-DFU STM32 (BAND+ при включении, см. docs/BUILD.md).
+- Полные правила эксплуатации — **[docs/SAFETY.md](docs/SAFETY.md)**.
+
+## Известные ограничения
+
+- База — 2.9.48, а не 2.12.2: часть официальных исправлений (FreeDV rev 4121/#1749, Hamlib 4.3,
+  AGC restore, Tune Power, CW-декодер, EEPROM signature, DMA size) отсутствует; план — P2-бэкпорты
+  (см. docs/PATCHES.md).
+- Поддержка только F4/mcHF; F7/H7-платформы из дерева удалены.
+- ЦОС-цепочка Nizar проверена по коду и статически (аудит §7.3), но не валидирована измерениями
+  на всех ревизиях плат; DSP-функции `*_Nizar` проверены частично. Нужны полевые испытания.
+- Нет CI и аппаратных автотестов; бюджет flash/CCM контролируется вручную (см. docs/BUILD.md).
+- `.dfu` и handbook CLI-скриптом не собираются (docs/BUILD.md, «Ограничения»).
+- Настройки EEPROM между этим firmware и другими сборками UHSDR несовместимы — при смене прошивки
+  возможен сброс/неверное чтение настроек.
+- Кандидаты в дефекты, не вошедшие в P0 (ALC look-ahead, VLA и др.), — в отчёте аудита, §7.3.
+
+## Лицензия и атрибуция
+
+- Продукт распространяется под **GNU GPLv3** — [LICENCE.md](LICENCE.md). Изменения обязаны
+  оставаться GPLv3; при распространении прошивки обязательна доступность исходного кода.
+- **UHSDR** — github.com/df8oe/UHSDR, DF8OE и сообщество; исходная база — firmware mcHF
+  Криса (M0NKA) и Клинта (KA7OEI).
+- **Nizar (3V8MN)** — доработки 96 кГц/12 кГц, ЦОС-слой, фильтры, UI (маркеры NIZZ/NIZ96/NIZ32).
+- **RS918 N96K-Pro** — сборка, исправления P0-1…P0-6, документация.
+- Библиотеки: CMSIS DSP (Arm), STM32 HAL (STMicroelectronics), FreeDV/Codec2 — список и ссылки
+  в [docs/CREDITS.md](docs/CREDITS.md).
+
+## Дисклеймер
+
+Прошивка предназначена для **полевых испытаний** и предоставляется «как есть», без каких-либо
+гарантий. Авторы не несут ответственности за повреждение трансивера, усилителя мощности, антенн,
+блока питания, за потерю данных и за нарушение национальных правил радиосвязи. Передавайте
+только в пределах своей лицензии и разрешённых диапазонов; перед включением PA проверяйте КСВ и
+согласование. Перед прошивкой — резервная копия. Если вы не понимаете последствий — не прошивайте.
+
+## Документация
+
+| Документ | Содержание |
+|---|---|
+| [PLAN-DEV.md](PLAN-DEV.md) | план разработки, этапы, критерии приёмки v1.0 |
+| [docs/BUILD.md](docs/BUILD.md) | сборка CLI/Eclipse, артефакты, прошивка, диагностика |
+| [docs/PATCHES.md](docs/PATCHES.md) | каталог патчей P0/P1/P2: файлы, обоснование, статус |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | история изменений (unreleased → v1.0) |
+| [docs/SAFETY.md](docs/SAFETY.md) | правила безопасной эксплуатации и прошивки |
+| [docs/CREDITS.md](docs/CREDITS.md) | атрибуция и лицензии |
+| [LICENCE.md](LICENCE.md) | GNU GPLv3 (не изменялся) |
+
+Внешние ссылки: [UHSDR wiki](https://github.com/df8oe/UHSDR/wiki/),
+[UHSDR startup page](https://df8oe.github.io/UHSDR/).
