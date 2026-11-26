@@ -2251,7 +2251,11 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 								break;
 
 	case MENU_POWER_METER_SCALE :
-								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.twenty_watt_meter,
+								// [build fix, GCC >= 14] ts.twenty_watt_meter is a bool (typedef int, uhsdr_types.h) while
+								// UiDriverMenuItemChangeUInt8() edits a uint8_t; the helper only reads/writes the low byte
+								// and the value is permanently kept at 0/1, so the cast is safe (Cortex-M4 is little endian)
+								// and does not change the menu behaviour.
+								var_change = UiDriverMenuItemChangeUInt8(var, mode, (volatile uint8_t*) &ts.twenty_watt_meter,
 																									  0,
 																									  1,
 																									  0,

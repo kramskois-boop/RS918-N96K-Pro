@@ -82,6 +82,15 @@
 	EXPORT arm_bitreversal_32
 	EXPORT arm_bitreversal_16
 
+/* [build fix, binutils >= 2.4x] without an ELF function type the symbols below are
+   NOTYPE with an even address, so the linker assumes ARM code while every caller is
+   Thumb and it refuses to link with "Unknown destination type (ARM/Thumb)".
+   The .type directives set STT_FUNC (and the Thumb bit) and are GNU as specific. */
+#if defined (__GNUC__)
+	.type arm_bitreversal_32, %function
+	.type arm_bitreversal_16, %function
+#endif
+
 #if defined(ARM_MATH_CM0) || defined(ARM_MATH_CM0PLUS)
 
 arm_bitreversal_32 PROC

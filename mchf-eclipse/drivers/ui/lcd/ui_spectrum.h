@@ -42,6 +42,7 @@ void UiSpectrum_DisplayFilterBW();
 
 
 void UiSpectrum_InitCwSnapDisplay (bool visible);
+void UiSpectrum_CwSnapDisplay (float32_t delta);   // [build fix, GCC >= 14] prototype added, defined in ui_spectrum.c
 void UiSpectrum_ResetSpectrum(void);
 uint16_t UiSprectrum_CheckNewGraticulePos(uint16_t new_y);
 

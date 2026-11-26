@@ -16,6 +16,7 @@
 #include "config_storage.h"
 
 #include "ui_driver.h"
+#include "ui_menu.h"   // [build fix, GCC >= 14] UiMenu_Set_Spectrum_BackGround_color() prototype
 
 #include "audio_driver.h"
 #include "cw_decoder.h"

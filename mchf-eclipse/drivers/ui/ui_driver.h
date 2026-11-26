@@ -192,6 +192,7 @@ void    UiDriver_RefreshEncoderDisplay();
 void    UiDriver_DrawFButtonLabel(uint8_t button_num, const char* label, uint32_t label_color) ;
 void 	UiDriver_DisplayFreqStepSize();
 void 	UiDriver_DisplayDemodMode(void);
+void 	UiDriver_DisplayFilter(void);   // [build fix, GCC >= 14] prototype added, defined in ui_driver.c
 void	UiDriver_LcdBlankingStartTimer(void);
 void    UiDriver_SpectrumChangeLayoutParameters();
 

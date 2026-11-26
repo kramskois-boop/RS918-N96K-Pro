@@ -564,6 +564,7 @@ enum	{
 void AudioDriver_Tx_Buffer_Delay_RAZ () ;
 void AudioDriver_Init(void);
 void AudioDriver_SetRxAudioProcessing(uint8_t dmod_mode, bool reset_dsp_nr);
+void AudioDriver_SetRxTxAudioProcessingAudioFilters();   // [build fix, GCC >= 14] prototype added, defined in audio_driver.c
 void AudioDriver_Set_Rx_Audio_Equalizer();  // NIZZ
 void AudioDriver_Set_Tx_Audio_Equalizer();  // NIZZ
 

@@ -6410,8 +6410,14 @@ static void  AudioDriver_TxProcessor ( AudioSample_t * const src_Codec, AudioSam
               uint16_t      blockSize_32    =  32;
               uint16_t             BS_8     =  8;
 
-    AudioSample_t16         srcUSB [ 64 ];
-    AudioSample_t  * const  src             = ((tx_audio_source == TX_AUDIO_DIG_EX) || (tx_audio_source == TX_AUDIO_DIG_IQ)) ? srcUSB : src_Codec;
+    AudioSample_t16         srcUSB [ 64 ];  // 16 bit stereo samples from the USB audio interface
+    // [build fix, GCC >= 14] srcUSB deliberately holds 16 bit stereo pairs (audio_out_fill_tx_buffer()
+    // below fills blockSize*2 int16_t values == sizeof(AudioSample_t16[64])), while the DSP pipeline
+    // uses AudioSample_t.  This pointer is only handed over to AudioDriver_TxAudioBufferFill() /
+    // AudioDriver_TxProcessorFM() / AudioDriver_TxProcessorDigital(), which cast it back to
+    // AudioSample_t16* before touching the data - so only the address is propagated, an explicit
+    // cast is required and not a single byte changes.
+    AudioSample_t  * const  src             = ((tx_audio_source == TX_AUDIO_DIG_EX) || (tx_audio_source == TX_AUDIO_DIG_IQ)) ? (AudioSample_t *) srcUSB : src_Codec;
 
     						// if we want to know if our signal will go out, look at this flag
     bool    external_tx_mute = ts.audio_dac_output_muting_flag || (ts.audio_dac_output_muting_buffer_count > 0) ;

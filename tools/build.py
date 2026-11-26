@@ -404,6 +404,37 @@ class Builder:
         return cmd
 
     # -- incremental build helpers -----------------------------------------
+    @staticmethod
+    def _make_words(text: str) -> list:
+        r"""split a make dependency list into words
+
+        gcc writes bare '\' as a path separator but escapes a space inside a
+        path as '\ ' (e.g. "E:\harnet\sdr\ 11\..."), so a plain .split()
+        tears Windows paths apart."""
+        words = []
+        cur = ""
+        i = 0
+        while i < len(text):
+            ch = text[i]
+            if ch == "\\" and i + 1 < len(text):
+                nxt = text[i + 1]
+                if nxt.isspace() or nxt in "\\#":
+                    cur += nxt          # escaped character, e.g. a space in a path
+                else:
+                    cur += ch + nxt     # ordinary Windows path separator
+                i += 2
+                continue
+            if ch.isspace():
+                if cur:
+                    words.append(cur)
+                    cur = ""
+            else:
+                cur += ch
+            i += 1
+        if cur:
+            words.append(cur)
+        return words
+
     def _depfile_deps(self, dep: Path) -> list:
         if not dep.is_file():
             return []
@@ -411,10 +442,25 @@ class Builder:
             text = dep.read_text(encoding="utf-8", errors="replace")
         except OSError:
             return []
+        # [build fix] the dependency file starts with a Windows path
+        # ("E:\...\foo.c.o: ..."), so a simple partition(":") would cut inside
+        # the drive letter and silently lose every header dependency.  The
+        # target always ends with the object suffix, cut there instead.
+        # The file may use CRLF, and -MP appends "header.h:" phony target
+        # lines after the real rule - normalise the EOLs, join the continuation
+        # lines and keep only the first (dependency) line.
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
         text = text.replace("\\\n", " ")
-        _, _, rhs = text.partition(":")
+        marker = ".o:"
+        pos = text.find(marker)
+        if pos < 0:
+            return []
+        rhs = text[pos + len(marker):]
+        nl = rhs.find("\n")
+        if nl >= 0:
+            rhs = rhs[:nl]
         result = []
-        for token in rhs.split():
+        for token in self._make_words(rhs):
             token = token.strip().replace("\\", "/")
             if not token:
                 continue

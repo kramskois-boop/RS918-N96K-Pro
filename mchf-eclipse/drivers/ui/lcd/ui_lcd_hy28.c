@@ -2342,6 +2342,10 @@ static void UiLcdHy28_SetActiveWindow_ILI932x(uint16_t XLeft, uint16_t XRight, u
 
 #ifdef USE_GFX_ILI9341                                         // Nouveau ecran rajouté en sept 2025  320x240
 
+// [build fix, GCC >= 14] forward declaration: the helper is defined below its first use,
+// a missing prototype is a hard error with modern GCC (implicit-function-declaration).
+void UiLcdHy28_WriteIndexSpi_Prepare_ILI9341(void);
+
 static  uint16_t  UiLcdHy28_ReadDisplayId_ILI9341(void)
 {
     uint16_t retval = 0;  // 0x9341;
@@ -2428,6 +2432,9 @@ static void UiLcdHy28_SetActiveWindow_ILI9341(uint16_t XLeft, uint16_t XRight,
 
 #ifdef USE_GFX_ILI7789                // Nouveau ecran rajouté en sept 2025  320x240
 
+
+// [build fix, GCC >= 14] same as for the ILI9341 helper above (declared before first use).
+void UiLcdHy28_WriteIndexSpi_Prepare_ILI7789(void);
 
 static uint16_t UiLcdHy28_ReadDisplayId_ILI7789(void)
 {

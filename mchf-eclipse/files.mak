@@ -90,6 +90,7 @@ drivers/audio/filters/fir_rx_interpolate_16_10kHz.c \
 drivers/audio/filters/iir_10k.c \
 drivers/audio/filters/iir_10k_neu.c \
 drivers/audio/filters/iir_15k_hpf_fm_squelch.c \
+drivers/audio/filters/iir_16k5_96ks.c \
 drivers/audio/filters/iir_1_4k.c \
 drivers/audio/filters/iir_1_6k.c \
 drivers/audio/filters/iir_1_8k.c \
@@ -97,6 +98,7 @@ drivers/audio/filters/iir_2_1k.c \
 drivers/audio/filters/iir_2_3k.c \
 drivers/audio/filters/iir_2_5k.c \
 drivers/audio/filters/iir_2_7k.c \
+drivers/audio/filters/iir_2_8k.c \
 drivers/audio/filters/iir_2_9k.c \
 drivers/audio/filters/iir_2k7_tx_bpf.c \
 drivers/audio/filters/iir_2k7_tx_bpf_fm.c \

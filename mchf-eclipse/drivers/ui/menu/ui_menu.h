@@ -20,6 +20,7 @@
 // Exports
 //
 void UiMenu_MapColors(uint32_t color ,char* options,volatile uint32_t* clr_ptr);
+void UiMenu_Set_Spectrum_BackGround_color (char *  menu_text, uint32_t * menu_color);   // [build fix, GCC >= 14] prototype added, defined in ui_menu.c
 
 
 // The supported mode values
