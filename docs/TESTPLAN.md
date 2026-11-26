@@ -41,12 +41,12 @@
 
 Ориентировочная длительность: 4–6 часов чистого времени (плюс паузы на охлаждение PA). Испытания VSWR выполнять **после** проверки TX на 50 Ом и калибровки индикации FWD/REV (или хотя бы контроля внешним КСВ-метром).
 
-### 0.3. Источник истины и известные расхождения в документации
+### 0.3. Источник истины и согласованность документации
 
-Приоритет: **код `mchf-eclipse/` → артефакты `release/v1.2/` → docs**. В ходе подготовки протокола выявлено два расхождения, которые нужно учесть (и передать в правку документации):
+Приоритет: **код `mchf-eclipse/` → артефакты `release/v1.2/` → docs**. Ранее в `docs/BUILD.md` §5.1 и `release/v1.2/RELEASE-NOTES.md` были расхождения (ПК видит диск; «автообновление»), но они **исправлены коммитом `44b142bc`** — документы согласованы с кодом.
 
-1. **docs/BUILD.md §5.1** описывает обновление прошивки как «на ПК появляется съёмный диск». По коду загрузчик работает как **USB-хост**: он монтирует USB-накопитель, вставленный в трансивер (`bootloader_main.c:30-39` — «USB Host logical drive path», `f_mount` в `bootloader_main.c:144`, драйвер `usbh_diskio.c` в `f4-bootloader.mak`). Порядок в §3.2 дан по коду.
-2. **release/v1.2/RELEASE-NOTES.md** говорит «включить трансивер → автообновление». По коду без удержания **BAND−** при включении загрузчик уходит в прошивку (`bootloader_main.c:339-359`), обновления не будет. В §3.2 — процедура по коду.
+1. Загрузчик — **USB-хост**: он монтирует USB-накопитель, вставленный в трансивер (`bootloader_main.c:30-39` — «USB Host logical drive path», `f_mount` в `bootloader_main.c:144`, драйвер `usbh_diskio.c` в `f4-bootloader.mak`); `docs/BUILD.md` §5.1 описывает это так же.
+2. Обновление начинается только при удержании **BAND−** при включении; без неё загрузчик уходит в прошивку (`bootloader_main.c:339-359`). `release/v1.2/RELEASE-NOTES.md` это уже отражает (USB-хост, BAND−).
 
 ### 0.4. Безопасность (обязательный минимум)
 
@@ -73,7 +73,7 @@
 
 ### 1.1. Что какой файл значит
 
-Папка `release/v1.2/` (13 файлов; все перечислены в `SHA256SUMS.txt`):
+Папка `release/v1.2/` (14 файлов: 13 перечислены в `SHA256SUMS.txt` + сам `SHA256SUMS.txt`):
 
 | Файл | Размер, Б | Назначение | Как использовать |
 |---|---:|---|---|
@@ -88,7 +88,7 @@
 | `build-summary.json` | 1 148 | Машинночитаемый бюджет сборки (flash/RAM/CCM) | Сверка §1.4 |
 | `warnings.log` | 13 154 | Предупреждения сборки (78 строк: fw 70 + bl 8) | Для справки; новых предупреждений этап A не добавил |
 | `compile_commands.json` | 3 403 476 | База компиляции (флаги/пути) | Для проверки флагов сборки |
-| `RELEASE-NOTES.md` | 3 104 | Краткие заметки релиза | Ознакомиться |
+| `RELEASE-NOTES.md` | 3 698 | Краткие заметки релиза | Ознакомиться |
 | `SHA256SUMS.txt` | 1 091 | SHA-256 всех 13 файлов (hex в верхнем регистре, формат `HASH␠␠FILE`) | Сверка §1.2 |
 
 > ⚠️ **Не переименовывать** `bl-mchf-5.0.4.bin` в `fw-mchf.bin` и не держать на накопителе посторонние `.bin`: загрузчик ищет ровно `fw-mchf.bin` и запишет его как прошивку. Запись 31-КиБ образа загрузчика в область прошивки (0x08010000) сделает устройство неработоспособным до восстановления через DFU.
@@ -224,7 +224,7 @@ Get-Content .\bl-mchf-5.0.4.hex -TotalCount 1
 
 | ID | Шаг | Ожидание | Статус |
 |---|---|---|---|
-| ART-01 | `Get-ChildItem release/v1.2` | 13 файлов из §1.1 на месте | must-pass |
+| ART-01 | `Get-ChildItem release/v1.2` | 14 файлов из §1.1 на месте | must-pass |
 | ART-02 | Размеры fw/bl/bl-known-good | 321 392 / 31 620 / 31 496 Б | must-pass |
 | ART-03 | SHA-256 `fw-mchf.bin` | `FD5D…951A` | must-pass |
 | ART-04 | SHA-256 `bl-mchf-5.0.4.bin` | `B1FE…9B9A` | must-pass |
@@ -263,9 +263,9 @@ Get-Content .\bl-mchf-5.0.4.hex -TotalCount 1
 Записать в папку испытаний (скриншоты/фото/таблица):
 
 1. **System Info текущей прошивки**: `Firmware`, `Build`, `Bootloader`, `RF Board`, `Audio Codec Presence`, `Touchscreen`, `Flash Size (kB)`, `CPU`, `EEPROM`. Путь: F1 (MENU) → группа **System Info** (верхний уровень меню) → пункты списка; выход — F1 (`EXIT`). Для пунктов с длинным значением — фото экрана.
-2. **Значения меню, которые будут меняться/важны** (записать в таблицу отчёта): уровень мощности (`Standard Menu`? — фактически индикатор PWR на главном экране), `Configuration Menu` → `VSWR Protection`, `Transmit Disable`, `TX on Out-Of-Band Freq.`; `PA Configuration` → `Tune Power Level`, `PA Bias`, `CW PA Bias`, band power adjust; `Display Menu` → `Spectrum Type`, `Spectrum Magnify`; `RX Filter & Equaliz` — слоты фильтров; `Compressor & Inputs` → `TX Input Select`; `CW Mode Settings` — keyer mode/speed/sidetone; `System Info` → `Smeter calibrate`/калибровки.
+2. **Значения меню, которые будут меняться/важны** (записать в таблицу отчёта): уровень мощности (`Standard Menu`? — фактически индикатор PWR на главном экране), `Configuration Menu` → `VSWR Protection`, `Transmit Disable`, `TX on Out-Of-Band Freq.`; `PA Configuration` → `Tune Power Level`, `PA Bias`, `CW PA Bias`, band power adjust; `Display Menu` → `Spectrum Type`, `Spectrum Magnify`, `Smeter calibrate`; `RX Filter & Equaliz` — слоты фильтров; `Compressor & Inputs` → `TX Input Select`; `CW Mode Settings` — keyer mode/speed/sidetone; `System Info` — значения пунктов п.1 (записать фактические).
 3. **Бэкап прошивки** (см. §2.4) и, при возможности, полный дамп flash 1 МиБ.
-4. **Бэкап настроек**: меню `Standard Menu` → `Backup Config` (копирует I2C-EEPROM в эмуляцию flash; доступно, т.к. `USE_CONFIGSTORAGE_FLASH` определён, `hardware/uhsdr_board.h:143`). Восстановление — `Restore Config`. Внимание: бэкап конфигурации лежит в секторах эмуляции EEPROM **0x08008000..0x0800FFFF** — не стирайте их полным стиранием чипа (§10.3).
+4. **Бэкап настроек**: `Standard Menu` → `Backup Config`/`Restore Config` доступны **только при конфиге в I2C-EEPROM** (`ts.configstore_in_use == CONFIGSTORE_IN_USE_I2C`, `ui_menu.c:2487-2538`). В этой сборке конфиг хранится в flash (`USE_CONFIGSTORAGE_FLASH`; `uhsdr_main.c:310`, `config_storage.c:184`), поэтому пункт показывает `n/a` — **Backup Config неприменим** (это норма, PREP-05 = NA). Настройки лежат в секторах эмуляции EEPROM **0x08008000..0x0800FFFF** — не стирайте их полным стиранием чипа (§10.3).
 
 ### 2.3. Настройки, которые понадобятся в тестах (записать фактические значения)
 
@@ -304,7 +304,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 
 (альтернатива: OpenOCD `dump_image backup-full-1MiB.bin 0x08000000 0x100000`.) Если SWD нет — вариант 1 обязателен, полный дамп — nice-to-have.
 
-**Вариант 3 (если прошивка уже не стартует)** — ROM-DFU: BAND+ при включении (§3.3), оттуда можно прошить загрузчик/прошивку.
+**Вариант 3 (если прошивка уже не стартует)** — ROM-DFU: BAND+ при включении (§3.3), оттуда можно прошить загрузчик/прошивку — **только если загрузчик цел** (BAND+ обрабатывает его код); при повреждённом/стёртом загрузчике нужен SWD/BOOT0 (см. docs/BOOTLOADER.md §7.3).
 
 ### 2.5. Подготовка USB-накопителя для обновления
 
@@ -321,7 +321,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 | PREP-02 | System Info старой прошивки снят (фото/таблица) | Firmware/Build/Bootloader записаны | must-pass |
 | PREP-03 | Значения меню (§2.3) записаны | таблица заполнена | must-pass |
 | PREP-04 | Бэкап прошивки (`fw-mchf.old` 983 040 Б) снят и сохранён | файл + SHA-256 | must-pass |
-| PREP-05 | `Backup Config` выполнен | «Saving settings…» без ошибки | nice-to-have |
+| PREP-05 | `Backup Config` | **NA**: в этой сборке конфиг в flash, пункт `n/a` (Backup/Restore — только для I2C-EEPROM); записать факт | NA |
 | PREP-06 | USB-накопитель: FAT32, `fw-mchf.bin` в корне, SHA верный | проверено | must-pass |
 | PREP-07 | БП: 13,8 В ±0,3 В под нагрузкой; ограничение тока выставлено | измерено | must-pass |
 | PREP-08 | Эквивалент(ы) 50 Ом проверены омметром (50±2 Ом) | измерено | must-pass |
@@ -344,7 +344,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 **Подготовка:** накопитель из §2.5 (FAT32, `fw-mchf.bin` 321 392 Б в корне, SHA из §1.2); трансивер выключен; антенна заменена эквивалентом 50 Ом; БП стабилен; питание не прерывать.
 
 1. Вставить USB-накопитель в USB-разъём трансивера.
-2. Зажать **BAND−** и включить питание (PWR). После появления экрана PWR отпустить, BAND− **держать**.
+2. Зажать **BAND−** и включить питание (PWR). После появления экрана загрузчика отпустить **кнопку PWR**, BAND− **держать**.
 3. На экране — экран загрузчика: `mcHF QRP Bootloader`, `Firmware Name: fw-mchf`, `USB Drive Mode`, `Release Band- to skip firmware update`.
 4. Дождаться `USB Drive detected.` → `Firmware will be updated...` → `Saving Flash to "fw-mchf.old"...` (сохранение старой прошивки на накопитель; ~960 КиБ, до 1–2 мин в зависимости от накопителя).
 5. После появления `Updating firmware using "fw-mchf.bin"...` кнопку **BAND−** можно отпустить.
@@ -357,7 +357,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 
 **Признак успеха:** после перезагрузки System Info → `Firmware = 2.9.48-n96kp3`, `Build = Nov 26 2026 - 23:58:46` (для релизного бина), `Bootloader = 5.0.4`.
 
-> **Замечание к документации.** docs/BUILD.md §5.1 описывает «на ПК появляется съёмный диск» — по коду это не так (см. §0.3): загрузчик — USB-хост и читает накопитель, вставленный в трансивер. Если на вашем экземпляре RS918 нет USB-host разъёма и способ A невозможен — используйте способ B (DFU, §3.3) и зафиксируйте это в отчёте.
+> **Согласованность документации.** docs/BUILD.md §5.1 и §0.3 согласованы с кодом и этим протоколом: загрузчик — USB-хост и читает накопитель, вставленный в трансивер (исправлено в `44b142bc`). Если на вашем экземпляре RS918 нет USB-host разъёма и способ A невозможен — используйте способ B (DFU, §3.3) и зафиксируйте это в отчёте.
 
 ### 3.3. Способ B: DFU (STM32 ROM bootloader) — прошивка и загрузчик
 
@@ -404,7 +404,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 | ID-03 | System Info → `Bootloader` | `5.0.4` (см. BOOT-02) | must-pass |
 | ID-04 | System Info → `RF Board` | `mcHF RF Board` | nice-to-have |
 | ID-05 | System Info → `Audio Codec Presence` | `Yes` | must-pass (базовое железо) |
-| ID-06 | System Info → `Flash Size (kB)` / `EEPROM` | 1024 / тип EEPROM + `[used]` (зелёный) | nice-to-have |
+| ID-06 | System Info → `Flash Size (kB)` / `EEPROM` | 1024 / тип serial EEPROM + `[not used]` (норма при flash-конфиге; `[used]` — только I2C) | nice-to-have |
 | ID-07 | System Info → `Touchscreen` | `XPT2046` (или `n/a` — зафиксировать) | nice-to-have |
 | ID-08 | Верхний экран: частота/бэнд/режим/уровень PWR | отображаются, без артефактов | must-pass |
 
@@ -418,7 +418,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 
 ### 4.1. Панорама/спектр 96 кГц, zoom, waterfall (must-pass)
 
-По коду: спектр 256/512 точек, при `Spectrum Magnify = 1x` — полоса **96 кГц** (375 Гц/бин), при `8x` — **12 кГц** (46,9 Гц/бин) (`ui_spectrum.c:254-255`; `ui_menu.c:2222-2245`; FFT 256 в `ui_driver.c:6272-6274`).
+По коду: спектр 256/512 точек (`sd.spec_len`), FFT IQ 512/1024 (`ui_spectrum.c:991-1003`); при `Spectrum Magnify = 1x` — полоса **96 кГц** (375 Гц/бин), при `8x` — **12 кГц** (46,9 Гц/бин) (`ui_spectrum.c:254-255`; `ui_menu.c:2222-2245`); `ui_driver.c:6272-6274` — только расчёт Гц/бин для CW-snap.
 
 Шаги:
 
@@ -551,7 +551,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 
 ### 5.6. Ограничения и защитные блокировки (must-pass)
 
-* **AM:** при выборе мощности ≥ «TUNE KEEP CURRENT» уровень принудительно ограничивается **2W** (`radio_management.c:184-197`): в AM выставить FULL → PWR-бокс/факт = 2W. Зафиксировать.
+* **AM:** G3 в AM работает как roll-over: после **0.5W** следующее нажатие даёт **2W** (запрос уровня ≥ `PA_LEVEL_TUNE_KEEP_CURRENT` клэмпится к 2W, `radio_management.c:184-190`). В обычном цикле G3 (2W→1W→0.5W→2W) уровни FULL/5W в AM не выбираются, но сохранённый из другого режима уровень **не клэмпится** — фактическую мощность проверять внешним ваттметром. Зафиксировать.
 * **TX вне любительских бэндов:** `Configuration Menu` → `TX on Out-Of-Band Freq.` = OFF (default). Встать на частоту вне бэндов (например, бэнд `Gen` и 27,000 МГц), нажать PTT/Tune → **передача не включается** (радио остаётся в RX; `RadioManagement_ValidateFrequencyForTX`, `radio_management.c:471-483`). Не включать этот пункт без необходимости; если включали — только в эквивалент и на минимальной мощности, затем вернуть OFF.
 * **Transmit Disable:** `Configuration Menu` → `Transmit Disable` = ON → PTT/Tune не передают (в CW слышен только sidetone). Вернуть OFF.
 * **Смена бэнда/фильтра во время TX** блокируется (UI и CAT); проверка CAT — §7, вручную — нажать BAND+/− во время передачи: бэнд не меняется, реле LPF не щёлкают под мощностью.
@@ -586,7 +586,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 | TX-06 | TX EQ | тембр меняется, без искажений | nice-to-have |
 | TX-07 | CW: ключ/paddle, sidetone, скорость, задержка | всё работает, TX/RX без залипаний | must-pass |
 | TX-08 | PTT: микрофон / Tune | включают/выключают TX корректно | must-pass |
-| TX-09 | AM: FULL → 2W | ограничение 2 Вт | nice-to-have |
+| TX-09 | AM: G3 roll-over после 0.5W → 2W; сохранённый FULL/5W не клэмпится | roll-over даёт 2 Вт; сохранённый уровень проверять внешним ваттметром | nice-to-have |
 | TX-10 | TX OOB заблокирован (27 МГц, Gen) | передача не включается | must-pass |
 | TX-11 | Transmit Disable = ON | TX заблокирован; OFF — восстановлен | nice-to-have |
 | TX-12 | Смена бэнда кнопками во время TX | бэнд не меняется, реле не щёлкают | must-pass |
@@ -685,7 +685,7 @@ STM32_Programmer_CLI.exe -c port=SWD -r 0x08000000 0x080FFFFF "backup-full-1MiB.
 
 ### 7.2. USB-аудио 96 кГц
 
-Дескрипторы: **2 канала, 16 бит, 96 000 Гц** (аудио-выход ПК → трансивер и микрофон/приём → ПК), `usbd_composite_desc.c:421-436` (+ микрофонная часть), `basesw/mcHF/Inc/usbd_conf.h:85` (`USBD_AUDIO_FREQ 96000`); строка устройства ` USB mchf 96KHz `, интерфейс ` USB mchf 96KHz Com` (`usbd_desc.c:115-119`). VID/PID в этой прошивке могут зависеть от настроек (Nizar-ветка 0x2341/0x8036 vs 0x0963/0x5733) — фиксируйте фактические из Диспетчера устройств.
+Дескрипторы: **2 канала, 16 бит, 96 000 Гц** (аудио-выход ПК → трансивер и микрофон/приём → ПК), `usbd_composite_desc.c:421-436` (+ микрофонная часть), `basesw/mcHF/Inc/usbd_conf.h:85` (`USBD_AUDIO_FREQ 96000`); строка устройства ` USB mchf 96KHz `, интерфейс ` USB mchf 96KHz Com` (`usbd_desc.c:115-119`). VID/PID: активны **0x2341/0x8036**; вариант **0x0963/0x5732** в коде закомментирован (`usbd_desc.c:71-83, 86, 99`) — фиксируйте фактические из Диспетчера устройств.
 
 | ID | Тест | Ожидание | Статус |
 |---|---|---|---|
@@ -865,7 +865,7 @@ v12-field-YYYYMMDD-<tester>/
 | `bl-mchf-5.0.4.bin` | 31 620 | `B1FE331C02CF7CF2B36B03E2E996D58F9619EA765980BA76DC28CCF40D3D9B9A` | — (загрузчик) |
 | `bl-mchf-4.1.2-known-good.bin` | 31 496 | `933249535DD5CACB871708802C4D09549AB84E2D4DA7AE53A69BB6E2FF3B8CA1` | — (загрузчик для отката) |
 
-Порядок: проверить SHA `release/v1.1/HASH` (аналогично §1.2) → подготовить носитель с `fw-mchf.bin` из `release/v1.1` → прошить способом A (§3.2) или B (§3.3) → System Info: `Firmware = 2.9.48-n96kp2`, `Build` — зафиксировать фактическую строку → быстрый smoke: RX на 50 Ом/антенну, TX 0,5 Вт в эквивалент, VSWR-02 (50 Ом, отсутствие `SWR!`). Настройки EEPROM: v1.1 и v1.2 имеют одинаковую раскладку (v1.2 новых слотов не добавляет), поэтому должны сохраниться; при аномалиях — `Restore Config`/дефолты.
+Порядок: проверить SHA по `release/v1.1/SHA256SUMS.txt` (аналогично §1.2; `fw-mchf.bin` — `1D3392…9E29`) → подготовить носитель с `fw-mchf.bin` из `release/v1.1` → прошить способом A (§3.2) или B (§3.3) → System Info: `Firmware = 2.9.48-n96kp2`, `Build` — зафиксировать фактическую строку → быстрый smoke: RX на 50 Ом/антенну, TX 0,5 Вт в эквивалент, VSWR-02 (50 Ом, отсутствие `SWR!`). Настройки EEPROM: v1.1 и v1.2 имеют одинаковую раскладку (v1.2 новых слотов не добавляет), поэтому должны сохраниться; при аномалиях — `Restore Config`/дефолты.
 
 **10.3.2. Загрузчик: 5.0.4 → 4.1.2 known-good (только при проблемах; риск «кирпича»).**
 
@@ -876,7 +876,7 @@ v12-field-YYYYMMDD-<tester>/
 
 **10.3.3. «Кирпич»/не стартует.**
 
-1. ROM-DFU: BAND+ при включении (§3.3) → прошить `fw-mchf.hex`/`bl-mchf-5.0.4.hex`; при необходимости — загрузчик 4.1.2.
+1. ROM-DFU: BAND+ при включении (§3.3; **работает только при живом загрузчике** — иначе SWD/BOOT0, см. docs/BOOTLOADER.md §7.3) → прошить `fw-mchf.hex`/`bl-mchf-5.0.4.hex`; при необходимости — загрузчик 4.1.2.
 2. Если DFU недоступен — метод P6-джампера/программатора (см. `mchf-eclipse/useful_manuals/bootloader_install.pdf`, upstream `bootloader_doc.md`); подробности — [docs/BOOTLOADER.md](BOOTLOADER.md).
 3. Не разбирать трансивер под напряжением; при сомнениях — остановиться и зафиксировать.
 
@@ -928,7 +928,7 @@ v12-field-YYYYMMDD-<tester>/
 | VSWR-порог default | 3 (1=OFF; EEPROM слот 426) |
 | Trip | ~60 мс (≤150 мс), `SWR!`, минимальная мощность, PA bias off |
 | Recovery | ~0,5–1,2 с (до ~1,1 с) |
-| PA levels | FULL / 5W / 2W / 1W / 0.5W (default 2W; AM ≤2W) |
+| PA levels | FULL / 5W / 2W / 1W / 0.5W (default 2W; в AM G3-roll-over даёт 2W, сохранённый уровень не клэмпится) |
 | Tune Power | as TX PWR / 0.5W / 1W / 2W / 5W / FULL POWER |
 | `fw-mchf.old` (дамп) | 983 040 Б (только прошивка, без загрузчика/конфига) |
 | Область загрузчика | 0x08000000..0x08007FFF (32 КиБ) |
@@ -946,7 +946,7 @@ v12-field-YYYYMMDD-<tester>/
 7. **Периодические пробы в зоне гистерезиса** (A1 F6/R2): ~60 мс с bias ON примерно раз в ~0,5 с — штатно; следить за нагревом/ЭМС.
 8. **Пункт меню `PA Bias`** может кратко (≤1 измерения) вернуть bias при foldback (A1-R4) — драйв при этом минимальный, безопасно.
 9. **CAT FT-817**: SET-команды мощности в этой прошивке нет; внутрибэндовый `SET_FREQ` в TX может применяться (WSJT-X Fake It), смена бэнда/фильтра — нет (P0-5/P1-5).
-10. **Расхождения в docs**: docs/BUILD.md §5.1 (USB-диск на ПК) и формулировка «автообновление» в RELEASE-NOTES — см. §0.3; тестировать по коду (загрузчик — USB-хост, нужен BAND−).
+10. **Согласованность docs**: docs/BUILD.md §5.1 и RELEASE-NOTES соответствуют коду и протоколу (исправлено коммитом `44b142bc`, см. §0.3); прошивка — USB-хост: флешка вставляется в трансивер, обновление — с удержанием BAND−.
 11. **Сборка не побайтово воспроизводима** (`fwt-…`); для релизного артефакта Build фиксирован (`Nov 26 2026 - 23:58:46`), для своей пересборки — записать фактическую строку.
 12. **CCM заполнена на 96,9 %** — не прошивать сборки с новыми CCM-буферами без пересчёта карты; использовать только проверенные артефакты.
 
@@ -963,7 +963,7 @@ v12-field-YYYYMMDD-<tester>/
 | Tune/Tune Power | `radio_management.c:209-263`; `ui_menu.c:3957-3972`; `ui_menu_structure.c:483` |
 | Фильтры 300…2900 Гц | `drivers/audio/audio_filter.c:46-85`; `ui_menu_structure.c:423-455` |
 | DSP/NR/notch/peak | `hardware/uhsdr_board.h:904-909`; `drivers/audio/audio_driver.h:519-527`; `ui_driver.c:6342-6389`; A2: `audio_driver.c:1511-1522`, `audio_nr.c:249-254` |
-| Спектр 96 кГц/zoom/водопад | `ui_spectrum.c:254-255`; `ui_menu.c:2222-2245, 2314-2330`; `ui_driver.c:6272-6274` |
+| Спектр 96 кГц/zoom/водопад | `ui_spectrum.c:254-255, 991-1003`; `ui_menu.c:2222-2245, 2314-2330`; `ui_driver.c:6272-6274` (CW-snap) |
 | USB-аудио 96k | `drivers/usb/device/class/composite/usbd_composite_desc.c:421-436`; `basesw/mcHF/Inc/usbd_conf.h:85`; `drivers/usb/app/usbd_desc.c:115-119` |
 | CAT/Hamlib/FT-817 | `drivers/cat/cat_driver.c:60-63, 717-732, 1045-1370`; `ui_menu_structure.c:136-139`; docs/PATCHES.md (P0-5, P1-5) |
 | EEPROM/конфиг | `drivers/ui/ui_configuration.c` (ConfigEntry); `misc/v_eprom/eeprom.h:31-44` (0x08008000, секторы 2–3); `ui_driver.c:5018-5091, 7294-7313` |
