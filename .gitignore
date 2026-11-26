@@ -24,3 +24,7 @@ release/
 *.bin
 *.elf
 *.map
+
+# N96K P2-2: CI/Docker local outputs (extracted artifacts, docker build export)
+artifacts/
+host-tests.log
