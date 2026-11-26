@@ -50,6 +50,18 @@ static void CatDriver_CatEnableTX(bool enable)
     else                                           { ts.ptt_req = false;  cat_driver.cat_ptt_active = false;  ts.tx_immediate_stop_req = true; }
 }
 
+/**
+ * N96K P0-5 (audit U4): are band/mode/filter changes allowed right now?
+ * While transmitting (including TUNE) the LPF/BPF relays must not be switched under power
+ * and the TX filter path must not be reconfigured. A pending CAT PTT request is treated like
+ * TX as well, so a band change cannot race with the TX start in the same CAT command batch.
+ * Same rule as in the UI: UiDriver_ChangeBand() and UiAction_ChangeDemodMode() are RX only.
+ */
+static bool CatDriver_IsChangeBandModeAllowed()
+{
+    return (ts.txrx_mode != TRX_MODE_TX) && (ts.tune == false) && (ts.ptt_req == false);
+}
+
 
 /**
  * @brief returns true if the current TX state has been initiated by a CAT PTT command
@@ -1038,6 +1050,18 @@ static void CatDriver_HandleCommands()
 
 									uint8_t   tx_band = RadioManagement_GetBand( (f ));
 
+									// N96K P0-5: never switch the LPF/BPF group (i.e. the band) while TXing.
+									// A retune inside the current, consistent band does not touch the relays and is still applied.
+									// Everything else is ACKed but ignored: Hamlib/WSJT-X keep a valid CAT transaction and the
+									// next frequency poll reports the real QRG instead of a protocol error while TXing.
+									if (CatDriver_IsChangeBandModeAllowed() == false &&
+										((tx_band != ts.band) || (RadioManagement_GetBand(df.tune_new) != ts.band)))
+									{
+										resp[0] = 0;    // ACK, command accepted but not applied
+										bc      = 1;
+										break;
+									}
+
 									if ( (tx_band != ts.band)  &&  (tx_band != MAX_BANDS) ) // mise � jour de la bande en cours  avant Txing si n�cessaire .
 									{
 										uint16_t   vfo_sell = is_vfo_b()?  VFO_B : VFO_A;
@@ -1109,6 +1133,14 @@ static void CatDriver_HandleCommands()
 							{
 								resp[0] = 0; // ACK
 								bc      = 1;
+
+								// N96K P0-5: no demod/filter change while TXing or in TUNE (same rule as the UI in ui_driver.c).
+								// ACK is still returned so the CAT transaction stays valid for Hamlib/WSJT-X;
+								// the request is simply not applied and polling reports the unchanged mode.
+								if (CatDriver_IsChangeBandModeAllowed() == false)
+								{
+									break;
+								}
 
 								uint8_t   new_mode      = ts.dmod_mode;
 								bool      new_cwlsb     = ts.cw_lsb;
@@ -1219,17 +1251,29 @@ static void CatDriver_HandleCommands()
 									bc = 1;
 									break;
 			case FT817_TOGGLE_VFO:
-									UiAction_ToggleVfoAB();
+									// N96K P0-5: VFO swap can change frequency/band/mode, treat it as a band change
+									if (CatDriver_IsChangeBandModeAllowed())
+									{
+										UiAction_ToggleVfoAB();
+									}
 									resp[0] = 0;
 									bc = 1;
 									break;
 			case FT817_SPLIT_ON:
-									UiDriver_SetSplitMode(true);
+									// N96K P0-5: split retunes the TX side (other VFO may be in another band), gate it
+									if (CatDriver_IsChangeBandModeAllowed())
+									{
+										UiDriver_SetSplitMode(true);
+									}
 									resp[0] = 0;
 									bc = 1;
 									break;
 			case FT817_SPLIT_OFF:
-									UiDriver_SetSplitMode(false);
+									// N96K P0-5: split change retunes the TX side, gate it while TXing
+									if (CatDriver_IsChangeBandModeAllowed())
+									{
+										UiDriver_SetSplitMode(false);
+									}
 									resp[0] = 0;
 									bc = 1;
 									break;
