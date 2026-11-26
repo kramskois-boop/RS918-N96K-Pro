@@ -88,7 +88,7 @@ python tools\build.py clean        # удалить каталог build\ цел
 | `fw-mchf.bin` | **прошивка для загрузчика**, её копируют на USB-диск (см. §5) |
 | `fw-mchf.hex` | та же прошивка в Intel HEX (для STM32CubeProgrammer и т.п.) |
 | `fw-mchf.map` | карта компоновки: адреса, размеры, расход flash/RAM |
-| `bl-mchf.elf` / `.bin` / `.hex` / `.map` | то же для загрузчика (**UHSDR bootloader 4.1.2**, см. `src/uhsdr_version.h: UHSDR_BOOT_VERS`) |
+| `bl-mchf.elf` / `.bin` / `.hex` / `.map` | то же для загрузчика (**UHSDR bootloader 5.0.4**, см. `src/uhsdr_version.h: UHSDR_BOOT_VERS`) |
 | `warnings.log` | все предупреждения компиляции и линковки |
 | `compile_commands.json` | база компиляции для clangd / VS Code / CLion |
 | `build-summary.json` | размеры и пути артефактов в машинночитаемом виде |
@@ -101,17 +101,21 @@ python tools\build.py clean        # удалить каталог build\ цел
 прошивка   fw-mchf.bin  320 024 байт  = 32,6 % области 960 КиБ (0x08010000..0x080FFFFF), запас 663 016
            RAM статич.   42 616 байт  = 32,5 % 128 КиБ, на стек остаётся ~88 КиБ
            CCM            63 476 байт  из 65 536 (свободно 2 060 байт — 96,9 %)
-загрузчик  bl-mchf.bin   31 496 байт  = 96,1 % области 32 КиБ (0x08000000..0x08007FFF), запас 1 272
+загрузчик  bl-mchf.bin   31 620 байт  = 96,5 % области 32 КиБ (0x08000000..0x08007FFF), запас 1 148
 ```
+
+(Загрузчик пересобран после обновления до 5.0.4 — `_audit/dev/p2-bootloader.md`; размер вырос
+на 124 байта относительно 4.1.2. Точная цифра зависит от текущих правок общего заголовка
+`hardware/uhsdr_board.h` (структура `TransceiverState`) — сверяйте `build/build-summary.json`.)
 
 Секции (arm-none-eabi-size -A), проверено на обоих таргетах:
 
 | Секция | Прошивка | Загрузчик |
 |---|---|---|
-| `.text` | 318 156 байт @ 0x08010000 | 31 364 байт @ 0x08000000 |
+| `.text` | 318 156 байт @ 0x08010000 | 31 488 байт @ 0x08000000 |
 | `.ARM.exidx` | 8 | — |
 | `.data` | 1 860 байт @ 0x20000000 | 132 байт @ 0x20000000 |
-| `.bss` | 40 752 байт @ 0x20000748 | 39 564 байт @ 0x20000748 |
+| `.bss` | 40 752 байт @ 0x20000748 | 39 568 байт @ 0x20000084 |
 | `.ccm` | 63 476 байт @ 0x10000000 | 0 |
 
 Проверить после сборки:
@@ -221,7 +225,7 @@ Nizar/upstream/FatFs/CMSIS, ни одного в правках сборки) и
 ### 5.1 Прошивка (firmware) — через загрузчик по USB, без программатора
 
 Загрузчик UHSDR представляется компьютеру как USB-флешка и умеет сам обновлять прошивку
-(см. `mchf-eclipse/src/bootloader/bootloader_main.c`, `BL_MSC_Application`).
+(см. `mchf-eclipse/src/bootloader/bootloader_main.c`, `Bootloader_UsbMSCDevice_Application`).
 
 1. Выключить трансивер.
 2. Нажать и **удерживать** кнопку **BAND−**, включить питание. На экране появится
@@ -241,9 +245,16 @@ Nizar/upstream/FatFs/CMSIS, ни одного в правках сборки) и
 
 ### 5.2 Загрузчик (bootloader) — только программатором
 
-Собранный загрузчик — **UHSDR bootloader 4.1.2** (`UHSDR_BOOT_VERS` в `src/uhsdr_version.h`);
-на экране при входе в режим обновления он печатает `Version: 4.1.2`. Эта версия соответствует
-прошивке 2.9.48 — менять загрузчик нужно только если он старее.
+Собранный загрузчик — **UHSDR bootloader 5.0.4** (`UHSDR_BOOT_VERS` в `src/uhsdr_version.h`,
+исходники — upstream UHSDR 2.12.2); на экране при входе в режим обновления он печатает
+`Version: 5.0.4`. Образ занимает 31 620 из 32 768 байт (запас 1 148 байт). Отличия от прежнего
+4.1.2 (2.9.48): переход в прошивку/DFU выполняется через `UhsdrBl_JumpToApplication()` (отключение
+прерываний, `HAL_RCC_DeInit()`, сброс NVIC — надёжнее старт прошивки), состояния перезагрузки
+заданы enum `BOOT_REBOOT`/`BOOT_DFU`/`BOOT_FIRMWARE`, перед сбросом MCU добавлен `__DSB()`.
+Совместимость с прошивкой 2.9.48 сохранена: старые точки входа (`bootloader_main`,
+`BL_Application`, `mchfBl_CheckAndGoForDfuBoot`) — псевдонимы в `bootloader_main.h`, а признак
+SBLA/SBLS в SRAM2 (его читает `drivers/audio/freedv_uhsdr.c`) по-прежнему выставляется.
+Загрузчик 4.1.2 (2.9.48) тоже работает с этой прошивкой; менять его нужно только если он старее.
 
 Загрузчик занимает первые 32 КиБ flash (`0x08000000`), поэтому обновляется либо по SWD, либо
 через встроенный DFU STM32.
@@ -259,7 +270,8 @@ STM32_Programmer_CLI.exe -c port=SWD -w build\bl-mchf.bin 0x08000000 -v -rst
 
 1. Нажать и удерживать **BAND+**, включить питание → на экране `DFU`.
    Загрузчик установит признак и перезагрузится в системный DFU STM32
-   (`mchfBl_CheckAndGoForDfuBoot`, адрес `0x1FFF0000`).
+   (`Bootloader_CheckAndGoForBootTarget`, старое имя `mchfBl_CheckAndGoForDfuBoot`;
+   после `__HAL_REMAPMEMORY_SYSTEMFLASH()` переход на адрес `0x00000000`).
 2. На компьютере появится устройство `STM32 BOOTLOADER` (DFU). Залить `build\bl-mchf.bin`
    по адресу `0x08000000` (STM32CubeProgrammer: `-c port=USB1 -w build\bl-mchf.bin 0x08000000 -v -rst`).
    Для DfuSe нужен `.dfu` — этот скрипт его не делает (см. §4), используйте CubeProgrammer или `.hex`.

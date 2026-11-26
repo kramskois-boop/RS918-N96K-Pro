@@ -21,12 +21,25 @@ extern "C" {
 #endif
 
 
-void BL_Application();
-int bootloader_main();
-void bootTypeSelector();
-void mchfBl_CheckAndGoForDfuBoot();
-void BL_InfoScreen();
-void BL_PrintLine(const char* txt);
+void Bootloader_UsbHostApplication(void);
+int  Bootloader_Main(void);
+void Bootloader_CheckAndGoForBootTarget(void);
+void Bootloader_PrintLine(const char* txt);
+
+enum
+{
+    BOOT_CLEARED = 0,
+    BOOT_REBOOT = 0x55, // this command can be issue also by the firmware indicate immediate start
+    BOOT_DFU = 0x99,
+    BOOT_FIRMWARE = 0x66993300,
+};
+
+// N96K P2: compatibility aliases.  The product's basesw/*/Src/main.c is still the 2.9.48 version and
+// calls the pre-5.0.4 bootloader entry points.  With these aliases the basesw sources (outside this
+// directory) stay untouched, while new bootloader code uses the 5.0.4 names.
+#define bootloader_main              Bootloader_Main
+#define BL_Application              Bootloader_UsbHostApplication
+#define mchfBl_CheckAndGoForDfuBoot Bootloader_CheckAndGoForBootTarget
 
 #ifdef __cplusplus
 }

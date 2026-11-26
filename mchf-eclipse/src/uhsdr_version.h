@@ -16,7 +16,7 @@
 #define 	UHSDR_VER_MINOR			"9"
 #define 	UHSDR_VER_RELEASE		"48"
 
-#define		UHSDR_BOOT_VERS			"4.1.2"
+#define		UHSDR_BOOT_VERS			"5.0.4"   // N96K P2: bootloader upgraded to upstream 5.0.4 (UHSDR 2.12.2)
 
 
 #ifdef SBLA									// Bootloader enables additional rf bands PCB
