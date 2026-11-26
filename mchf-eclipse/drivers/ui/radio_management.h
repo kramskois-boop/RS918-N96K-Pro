@@ -248,6 +248,9 @@ bool RadioManagement_IsApplicableDemodMode(uint32_t demod_mode);
 void RadioManagement_SwitchTxRx(uint8_t txrx_mode, bool tune_mode);
 void RadioManagement_Check_Initialise_Tx_decimated_filters ( bool tune_now ); // ajouté par NIZZ
 void RadioManagement_SetBandPowerFactor(uchar band);
+// N96K A1 (P2 F2): TRUE while the VSWR foldback (or its recovery trial) holds the PA. Used by
+// RadioManagement_SetBandPowerFactor() so that a user power change cannot re-apply full drive.
+bool RadioManagement_IsVswrFoldbackActive(void);
 bool RadioManagement_LSBActive(uint16_t dmod_mode);
 bool RadioManagement_USBActive(uint16_t dmod_mode);
 // void RadioManagement_SetBandPowerFactor(uchar band);

@@ -1317,6 +1317,18 @@ void RadioManagement_SetBandPowerFactor(uchar band)
 {
     float32_t   pf_bandvalue, pf_levelscale;    // used as a holder for percentage of power output scaling
 
+    // N96K A1 (P2 F2): single point of enforcement for the VSWR foldback invariant. While the
+    // protection is engaged (including a recovery trial, PA bias on!) and the radio transmits, no
+    // user power factor may be applied: a PWR encoder/menu/CAT/Tune change would otherwise restore
+    // full drive with the PA biased until the next protection measurement (up to ~50 ms of full
+    // power into a bad load). ts.power_level is NOT modified: it keeps the requested level and
+    // RadioManagement_VswrFoldbackRelease() re-applies that level once the load is confirmed good.
+    uint8_t     effective_power_level = ts.power_level;
+    if ((ts.txrx_mode == TRX_MODE_TX) && RadioManagement_IsVswrFoldbackActive())
+    {
+        effective_power_level = PA_LEVEL_MINIMAL;
+    }
+
     if (band >= MAX_BANDS)  // if Out of Band
     {
         // N96K P0-5: restore gating by FLAGS1_TX_OUTSIDE_BANDS (audit U4). TX outside the ham
@@ -1329,14 +1341,14 @@ void RadioManagement_SetBandPowerFactor(uchar band)
         }
         else        // TX outside bands **very dirty hack**: I use constant for power
         {
-			if (ts.power_level == PA_LEVEL_FULL) { pf_bandvalue = ts.pwr_out_of_band_factor;          }
+			if (effective_power_level == PA_LEVEL_FULL) { pf_bandvalue = ts.pwr_out_of_band_factor;    }
 			else                                 { pf_bandvalue = ts.pwr_out_of_band_factor/2.0 +3.0; }   // 38 // 20
 			ts.current_pwr_adj = (uint8_t) ts.pwr_out_of_band_factor;  // pour mettre � jour l'affichage du "PWR" en haut 3em pav� de l'ecran
         }
     }
     else
     {
-        pf_bandvalue       = (float)ts.pwr_adj[ts.power_level == PA_LEVEL_FULL?ADJ_FULL_POWER:ADJ_5W][band];
+        pf_bandvalue       = (float)ts.pwr_adj[effective_power_level == PA_LEVEL_FULL?ADJ_FULL_POWER:ADJ_5W][band];
         ts.current_pwr_adj = (uint8_t)  pf_bandvalue;   // pour mettre � jour l'affichage du "PWR" en haut 3em pav� de l'ecran
     }
 
@@ -1348,7 +1360,7 @@ void RadioManagement_SetBandPowerFactor(uchar band)
 
 
     // now rescale to power levels <5 watts, is so-configured
-    switch(ts.power_level)
+    switch(effective_power_level)
     {
 		case    PA_LEVEL_0_5W: 	pf_levelscale = 0.316;   break;     // rescale for 10% of 5 watts (0.5 watts)
 		case    PA_LEVEL_1W  : 	pf_levelscale = 0.447;   break;     // rescale for 20% of 5 watts (1.0 watts)
@@ -1827,6 +1839,19 @@ static uint8_t  vswr_settle_cnt         = 0;        // 10 ms measurement ticks s
 static float    vswr_foldback_avg       = 0.0f;     // dampened VSWR value
 
 /**
+ * @brief N96K A1 (P2 F2): is the VSWR foldback protection engaged (including a recovery trial)?
+ *
+ * While returning true and while transmitting, RadioManagement_SetBandPowerFactor() ignores the
+ * user's power level and applies PA_LEVEL_MINIMAL, so a power change (PWR encoder, menu, CAT, Tune)
+ * can never re-apply full drive with the PA bias switched on. A recovery trial counts as active
+ * (its whole purpose is to measure at minimal drive, not to hand the PA back to the user).
+ */
+bool RadioManagement_IsVswrFoldbackActive(void)
+{
+    return vswr_foldback_active;
+}
+
+/**
  * @brief N96K P0-4: reduce the TX power factor to the minimal level. The user's power level
  * (ts.power_level, stored in EEPROM) is not modified, only the TX gain factor is changed.
  */
@@ -1887,7 +1912,10 @@ static void RadioManagement_VswrFoldbackReset()
  *   every RETRY_CNT measurements one recovery trial: PA bias on but MINIMAL drive, so a bad load
  *             is measured at safe power only; a bad trial mutes the PA again
  *   RECOVERY_CNT consecutive good measurements below (threshold - hysteresis) -> release: restore the
- *             user power and the PA bias
+ *             user power and the PA bias; a trial ending inside the hysteresis band is also aborted
+ *             (PA muted again) because the load is not good enough for the user power
+ *   the user power level is re-applied through RadioManagement_SetBandPowerFactor(), which forces
+ *   PA_LEVEL_MINIMAL while the protection is active, so PWR/menu/CAT changes cannot restore the drive
  * The dampened value uses fast attack / slow decay, so the PA does not oscillate.
  * Must be called after a power measurement only.
  */
@@ -1998,7 +2026,13 @@ static void RadioManagement_CheckVswrProtection()
         return;
     }
 
-    vswr_foldback_recovery = 0;                     // inside the hysteresis band: keep the trial running
+    // N96K A1 (P3 F6): inside the hysteresis band [threshold - hysteresis; threshold] the load is not
+    // good enough to restore the user power, so end the recovery trial and mute the PA again instead
+    // of leaving the bias on at minimal drive indefinitely (matches the "bad trial" path above).
+    RadioManagement_DisablePaBias();
+    vswr_foldback_trial    = false;
+    vswr_foldback_retry    = 0;
+    vswr_foldback_recovery = 0;
 }
 
 
