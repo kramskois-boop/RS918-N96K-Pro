@@ -78,7 +78,7 @@ endif
 
 
 
-COMPILEFLAGS := -DUSE_HAL_DRIVER -DDEBUG -DUSE_FULL_ASSERT -DTRACE -D_GNU_SOURCE \
+COMPILEFLAGS := -DUSE_HAL_DRIVER -DFDV_ARM_MATH -DDEBUG -DUSE_FULL_ASSERT -DTRACE -D_GNU_SOURCE \
 	  -DTRX_ID=\"$(TRX_ID)\" -DTRX_NAME=\"$(TRX_NAME)\" $(CONFIGFLAGS) \
 	  -ffunction-sections -fdata-sections -flto -Wall -Wno-unused-function -g3
 

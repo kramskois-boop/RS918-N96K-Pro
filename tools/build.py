@@ -88,6 +88,10 @@ COMPILEFLAGS_BASE = [
     "-DUSE_HAL_DRIVER",
     "-DDEBUG",
     "-DUSE_FULL_ASSERT",
+    # N96K P2: upstream 750551fc ("fix #1749: FreeDV crashes on mcHF/STM32F4") -
+    # enable the CMSIS-DSP optimized Codec2 math path (FDV_ARM_MATH).  Upstream
+    # sets this flag in Makefile COMPILEFLAGS; build.py replicates that list.
+    "-DFDV_ARM_MATH",
     "-DTRACE",
     "-D_GNU_SOURCE",
     # NOTE: Makefile sets TRX_NAME='mcHF QRP' (make keeps the single quotes) and

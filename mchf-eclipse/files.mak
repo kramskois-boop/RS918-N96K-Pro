@@ -42,6 +42,8 @@ drivers/freedv/codebooklspmelvq.c \
 drivers/freedv/codebookmel.c \
 drivers/freedv/codebooknewamp1.c \
 drivers/freedv/codebooknewamp1_energy.c \
+drivers/freedv/codebooknewamp2.c \
+drivers/freedv/codebooknewamp2_energy.c \
 drivers/freedv/codebookres.c \
 drivers/freedv/codebookvq.c \
 drivers/freedv/codebookvqanssi.c \
@@ -51,7 +53,7 @@ drivers/freedv/cohpsk.c \
 drivers/freedv/dct2.c \
 drivers/freedv/dump.c \
 drivers/freedv/fdmdv.c \
-drivers/freedv/fifo.c \
+drivers/freedv/filter.c \
 drivers/freedv/fm.c \
 drivers/freedv/fmfsk.c \
 drivers/freedv/freedv_api.c \
@@ -60,6 +62,8 @@ drivers/freedv/freedv_vhf_framing.c \
 drivers/freedv/fsk.c \
 drivers/freedv/golay23.c \
 drivers/freedv/gp_interleaver.c \
+drivers/freedv/HRA_112_112.c \
+drivers/freedv/HRAb_396_504.c \
 drivers/freedv/interp.c \
 drivers/freedv/interldpc.c \
 drivers/freedv/kiss_fft.c \
@@ -71,11 +75,12 @@ drivers/freedv/mbest.c \
 drivers/freedv/modem_stats.c \
 drivers/freedv/mpdecode_core.c \
 drivers/freedv/newamp1.c \
+drivers/freedv/newamp2.c \
 drivers/freedv/nlp.c \
-drivers/freedv/octave.c \
 drivers/freedv/ofdm.c \
 drivers/freedv/pack.c \
 drivers/freedv/phase.c \
+drivers/freedv/phi0.c \
 drivers/freedv/postfilter.c \
 drivers/freedv/quantise.c \
 drivers/freedv/sine.c \
