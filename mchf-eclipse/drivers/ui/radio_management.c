@@ -71,9 +71,20 @@
 
 #define LOW_POWER_CALC_THRESHOLD        0.05    // voltage from sensor below which we use the "low power" calculations, above
 
+// N96K P0-4: VSWR foldback protection (audit U3, adapted from upstream 2.12.2 dcbebe5f)
+#define VSWR_MAX_CALC_VALUE             49.0f   // cap for (nearly) infinite mismatch: avoids inf/NaN readings
+#define VSWR_PROTECTION_HYSTERESIS      0.5f    // foldback is released only below (threshold - hysteresis)
+#define VSWR_PROTECTION_RECOVERY_CNT    10      // consecutive good readings (~0.5 s) before the PA output is restored
+#define VSWR_PROTECTION_SETTLE_COUNTER  2       // let TX settle before acting, same criterion as the SWR meter display
+
+// N96K P0-4: VSWR protection threshold in VSWR units, values <= 1 disable the protection
+uint8_t                     vswr_protection_threshold = VSWR_PROTECTION_THRESHOLD_DEFAULT;
 
 // SWR/Power meter
 SWRMeter                    swrm;
+
+// N96K P0-4: VSWR foldback state is reset when returning to RX (see RadioManagement_SwitchTxRx)
+static void                 RadioManagement_VswrFoldbackReset(void);
 
 // ------------------------------------------------
 // Frequency public
@@ -432,6 +443,14 @@ void RadioManagement_MuteTemporarilyRxAudio()
 
 Oscillator_ResultCodes_t RadioManagement_ValidateFrequencyForTX(uint32_t dial_freq)
 {
+    // N96K P0-5: out-of-band TX interlock (audit U4). TX outside of the amateur bands is only
+    // allowed with CONFIG_TX_OUT_ENABLE / FLAGS1_TX_OUTSIDE_BANDS (default: RX only).
+    // This keeps the radio in RX instead of keying the PA on a frequency with a wrong LPF.
+    if ((RadioManagement_GetBand(dial_freq) >= MAX_BANDS) && ((ts.flags1 & FLAGS1_TX_OUTSIDE_BANDS) == 0))
+    {
+        return OSC_TUNE_IMPOSSIBLE;
+    }
+
     // we check with the si570 code if the frequency is tunable, we do not tune to it.
     return osc->prepareNextFrequency(RadioManagement_Dial2TuneFrequency(dial_freq, TRX_MODE_TX), df.temp_factor);
 }
@@ -657,6 +676,7 @@ void   RadioManagement_SwitchTxRx ( uint8_t  txrx_requested_mode,  bool  tune_mo
 			}
 
         	RadioManagement_DisablePaBias();  //  kill bias to mute the HF output quickly
+            RadioManagement_VswrFoldbackReset();    // N96K P0-4: every new TX starts with a cleared foldback state
         }
         else  // si on doit passer en  Tx
         {
@@ -1272,11 +1292,20 @@ void RadioManagement_SetBandPowerFactor(uchar band)
 
     if (band >= MAX_BANDS)  // if Out of Band
     {
-        					// if(ts.flags1 & FLAGS1_TX_OUTSIDE_BANDS)  // TX outside bands **very dirty hack**: I use constant for power
-
-		if (ts.power_level == PA_LEVEL_FULL) { pf_bandvalue = ts.pwr_out_of_band_factor;          }
-		else                                 { pf_bandvalue = ts.pwr_out_of_band_factor/2.0 +3.0; }   // 38 // 20
-		ts.current_pwr_adj = (uint8_t) ts.pwr_out_of_band_factor;  // pour mettre � jour l'affichage du "PWR" en haut 3em pav� de l'ecran
+        // N96K P0-5: restore gating by FLAGS1_TX_OUTSIDE_BANDS (audit U4). TX outside the ham
+        // bands is already inhibited in RadioManagement_ValidateFrequencyForTX(); keeping the PA
+        // drive at zero here is the second barrier (e.g. if a TX path bypasses the check above).
+        if ((ts.flags1 & FLAGS1_TX_OUTSIDE_BANDS) == 0)
+        {
+            pf_bandvalue       = 0;
+            ts.current_pwr_adj = 0;
+        }
+        else        // TX outside bands **very dirty hack**: I use constant for power
+        {
+			if (ts.power_level == PA_LEVEL_FULL) { pf_bandvalue = ts.pwr_out_of_band_factor;          }
+			else                                 { pf_bandvalue = ts.pwr_out_of_band_factor/2.0 +3.0; }   // 38 // 20
+			ts.current_pwr_adj = (uint8_t) ts.pwr_out_of_band_factor;  // pour mettre � jour l'affichage du "PWR" en haut 3em pav� de l'ecran
+        }
     }
     else
     {
@@ -1756,6 +1785,129 @@ static void RadioManagement_PowerFromADCValue( float val, float sensor_null, flo
 }
 
 /*
+ * N96K P0-4: VSWR foldback protection for the PA (audit U3, adapted from upstream 2.12.2 dcbebe5f).
+ * All adjustments are done while transmitting, but only after the TX has settled and no TX/RX
+ * transition is pending, so the power is never switched at the TX transition itself.
+ */
+static bool     vswr_foldback_active   = false;
+static uint8_t  vswr_foldback_recovery = 0;
+static float    vswr_foldback_avg      = 0.0f;
+
+/**
+ * @brief N96K P0-4: reduce the TX power factor to the minimal level. The user's power level
+ * (ts.power_level, stored in EEPROM) is not modified, only the TX gain factor is changed.
+ */
+static void RadioManagement_SetMinimalTxPowerFactor()
+{
+    uint8_t  band        = RadioManagement_GetBand(df.tune_new);
+    uint8_t  saved_level = ts.power_level;
+
+    ts.power_level = PA_LEVEL_MINIMAL;
+    RadioManagement_SetBandPowerFactor(band);
+    ts.power_level = saved_level;
+}
+
+/**
+ * @brief N96K P0-4: release the VSWR foldback, restore the PA bias and the user's power factor.
+ */
+static void RadioManagement_VswrFoldbackRelease()
+{
+    vswr_foldback_active    = false;
+    vswr_foldback_recovery  = 0;
+    vswr_foldback_avg       = 0.0f;
+    swrm.high_vswr_detected = false;
+
+    // restore the TX power factor of the user's power level
+    RadioManagement_SetBandPowerFactor(RadioManagement_GetBand(df.tune_new));
+
+    if (ts.txrx_mode == TRX_MODE_TX)    // give the PA its bias back (it was killed by the foldback)
+    {
+        RadioManagement_SetPaBias();
+    }
+}
+
+/**
+ * @brief N96K P0-4: clear the VSWR foldback state when returning to RX.
+ */
+static void RadioManagement_VswrFoldbackReset()
+{
+    vswr_foldback_active    = false;
+    vswr_foldback_recovery  = 0;
+    vswr_foldback_avg       = 0.0f;
+    swrm.high_vswr_detected = false;
+}
+
+/**
+ * @brief N96K P0-4: fold the PA back if the transmitted VSWR exceeds the threshold.
+ * The measured value is dampened (fast attack, slow decay) and a hysteresis is applied on the
+ * release, so the PA does not oscillate between full and minimal output power.
+ * Must be called after a valid power measurement only.
+ */
+static void RadioManagement_CheckVswrProtection()
+{
+    if (ts.txrx_mode != TRX_MODE_TX)                                     { return; }
+    if (vswr_protection_threshold <= 1)                                  { return; }   // protection disabled
+    if (ts.dynamic_tune_activ_counter >= VSWR_PROTECTION_SETTLE_COUNTER) { return; }   // TX not settled yet
+    if (ts.ptt_req || ts.tx_immediate_stop_req)                          { return; }   // TX/RX transition pending
+
+    if (swrm.fwd_pwr < SWR_MIN_CALC_POWER)      // not enough forward power for a valid VSWR measurement
+    {
+        // If the PA is folded back, the drive is minimal and/or the PA bias is off, so the forward
+        // power may be too low to measure the VSWR at all. Retry after a while with the PA bias back
+        // on but with the minimal drive kept: this is safe and allows the protection to detect that
+        // the VSWR has normalized again without applying full power into a possibly bad load.
+        if (vswr_foldback_active && (++vswr_foldback_recovery >= VSWR_PROTECTION_RECOVERY_CNT))
+        {
+            vswr_foldback_recovery = 0;
+            vswr_foldback_avg      = 0.0f;      // first valid reading will initialize the integrator
+            if (ts.txrx_mode == TRX_MODE_TX)
+            {
+                RadioManagement_SetPaBias();
+            }
+        }
+        return;
+    }
+
+    // fast attack, slow decay, the hysteresis is applied on this dampened value
+    if ((vswr_foldback_avg < 1.0f) || (swrm.vswr > vswr_foldback_avg))
+    {
+        vswr_foldback_avg = swrm.vswr;
+    }
+    else
+    {
+        vswr_foldback_avg = vswr_foldback_avg * (1 - VSWR_DAMPENING_FACTOR) + swrm.vswr * VSWR_DAMPENING_FACTOR;
+    }
+
+    if (vswr_foldback_active == false)
+    {
+        if (vswr_foldback_avg > (float)vswr_protection_threshold)
+        {
+            RadioManagement_DisablePaBias();            // mute the PA immediately
+            RadioManagement_SetMinimalTxPowerFactor();  // and reduce the drive to the minimum
+            swrm.high_vswr_detected = true;
+            vswr_foldback_active    = true;
+            vswr_foldback_recovery  = 0;
+        }
+    }
+    else if (vswr_foldback_avg > (float)vswr_protection_threshold)
+    {
+        RadioManagement_DisablePaBias();                // still too high: keep the PA muted
+        vswr_foldback_recovery = 0;
+    }
+    else if (vswr_foldback_avg < ((float)vswr_protection_threshold - VSWR_PROTECTION_HYSTERESIS))
+    {
+        if (++vswr_foldback_recovery >= VSWR_PROTECTION_RECOVERY_CNT)
+        {
+            RadioManagement_VswrFoldbackRelease();
+        }
+    }
+    else
+    {
+        vswr_foldback_recovery = 0;
+    }
+}
+
+/*
  * @brief Measures and calculates TX Power Output and SWR, has to be called regularly
  * @returns true if new values have been calculated
  */
@@ -1807,9 +1959,34 @@ bool  RadioManagement_UpdatePowerAndVSWR()
         swrm.p_curr   = 0;
         swrm.fwd_calc = 0;
         swrm.rev_calc = 0;
-        // Calculate VSWR from power readings
+        // N96K P0-4: calculate VSWR only if the forward power is high enough for a valid measurement
+        // (audit U3). Otherwise keep the previous value: no division by zero, no NaN and no negative
+        // VSWR when the reverse reading happens to be higher than the forward one.
+        if (swrm.fwd_pwr >= SWR_MIN_CALC_POWER)
+        {
+            float  vswr_ratio = swrm.rev_pwr / swrm.fwd_pwr;    // reflected / forward power
 
-        swrm.vswr = ( 1 + sqrtf(swrm.rev_pwr/swrm.fwd_pwr))/(1-sqrtf(swrm.rev_pwr/swrm.fwd_pwr) );
+            if (!(vswr_ratio >= 0.0f))                          // also catches NaN
+            {
+                vswr_ratio = 0.0f;
+            }
+            if (vswr_ratio > 1.0f)                              // full reflection (or detector offset)
+            {
+                vswr_ratio = 1.0f;
+            }
+
+            if (vswr_ratio > 0.9801f)                           // 0.99^2: (almost) infinite mismatch
+            {
+                swrm.vswr = VSWR_MAX_CALC_VALUE;
+            }
+            else
+            {
+                float  vswr_refl = sqrtf(vswr_ratio);           // reflection coefficient
+                swrm.vswr = (1.0f + vswr_refl) / (1.0f - vswr_refl);
+            }
+        }
+
+        RadioManagement_CheckVswrProtection();
         retval = true;
     }
     return retval;

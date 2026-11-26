@@ -140,6 +140,8 @@ typedef struct SWRMeter
 
     uint8_t coupling_calc[COUPLING_MAX];
 
+    bool  high_vswr_detected;   // N96K P0-4: TRUE while the VSWR foldback protection is engaged
+
 } SWRMeter;
 
 // New modes need to be added so that configuration compatibility is retained
@@ -204,6 +206,15 @@ extern const cw_mode_map_entry_t cw_mode_map[];
 
 // SWR/Power meter
 extern SWRMeter                    swrm;
+
+// N96K P0-4: PA VSWR foldback protection (audit U3, adapted from upstream 2.12.2 dcbebe5f).
+// Threshold is in VSWR units, values <= 1 disable the protection (upstream compatible).
+// The runtime threshold has to be stored in the EEPROM slot EEPROM_VSWR_PROTECTION_THRESHOLD
+// (ui_configuration.h:616) - the ConfigEntry binding itself belongs to ui_configuration.c which
+// is outside of the file scope of this patch, so a safe compile-time default is used for now.
+#define PA_LEVEL_MINIMAL                    PA_LEVEL_0_5W
+#define VSWR_PROTECTION_THRESHOLD_DEFAULT   3
+extern uint8_t vswr_protection_threshold;
 
 inline bool RadioManagement_IsTxDisabled()
 {
