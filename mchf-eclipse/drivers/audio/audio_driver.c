@@ -4128,7 +4128,8 @@ void AudioDriver_Rx_Manual_IQ_Correction (float32_t * const  i_sour,
 		absolute_i_avg +=  absolute_i  -  absolute_i_avg / devidend ;    /// eq (35) and first order lowpass
 		absolute_q_avg +=  absolute_q  -  absolute_q_avg / devidend ;    /// eq (36) and first order lowpass
 
-		if(abs(absolute_i_avg) > 0.0001) {  adb.phase_corr = correla_iq_avg / absolute_i_avg; }  /// calcul coeff correctif de dephasage I/Q : M_c1
+		// N96K P0-3: abs() -> fabsf() for float32_t thresholds (audit A3)
+		if(fabsf(absolute_i_avg) > 0.0001) {  adb.phase_corr = correla_iq_avg / absolute_i_avg; }  /// calcul coeff correctif de dephasage I/Q : M_c1
 		else                             {  adb.phase_corr = zzero;                           }  /// prevent divide-by-zero// eq (30)
 
 		float32_t                 help     = ( absolute_i_avg * absolute_i_avg );  /// au carr�
@@ -4151,7 +4152,8 @@ void AudioDriver_Rx_Manual_IQ_Correction (float32_t * const  i_sour,
 										{
 
 
-											if (abs(absolute_q_avg) > 0.00001)  // si aprÃ¨s delay du dernier demarrage et no divide-by-zero
+											// N96K P0-3: abs() -> fabsf() for float32_t threshold (audit A3)
+											if (fabsf(absolute_q_avg) > 0.00001)  // si aprÃ¨s delay du dernier demarrage et no divide-by-zero
 											{
 															// twinpeak_tested = 2 --> wait for system to warm up
 															// twinpeak_tested = 0 --> go and test the IQ phase
@@ -4246,7 +4248,8 @@ void AudioDriver_Rx_Auto_IQ_Correction (float32_t * const i_sour, float32_t * co
         absolute_i_avg +=  absolute_i  -  absolute_i_avg / devidend ;    /// eq (35) and first order lowpass
         absolute_q_avg +=  absolute_q  -  absolute_q_avg / devidend ;    /// eq (36) and first order lowpass
 
-		if(abs(absolute_i_avg) > 0.0001) {  adb.phase_corr = correla_iq_avg / absolute_i_avg; }  /// calcul coeff correctif de dephasage I/Q : M_c1
+		// N96K P0-3: abs() -> fabsf() for float32_t thresholds (audit A3)
+		if(fabsf(absolute_i_avg) > 0.0001) {  adb.phase_corr = correla_iq_avg / absolute_i_avg; }  /// calcul coeff correctif de dephasage I/Q : M_c1
 		else                             {  adb.phase_corr = zzero;                           }  /// prevent divide-by-zero// eq (30)
 
 		float32_t                 help     = ( absolute_i_avg * absolute_i_avg );  /// au carr�
@@ -4269,7 +4272,8 @@ void AudioDriver_Rx_Auto_IQ_Correction (float32_t * const i_sour, float32_t * co
 										{
 
 
-											if (abs(absolute_q_avg) > 0.00001)  // si aprÃ¨s delay du dernier demarrage et no divide-by-zero
+											// N96K P0-3: abs() -> fabsf() for float32_t threshold (audit A3)
+											if (fabsf(absolute_q_avg) > 0.00001)  // si aprÃ¨s delay du dernier demarrage et no divide-by-zero
 											{
 															// twinpeak_tested = 2 --> wait for system to warm up
 															// twinpeak_tested = 0 --> go and test the IQ phase
@@ -4403,6 +4407,12 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
     }
 
     float32_t    NR_dec_buffer[ no_dec_samples ];
+
+    // N96K P0-3: NR_dec_buffer used to stay uninitialised when no NR output block was available
+    // (NR just switched on or the UI thread fell behind); it is read unconditionally below and
+    // copied into the RX audio path, so interrupt stack garbage reached the codec. Silence costs
+    // only 4..8 float stores in the ISR, the out_buffer != NULL branch overwrites all of them.
+    arm_fill_f32 ( 0, NR_dec_buffer, no_dec_samples ); // N96K P0-3: init NR buffer (audit A1)
 
     if (out_buffer != NULL)  //NR-routine has finished it's job
     {
@@ -4857,14 +4867,15 @@ static  void  AudioDriver_RxProcessor( AudioSample_t * const src_Codec,  AudioSa
                 {
 					if ( (dmod_mode == DEMOD_USB) || (dmod_mode == DEMOD_LSB) || ( dmod_mode == DEMOD_CW ))
 					{
-						                        float32_t  somme_a0  = abs( adb.a_buffer[0][0] );
-												float32_t  somme_a1  = abs( adb.a_buffer[0][1] );
-												float32_t  somme_a2  = abs( adb.a_buffer[0][2] );
-												float32_t  somme_a3  = abs( adb.a_buffer[0][3] );
-														   somme_a0 += abs( adb.a_buffer[0][4] );
-														   somme_a1 += abs( adb.a_buffer[0][5] );
-														   somme_a2 += abs( adb.a_buffer[0][6] );
-														   somme_a3 += abs( adb.a_buffer[0][7] );
+						                        // N96K P0-3: abs() -> fabsf() for float32_t magnitudes (audit A3)
+						                        float32_t  somme_a0  = fabsf( adb.a_buffer[0][0] );
+												float32_t  somme_a1  = fabsf( adb.a_buffer[0][1] );
+												float32_t  somme_a2  = fabsf( adb.a_buffer[0][2] );
+												float32_t  somme_a3  = fabsf( adb.a_buffer[0][3] );
+														   somme_a0 += fabsf( adb.a_buffer[0][4] );
+														   somme_a1 += fabsf( adb.a_buffer[0][5] );
+														   somme_a2 += fabsf( adb.a_buffer[0][6] );
+														   somme_a3 += fabsf( adb.a_buffer[0][7] );
 														   somme_a0 += somme_a1;
 														   somme_a2 += somme_a3;
 														   somme_a0 += somme_a2;
@@ -5298,16 +5309,24 @@ static void AudioDriver_Tx_Reverberation ( float32_t* buffer)  // fonction de re
 	buffer[0] += ( last_val                        + buff_eco[ indice_lect_eco ]) * coeff_moitie;
 	buffer[1] +=   buff_eco[ indice_lect_eco     ]                                * coeff_entier;
 	buff_eco[ indice_enrg_eco++ ] = buffer[0];
-	buffer[2] += ( buff_eco[ (indice_lect_eco++) ] + buff_eco[ indice_lect_eco ]) * coeff_moitie;
+	// N96K P0-3: was "buff_eco[(indice_lect_eco++)] + buff_eco[indice_lect_eco]", which reads and
+	// modifies indice_lect_eco without a sequence point (UB, audit A2). Now the two taps are read
+	// explicitly (n and n+1) and the step is explicit; tap pairs, 4 increments/call and the wrap
+	// check are unchanged. buffer[3]/[5]/[7] below read indice_lect_eco == n+1 exactly as before.
+	buffer[2] += ( buff_eco[ indice_lect_eco ] + buff_eco[ indice_lect_eco + 1u ]) * coeff_moitie;
+	indice_lect_eco++;   // N96K P0-3: explicit step 1 of 4 (audit A2)
 	buffer[3] +=   buff_eco[  indice_lect_eco    ]                                * coeff_entier;
 	buff_eco[ indice_enrg_eco++ ] = buffer[2];
-	buffer[4] += ( buff_eco[ (indice_lect_eco++) ] + buff_eco[ indice_lect_eco ]) * coeff_moitie;
+	buffer[4] += ( buff_eco[ indice_lect_eco ] + buff_eco[ indice_lect_eco + 1u ]) * coeff_moitie;
+	indice_lect_eco++;   // N96K P0-3: explicit step 2 of 4 (audit A2)
 	buffer[5] +=   buff_eco[  indice_lect_eco    ]                                * coeff_entier;
 	buff_eco[ (indice_enrg_eco++) ] = buffer[4];
-	buffer[6] += ( buff_eco[ (indice_lect_eco++) ] + buff_eco[ indice_lect_eco ]) * coeff_moitie;
+	buffer[6] += ( buff_eco[ indice_lect_eco ] + buff_eco[ indice_lect_eco + 1u ]) * coeff_moitie;
+	indice_lect_eco++;   // N96K P0-3: explicit step 3 of 4 (audit A2)
 	buffer[7] +=   buff_eco[  indice_lect_eco    ]                                * coeff_entier;
 	buff_eco[ (indice_enrg_eco++) ] = buffer[6];
-	last_val   =   buff_eco[ (indice_lect_eco++) ];
+	last_val   =   buff_eco[ indice_lect_eco ];   // N96K P0-3: read then increment (was (indice_lect_eco++))
+	indice_lect_eco++;   // N96K P0-3: explicit step 4 of 4 (audit A2)
 	uint16_t   delayy = ts.reverberation_delay << 2u;
 	if ( indice_enrg_eco >= delayy )  indice_enrg_eco = 0;
 	if ( indice_lect_eco >= delayy )  indice_lect_eco = 0;
