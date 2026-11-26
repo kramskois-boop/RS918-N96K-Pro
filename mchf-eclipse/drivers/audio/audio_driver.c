@@ -1508,6 +1508,19 @@ void AudioDriver_SetRxAudioProcessing ( uint8_t  dmod_mode,  bool  reset_dsp_nr 
 	ads.af_disabled++;
 	ts.dsp_inhibit++;
 
+#ifdef USE_ALTERNATE_NR
+    // N96K A2: backport of the AudioNr_Prepare() call site of upstream df9ef3f9 (#1749). Upstream
+    // calls it from RadioManagement_SetDemodMode() when DEMOD_DIGI is left. In this firmware that
+    // function calls us BEFORE ts.dmod_mode is updated, so the old mode is still visible here and
+    // this is the equivalent hook (the only mode change path). Leaving a digital mode means FreeDV
+    // may have used the NR buffers (same MultiModeBuffer union): drop the residue, otherwise the
+    // NR audio filter chain can be fed FreeDV data (and NaNs) -> "silence after FreeDV + NR" (#1749).
+    if ( (ts.dmod_mode == DEMOD_DIGI) && (dmod_mode != DEMOD_DIGI) )
+    {
+        AudioNr_Prepare();
+    }
+#endif
+
     // make sure we have a proper filter path for the given mode
 
     // the commented out part made the code  only look at last used/selected filter path if the current filter path is not applicable
@@ -4341,6 +4354,16 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
     static int         outbuff_count    = 0;
     static int         NR_fill_in_pt    = 0;
     static NR_Buffer*  out_buffer       = NULL;
+
+#ifdef USE_FREEDV
+    // N96K A2 (upstream 27945d8b): NR and FreeDV share the same MultiModeBuffer union (mmb). While
+    // FreeDV is active this function must not touch the shared buffers: leave the audio untouched
+    // (pass-through) and keep the NR state for the next analog session.
+    if ( ts.dmod_mode == DEMOD_DIGI && ts.digital_mode == DigitalMode_FreeDV )
+    {
+        return;
+    }
+#endif
 
     // this would be the right place for another decimation-by-2 to get down to 6ksps
     // in order to further improve the spectral noise reduction

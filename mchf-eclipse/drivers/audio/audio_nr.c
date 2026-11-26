@@ -13,6 +13,9 @@
 #include "arm_const_structs.h"
 #include "profiling.h"
 
+#include <string.h>             // N96K A2: memset() in AudioNr_Prepare()
+#include "radio_management.h"   // N96K A2: DigitalMode_FreeDV for the NR/FreeDV buffer-sharing guard
+
 //#define debug_alternate_NR
 
 #ifdef USE_ALTERNATE_NR
@@ -27,6 +30,11 @@ __IO int32_t  NR_out_tail = 0;
 
 NR_Buffer*   NR_in_buffers [ NR_BUFFER_FIFO_SIZE ];
 NR_Buffer*   NR_out_buffers[ NR_BUFFER_FIFO_SIZE ];
+
+// N96K A2 (upstream df9ef3f9): these used to be function-local statics inside alternateNR_handle().
+// They are at file scope now so that AudioNr_Prepare() can reset them when FreeDV is left.
+static uint16_t  NR_current_buffer_idx = 0;
+static bool      NR_was_here           = false;
 
 
  const   float32_t   SQRT_von_Hann_256[256]
@@ -233,10 +241,31 @@ int32_t NR_out_has_room()
 
 //**************************************************************************************************************
 
+// N96K A2: backport of upstream df9ef3f9 (#1749) "AudioNr fix for silence after using FreeDV and NR".
+// NR and FreeDV use the same MultiModeBuffer union (mmb). After using FreeDV the NR buffers may still
+// contain FreeDV residue (values which are not valid audio and can even be NaN for the following IIR
+// filters). Reset the NR processing state and clear the shared buffers when leaving FreeDV, so the
+// first NR blocks after the switch are processed from silence instead of FreeDV data.
+void AudioNr_Prepare(void)
+{
+    NR_current_buffer_idx = 0;
+    NR_was_here           = false;
+    memset(&mmb.nr_audio_buff[0].samples[0], 0, NR_BUFFER_NUM * sizeof(mmb.nr_audio_buff[0]));
+}
+
+//**************************************************************************************************************
+
 void alternateNR_handle()
 {
-    static uint16_t  NR_current_buffer_idx = 0;
-    static bool      NR_was_here           = false;
+#ifdef USE_FREEDV
+    // N96K A2 (upstream 27945d8b): NR and FreeDV use the same MultiModeBuffer union (mmb); while
+    // FreeDV is active the NR algorithm must not run, otherwise it overwrites the FreeDV IQ buffer
+    // and processes FreeDV residue as audio.
+    if ( ts.dmod_mode == DEMOD_DIGI && ts.digital_mode == DigitalMode_FreeDV )
+    {
+        return;
+    }
+#endif
 
     if (NR_was_here == false)
     {

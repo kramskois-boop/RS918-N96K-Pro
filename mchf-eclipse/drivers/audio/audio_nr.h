@@ -105,6 +105,10 @@ extern NoiseReduction  	NR; // declaration, definition is in audio_nr.c
 extern NoiseReduction2  NR2; // declaration, definition is in audio_nr.c
 
 
+// N96K A2: backport of upstream df9ef3f9 (#1749) - NR and FreeDV share the MultiModeBuffer
+// union (mmb), so the NR state and buffers have to be reset when leaving FreeDV.
+void AudioNr_Prepare(void);
+
 void alternateNR_handle();
 
 void do_alternate_NR();
