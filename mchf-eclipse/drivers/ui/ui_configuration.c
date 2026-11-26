@@ -415,12 +415,13 @@ static void __attribute__ ((noinline)) UiReadSettingEEPROM_UInt8x2(uint16_t addr
     {
         *val_ptr = value;
 
-        if ( (((*val_ptr >> 8) && 0xff)  < ((min_val >> 8) && 0xff)) || (((*val_ptr >> 8) && 0xff)  > ((max_val >> 8) && 0xff)) || ts.load_eeprom_defaults)
+        // N96K P0-1: bitwise mask; logical && turned every comparison into 0/1, range check was dead (audit U2)
+        if ( (((*val_ptr >> 8) & 0xff)  < ((min_val >> 8) & 0xff)) || (((*val_ptr >> 8) & 0xff)  > ((max_val >> 8) & 0xff)) || ts.load_eeprom_defaults)
         {
             *val_ptr = (*val_ptr & 0xff) | (default_val & 0xff00);
         }
 
-        if ( ((*val_ptr && 0xff)  < (min_val && 0xff)) || ((*val_ptr && 0xff)  > (max_val && 0xff)) || ts.load_eeprom_defaults)
+        if ( ((*val_ptr & 0xff)  < (min_val & 0xff)) || ((*val_ptr & 0xff)  > (max_val & 0xff)) || ts.load_eeprom_defaults)
         {
             *val_ptr = (*val_ptr & 0xff00) | (default_val & 0x00ff);
         }
@@ -558,6 +559,16 @@ void UiReadSettingsBandMode ( const uint8_t i, const uint16_t band_mode, const u
 
     vforeg->decod_mode = (value16 >> 8) & 0xFF;     // demodulator mode might not be right for saved band!
     vforeg->digital_mode = value16 & 0xFF;
+
+    // N96K P0-1: value16 is undefined if the EEPROM read failed, bound the mode bytes before use (audit U2)
+    if (vforeg->decod_mode > DEMOD_MAX_MODE)
+    {
+        vforeg->decod_mode = DEMOD_LSB;
+    }
+    if (vforeg->digital_mode >= DigitalMode_Num_Modes)
+    {
+        vforeg->digital_mode = DigitalMode_None;
+    }
 
     // Try to read Freq saved values
     UiReadSettingEEPROM_UInt32(band_freq_high + i, band_freq_low + i,&value32,bandInfo[i].tune + DEFAULT_FREQ_OFFSET,0,0xffffffff);
@@ -775,6 +786,15 @@ void   UiConfiguration_LoadEepromValues( void )
         if(ts.load_freq_mode_defaults)          // freq defaults to be loaded?
         {
             ts.dmod_mode = DEMOD_LSB;           // yes - set to LSB
+        }
+        // N96K P0-1: value16 is undefined if the EEPROM read failed, clamp before use as array index (audit U2)
+        if (ts.band >= MAX_BAND_NUM)
+        {
+            ts.band = BAND_MODE_80;
+        }
+        if (ts.dmod_mode > DEMOD_MAX_MODE)
+        {
+            ts.dmod_mode = DEMOD_LSB;
         }
 
     }

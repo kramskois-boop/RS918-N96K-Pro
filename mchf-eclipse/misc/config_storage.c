@@ -104,6 +104,10 @@ static bool ConfigStorage_CheckSameContentSerialAndFlash ( void )
 uint16_t ConfigStorage_ReadVariable(uint16_t addr, uint16_t *value)
 {
     uint16_t retval;
+
+    // N96K P0-1: deterministic value on every path, one caller ignores the return code (audit U2)
+    *value = 0;
+
     switch(ts.configstore_in_use)
     {
 		case CONFIGSTORE_IN_USE_I2C:
@@ -127,7 +131,8 @@ uint16_t ConfigStorage_ReadVariable(uint16_t addr, uint16_t *value)
 										break;
 									}
 		default:
-									retval = 0;
+									// N96K P0-1: CONFIGSTORE_IN_USE_ERROR / unknown state must not report success (audit U2)
+									retval = HAL_ERROR;
     }
     return retval;
 }
