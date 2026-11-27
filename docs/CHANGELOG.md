@@ -37,6 +37,9 @@ B1 — инструментальный этап: прошивка, загруз
 - **Статус:** `docker build` и GitHub Actions вживую не исполнялись (нет Docker/remote) — YAML
   проверен статически (`check_workflow.py`), release.py — на реальной сборке и фикстуре
   `release/v1.2`. Первый живой прогон — после появления remote и push тега.
+- **Локальная подготовка к публикации (B5, часть):** `docs/GITHUB.md` и `tools/github-setup.ps1` —
+  настройка `origin`, проверка доступа (Git Credential Manager), первый push `main` + теги
+  `v1.0/v1.1/v1.2`; upstream-проект сохранён как remote `upstream`. Ждёт логина GitHub.
 
 ### Документация
 

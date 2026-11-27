@@ -263,7 +263,8 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
 | [docs/CHANGES.md](docs/CHANGES.md) | **сводная таблица изменений**: было → стало → что даёт (плюсы), метрики до/после |
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | **печатный чек-лист must-pass** для полевой проверки (PDF/DOCX — в release/vX/printable/) |
 | [docs/SAFETY.md](docs/SAFETY.md) | правила безопасной эксплуатации и прошивки |
-| [docs/CI.md](docs/CI.md) | CI/Docker: сборка в контейнере, host-тесты, ограничения |
+| [docs/CI.md](docs/CI.md) | CI/Docker: сборка в контейнере, host-тесты, 3 job'а (включая release), ограничения |
+| [docs/GITHUB.md](docs/GITHUB.md) | **публикация своего репозитория на GitHub**: remote, OAuth/SSH/PAT, первый push, Actions, защита тегов |
 | [docs/CREDITS.md](docs/CREDITS.md) | атрибуция и лицензии |
 | [tests/README.md](tests/README.md) | host-тесты: что проверяют, как запускать, known issues |
 | [LICENCE.md](LICENCE.md) | GNU GPLv3 (не изменялся) |
