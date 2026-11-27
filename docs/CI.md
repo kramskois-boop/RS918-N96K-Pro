@@ -14,6 +14,7 @@
 |---|---|---|
 | Хост-тесты ЦОС-таблиц | `tests/run_all.py` | несоответствие `numTaps`/`numStages` длинам таблиц, nan/inf и нулевые коэффициенты, таблицы IQ-фильтров, отсутствие файла фильтра в `files.mak` (регрессия P0-2), инварианты версии/продукта, карту EEPROM |
 | Сборка прошивки | `docker build .` | что дерево собирается фиксированным GCC 15.2.1 **с нуля**; проверяются `fw-mchf`/`bl-mchf` и бюджеты flash/RAM/CCM |
+| Предупреждения компилятора | `tools/check_warnings.py` + `tests/warnings-baseline.txt` | новые/усилившиеся предупреждения GCC и линкера относительно baseline (warning-гейт B5); исчезновение известных предупреждений допускается |
 | Артефакты | `docker/verify_artifacts.py` | наличие `.elf/.bin/.hex/.map`, `build-summary.json`, размеры в бюджете, `SHA256SUMS.txt` |
 | Публикация релиза | job `release` + `tools/release.py` | полнота состава `release/vX`, формат `SHA256SUMS.txt`, тело GitHub Release из `RELEASE-NOTES.md`; только на push тега `v*` |
 
@@ -100,6 +101,9 @@ python3 tests/run_all.py
    запускает `python3 tests/run_all.py`, затем `python3 tools/build.py all`,
    затем `python3 docker/verify_artifacts.py build`.
 
+Warning-гейт (`tools/check_warnings.py`) внутри образа не запускается: он
+работает в job `docker-build` на извлечённом `artifacts/warnings.log` (см. §5.3).
+
 Сборка и извлечение артефактов:
 
 ```bash
@@ -144,7 +148,7 @@ python tools/check_workflow.py .github/workflows/build.yml
 | Job | Когда | Что делает |
 |---|---|---|
 | `host-tests` | push/PR, любой ref | Ubuntu 24.04 + `actions/setup-python` 3.12, запуск `tests/run_all.py`, затем `tools/check_workflow.py` (YAML-линт), лог `host-tests.log` в артефактах |
-| `docker-build` | после `host-tests` | `docker/setup-buildx-action` + `docker/build-push-action` (кэш слоёв в GitHub Actions cache, чтобы не качать 307 МБ тулчейна каждый раз), извлечение артефактов `docker cp`, повторная проверка `verify_artifacts.py`, выгрузка `n96k-firmware` (bin/hex/elf/map, `build-summary.json`, `compile_commands.json`, `warnings.log`, `SHA256SUMS.txt`) |
+| `docker-build` | после `host-tests` | `docker/setup-buildx-action` + `docker/build-push-action` (кэш слоёв в GitHub Actions cache, чтобы не качать 307 МБ тулчейна каждый раз), извлечение артефактов `docker cp`, warning-гейт `tools/check_warnings.py artifacts/warnings.log` (см. §5.3), повторная проверка `verify_artifacts.py`, выгрузка `n96k-firmware` (bin/hex/elf/map, `build-summary.json`, `compile_commands.json`, `warnings.log`, `SHA256SUMS.txt`) |
 | `release` | **только push тега `v*`** (`if: startsWith(github.ref, 'refs/tags/v')`, `needs: docker-build`) | `actions/download-artifact@v4` (name `n96k-firmware`) -> `python3 tools/release.py --version <tag> --build-dir artifacts --out release/<tag>` -> `sha256sum -c SHA256SUMS.txt` -> `softprops/action-gh-release@v2` (файлы каталога, тело — `RELEASE-NOTES.md`). `permissions: contents: write` выдан только этому job'у |
 
 Триггеры: push в `main` и теги `v*`, pull request, ручной запуск
@@ -199,6 +203,50 @@ GitHub Release с артефактами создан; после проверк
 CI собирает **только default-конфигурацию**. Opt-in FreeDV-сборка (`tools/build.py --freedv`,
 см. [FREEDV.md](FREEDV.md)) в CI пока не входит: её нужно собирать локально и проверять на стенде;
 при желании добавляется отдельным job/матрицей.
+
+### 5.3. Warning-гейт: `tools/check_warnings.py` (B5)
+
+`tools/build.py` складывает все предупреждения компилятора и линкера в
+`build/warnings.log`. Job `docker-build` после извлечения артефактов выполняет
+
+```bash
+python3 tools/check_warnings.py artifacts/warnings.log
+```
+
+и валит сборку, если появилось **новое** предупреждение (его текста нет в
+baseline) или известное предупреждение стало встречаться **чаще**, чем в
+baseline. Если известные предупреждения исчезли — это OK (baseline стоит
+понизить, чтобы зафиксировать улучшение).
+
+* Baseline: `tests/warnings-baseline.txt`, формат `<сколько раз> <нормализованный текст>`;
+  строки-комментарии `#` игнорируются, порядок — по алфавиту. На момент B5
+  baseline содержит 73 предупреждения (35 различных текстов) — это состояние
+  default-сборки после исправления пяти `-Waddress`-дефектов;
+* нормализация: у диагностик GCC убираются абсолютные пути и номера
+  строк/столбцов (относительный файл берётся из префикса, который пишет
+  `build.py`); в сообщениях линкера дополнительно убираются абсолютные пути,
+  суффикс `.exe` у `lto-wrapper` и случайные числа. Поэтому один и тот же
+  baseline работает и на Windows-хосте, и в Linux-образе с тем же pinned
+  GCC 15.2.1;
+* локальная проверка (без пересборки) — по существующему логу:
+  `python tools/check_warnings.py build` (принимается и каталог сборки, и
+  сам файл `warnings.log`);
+* обновление baseline после осознанного исправления/принятия предупреждений:
+
+  ```bash
+  python tools/build.py all --force
+  python tools/check_warnings.py build --update-baseline
+  git diff tests/warnings-baseline.txt   # посмотреть, что именно изменилось
+  ```
+
+* коды возврата: **0** — OK, **1** — есть новые/усилившиеся предупреждения,
+  **2** — не удалось прочитать лог или baseline (например, сборка не
+  выполнялась);
+* гейт относится к **default-конфигурации** (её собирает CI). Лог
+  `--freedv`-сборки с этим baseline сравнивать не нужно: baseline фиксирует
+  default-сборку (сейчас FreeDV-вариант даёт тот же набор предупреждений, но
+  это не гарантировано; если opt-in сборка появится в CI — ей нужен свой
+  baseline).
 
 ---
 

@@ -90,6 +90,19 @@ python tools\build.py all --freedv --build-dir build-freedv --force -j 8
 48 836, CCM 63 972 (свободно 1 564). Default-сборка без флага остаётся прежней. Размеры, бюджет,
 ограничения и план стенда — [docs/FREEDV.md](FREEDV.md).
 
+**Уровень оптимизации (B5).** Default — `-O2`; для экспериментов можно собрать `-O3` (сильно больше
+flash, CPU-эффект проверяется на стенде) или `-Os` (для размера; в текущем дереве **не линкуется**
+из-за C99-inline в заголовках):
+
+```powershell
+python tools\build.py all --opt-level O3 --build-dir build-o3 --force -j 8
+python tools\build.py all --freedv --opt-level O3 --build-dir build-o3-freedv --force -j 8
+```
+
+Замеры (F4, GCC 15.2.1): `-O2` fw 322 312 Б; `-O3` fw 425 500 Б, RAM 42 696, CCM 63 476
+(загрузчик всегда `-Os`, не меняется). Host-тесты и бюджет проверены; выбор уровня — осознанно,
+default оставлен `-O2`.
+
 ---
 
 ## 3. Что получается

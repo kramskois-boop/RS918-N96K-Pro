@@ -4,8 +4,9 @@
 #   host-tests    - tests/run_all.py: DSP table / version / EEPROM invariants,
 #                   no toolchain and no third-party Python packages required;
 #   docker-build  - reproducible firmware build with the pinned xPack GCC
-#                   15.2.1-1.1 toolchain, artifact budget verification, and
-#                   the same host tests re-run inside the image;
+#                   15.2.1-1.1 toolchain, artifact budget verification, a
+#                   compiler-warning gate against tests/warnings-baseline.txt,
+#                   and the same host tests re-run inside the image;
 #   release       - tag v* only: packs the docker-build artifacts with
 #                   tools/release.py, verifies SHA256SUMS.txt and publishes
 #                   the GitHub Release.
@@ -103,6 +104,16 @@ jobs:
           done
           docker rm n96k-artifacts
           ls -l artifacts
+
+      # B5: the build log is compared with tests/warnings-baseline.txt - a new
+      # compiler/linker warning (or more occurrences of a known one) fails the
+      # job.  tools/build.py writes every warning to build/warnings.log and the
+      # extraction step above copies it to artifacts/warnings.log.
+      - name: Check compiler warnings against baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/check_warnings.py artifacts/warnings.log
 
       - name: Verify exported artifacts (budgets + SHA256SUMS)
         shell: bash

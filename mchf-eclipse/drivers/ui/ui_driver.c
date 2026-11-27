@@ -724,7 +724,10 @@ void  UiDriver_DisplayFilter()
 		filter_ptr = " ";
 	}
 
-	if ((filter_ptr =="LPF") || (filter_ptr =="LPF*") || ( ts.dmod_mode == DEMOD_SAM) || ( ts.dmod_mode == DEMOD_AM))
+	// N96K B5: compare the filter path NAME by value. Comparing pointers to string
+	// literals is unspecified behaviour (-Waddress) and only worked because LTO merged
+	// the "LPF"/"LPF*" literals from audio_filter.c with the ones used here.
+	if ((!strcmp(filter_ptr,"LPF")) || (!strcmp(filter_ptr,"LPF*")) || ( ts.dmod_mode == DEMOD_SAM) || ( ts.dmod_mode == DEMOD_AM))
 	{
 	   const char * passe_haut_text ;
 
@@ -742,7 +745,8 @@ void  UiDriver_DisplayFilter()
 		strcpy( passe_bas_text, filter_names[0] );
 		char   nizchar[6] = "*";
  	//	char   ssschar[6] = "S";
-		if      (filter_ptr == "LPF*") { strcat( passe_bas_text, nizchar ); } // pour reperer les filtres speciaux en étoil
+		// N96K B5: same pointer-vs-string-literal bug as above, compare the text instead.
+		if      (!strcmp(filter_ptr, "LPF*")) { strcat( passe_bas_text, nizchar ); } // pour reperer les filtres speciaux en étoil
 	//	else if (filter_ptr == "LPFS") { strcat( passe_bas_text, ssschar ); }
 		UiDriver_LeftBoxDisplay ( 0, passe_haut_text, filter_path_change, passe_bas_text, font_clr, font_clr, false);
 	}

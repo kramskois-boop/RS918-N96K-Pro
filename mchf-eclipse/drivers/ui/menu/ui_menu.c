@@ -41,36 +41,59 @@
 
 #define CLR_OR_SET_BITMASK(cond,value,mask) ((value) = (((cond))? ((value) | (mask)): ((value) & ~(mask))))
 
+// N96K B5: bounded fixed-point formatter.  The old code wrote '.' and the final
+// NUL without checking maxchar and bounded the fraction loop by the wrong index,
+// so it could write past the caller's buffer (latent OOB; LTO reports "writing
+// 1 byte into a region of size 0" at -O3).  Also clamp digitsAfter larger than
+// the formatted number so numberstr[] is never indexed below zero.
 void float2fixedstr(char* buf, int maxchar, float32_t f, uint16_t digitsBefore, uint16_t digitsAfter)
 {
     char formatstr[16],numberstr[32];
 
     int32_t mult_digits = pow10(digitsAfter);
 
+    if (maxchar < 1)
+    {
+        return;
+    }
+
     snprintf(formatstr,16,(digitsBefore + digitsBefore > 0)?"%%%dd":"%%d",digitsBefore + digitsAfter);
 
-    snprintf(numberstr, 31, formatstr, (int32_t)(f * mult_digits));
+    snprintf(numberstr, sizeof(numberstr), formatstr, (int32_t)(f * mult_digits));
 
-    int32_t num_len = strnlen(numberstr,32);
+    int32_t num_len = strnlen(numberstr,sizeof(numberstr));
+
+    // digits before the decimal point, never negative (maxchar >= 1 here)
+    int32_t int_len = num_len - digitsAfter;
+    if (int_len < 0)
+    {
+        int_len = 0;
+    }
 
     int idx = 0;
-    for (idx= 0; idx < num_len - digitsAfter && idx < maxchar; idx++)
+    for (int i= 0; i < int_len && idx < maxchar - 1; i++)
     {
-        buf[idx] = numberstr[idx];
+        buf[idx++] = numberstr[i];
     }
 
     if (idx == 0 || buf[idx-1] == '-')
     {
-        buf[idx++] = '0';
+        if (idx < maxchar - 1)
+        {
+            buf[idx++] = '0';
+        }
     }
     else if (buf[idx-1] == ' ')
     {
         buf[idx-1] = '0';
     }
 
-    buf[idx++] = '.';
+    if (idx < maxchar - 1)
+    {
+        buf[idx++] = '.';
+    }
 
-    for (int i= num_len - digitsAfter; i < num_len && i < maxchar; i++)
+    for (int i= int_len; i < num_len && idx < maxchar - 1; i++)
     {
         char c = numberstr[i];
         if (c == ' ')
