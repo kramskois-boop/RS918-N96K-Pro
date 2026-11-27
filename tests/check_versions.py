@@ -6,10 +6,12 @@ The numeric UHSDR version 2.9.48 must not change: the EEPROM/config
 compatibility logic and the menu code parse it.  The product version string,
 origin attribution and licence are the visible N96K branding.
 
-Bootloader: the product targets UHSDR bootloader 5.0.4 (P2 workstream run in
-parallel with this one).  Until that port lands, 4.1.2 is accepted as KNOWN so
-the pre-integration tree stays green; any other value is a hard failure.
-When the bootloader patch is merged the KNOWN entry simply stops appearing.
+Bootloader: the product ships and requires UHSDR bootloader 5.0.4 (P2 port,
+upstream 2.12.2 dcbebe5f).  UHSDR_BOOT_VERS must be exactly "5.0.4": a value
+that silently rolls the bootloader back (e.g. the 4.1.2 of the 2.9.48 base) is
+a hard failure.  There is deliberately no "accepted" set: the firmware and
+the bootloader version are coupled (bootloader features and the SBLA/SBLS
+suffix logic), so a downgrade must never pass CI.
 """
 
 from __future__ import annotations
@@ -27,10 +29,6 @@ EXPECTED_UHSDR = ("2", "9", "48")
 EXPECTED_PRODUCT_NAME = "RS918 N96K-Pro"
 EXPECTED_PRODUCT_VERSION = "2.9.48-n96kp3"
 EXPECTED_BOOT_VERS = "5.0.4"
-ACCEPTED_BOOT_VERS = {
-    "4.1.2": "P2 bootloader 5.0.4 port is a separate, parallel workstream; "
-            "4.1.2 is the v1.0 baseline value",
-}
 
 
 def _string_literal(raw):
@@ -108,20 +106,16 @@ def run(repo):
     else:
         res.ok()
 
-    # bootloader version: target 5.0.4, current 4.1.2 accepted as transition
+    # bootloader version: exactly 5.0.4, no accepted/downgrade fallback.
+    # A rollback to the 2.9.48 base value (4.1.2) must fail loudly: the firmware
+    # and the bootloader are version-coupled (audit F5 / p-verify2.md:153).
     boot = _string_literal(defines.get("UHSDR_BOOT_VERS", ""))
     if boot is None:
         res.fail("UHSDR_BOOT_VERS", "UHSDR_BOOT_VERS is not defined")
     elif boot == EXPECTED_BOOT_VERS:
         res.ok()
-    elif boot in ACCEPTED_BOOT_VERS:
-        res.known_issue(
-            "UHSDR_BOOT_VERS",
-            "UHSDR_BOOT_VERS=%r, product target is %r"
-            % (boot, EXPECTED_BOOT_VERS),
-            ACCEPTED_BOOT_VERS[boot])
     else:
         res.fail("UHSDR_BOOT_VERS",
-                 "UHSDR_BOOT_VERS=%r, expected %r"
-                 % (boot, EXPECTED_BOOT_VERS))
+                 "UHSDR_BOOT_VERS=%r, expected exactly %r (bootloader "
+                 "downgrade is not accepted)" % (boot, EXPECTED_BOOT_VERS))
     return res

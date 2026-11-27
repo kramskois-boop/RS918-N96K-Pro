@@ -22,7 +22,8 @@ Check modules:
     check_iq        Nizar IQ tables and their descriptors            (3c)
     check_files_mak every filter driver is in files.mak             (3d)
     check_versions  UHSDR/product/bootloader identity               (3e)
-    check_eeprom    EEPROM address map consistency                  (3f)
+    check_eeprom    EEPROM address map consistency + descriptor map (3f, F11)
+    check_vswr      VSWR/PA foldback safety invariants               (P0-4/A1)
     check_audio     static biquad instances in audio_driver.c       (bonus)
 """
 
@@ -44,6 +45,7 @@ CHECK_MODULES = (
     "check_files_mak",
     "check_versions",
     "check_eeprom",
+    "check_vswr",
     "check_audio",
 )
 

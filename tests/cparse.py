@@ -103,7 +103,7 @@ def _blank(line):
     return "" if not line.strip() else " " * len(line)
 
 
-def apply_preprocessor(text, defines=None):
+def apply_preprocessor(text, defines=None, defined_names=None):
     """Blank out disabled preprocessor regions, preserving newlines.
 
     Only the simple forms used by this firmware are evaluated:
@@ -111,6 +111,15 @@ def apply_preprocessor(text, defines=None):
       #ifdef KNOWN_MACRO     -> known True when the macro is defined
       anything else          -> treated as enabled (the build defines USE_* etc.)
     The result keeps #define lines, so parse_defines() can still use them.
+
+    defined_names: optional set of macro names known to be defined by the build
+    (normally the keys of parse_defines() over the relevant headers).  When it
+    is given, #ifdef/#ifndef are evaluated against it; when it is None the
+    historical "assume every feature switch is enabled" behaviour is kept, so
+    callers that need the old semantics do not change.  Mutually exclusive
+    alternatives (e.g. #ifdef OBSOLETE_NR / #ifdef USE_LMS_AUTONOTCH in
+    ui_configuration.c) must be evaluated, otherwise both descriptor rows
+    appear and the table looks duplicated.
     """
     defines = defines or {}
     lines = text.split("\n")
@@ -129,12 +138,18 @@ def apply_preprocessor(text, defines=None):
                 value = eval_int(rest, defines)
                 cond = True if value is None else bool(value)
             elif directive == "ifdef":
-                # both known and unknown macros are assumed enabled: the firmware
-                # build defines its feature switches (USE_FREEDV, ...), so the
-                # guarded table is the one that gets compiled
-                cond = True
+                if defined_names is None:
+                    # both known and unknown macros are assumed enabled: the
+                    # firmware build defines its feature switches (USE_FREEDV,
+                    # ...), so the guarded table is the one that gets compiled
+                    cond = True
+                else:
+                    cond = rest in defined_names
             else:  # ifndef
-                cond = False if rest in defines else True
+                if defined_names is None:
+                    cond = False if rest in defines else True
+                else:
+                    cond = rest not in defined_names
             stack.append({"parent": parent, "cond": cond, "else": False})
         elif directive in ("else", "elif"):
             if not stack:
