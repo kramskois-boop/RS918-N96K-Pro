@@ -56,7 +56,18 @@ struct freedv {
     struct FMFSK        *fmfsk;
     struct OFDM         *ofdm;
     struct LDPC         *ldpc;
+#ifdef N96K_FREEDV
+    /* N96K B4: FreeDV-1600-only opt-in build.  The full struct MODEM_STATS is 10.6 KB and
+       would eat the (already tight) heap: only sync/SNR are needed for the UI display and
+       they are filled directly in freedv_comprx_fdmdv_1600()/freedv_get_modem_stats(). */
+    struct
+    {
+        int   sync;
+        float snr_est;
+    } stats;
+#else
     struct MODEM_STATS   stats;
+#endif
     
     struct freedv_vhf_deframer * deframer;      // Extracts frames from VHF stream
 
