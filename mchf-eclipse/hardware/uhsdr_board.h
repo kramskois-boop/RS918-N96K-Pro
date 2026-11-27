@@ -67,7 +67,14 @@
  */
 
 
+// N96K B6: opt-in "full" build.  tools/build.py --full adds -DN96K_FULL_BUILD, which
+// disables the Nizar IS_SMALL_BUILD limit (upstream-like build: FreeDV auto-enabled,
+// predefined FFT windows, full audio buffers).  Default product build does NOT define
+// N96K_FULL_BUILD, so IS_SMALL_BUILD is set exactly as in the fork; an explicit
+// -DIS_SMALL_BUILD (e.g. Makefile BUILDFOR=F4-512KB) always wins over --full.
+#if !defined(N96K_FULL_BUILD) && !defined(IS_SMALL_BUILD)
 #define IS_SMALL_BUILD    // nizou
+#endif
 
 //   #define    TUNISIANN
 
