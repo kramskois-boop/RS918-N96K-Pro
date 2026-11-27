@@ -45,9 +45,14 @@ python tools/build.py all --freedv --build-dir build-freedv --force -j 8
 
 | Сборка | FLASH, Б | RAM static, Б | CCM, Б | warning |
 |---|---|---|---|---|
-| default (без флага) | 321 392 | 42 616 | 63 476 | 78 |
-| `--freedv` (вариант A) | **564 564** | **48 768** | **63 972** | 78 |
+| default (без флага) | **322 360** | **42 668** | **63 476** | 78 |
+| `--freedv` (вариант A, после B3) | **565 584** | **48 836** | **63 972** | 78 |
+| `--freedv` без B3 (до слияния) | 564 564 | 48 768 | 63 972 | 78 |
 | `--freedv` + отключён `IS_SMALL_BUILD` (вариант B, эксперимент) | 571 304 | 48 776 | 63 972 | 78 |
+
+B3 (надёжность/DSP) добавляет к default-сборке +968 Б flash и +52 Б RAM
+(фиксированный ISR-буфер, сброс NR, выравнивание ALC-кольца, диагностика); в
+FreeDV-сборке те же +1 020 Б flash и +68 Б RAM.
 
 Загрузчик во всех случаях: FLASH 31 620, RAM 39 700, CCM 0. Flash FreeDV-сборки
 занят на 57,4 % (свободно 418 476 Б), CCM — 63 972/65 536 (свободно 1 564 Б).
@@ -62,8 +67,8 @@ python tools/build.py all --freedv --build-dir build-freedv --force -j 8
   FDMDV-состояние 40 020 Б, `struct freedv` 328 Б (без MODEM_STATS), Codec2-1300
   6 344 Б + буферы 13 704 Б, NLP 1 756 Б, bpf 1 684 Б — **итого ≈ 55,4 КБ**
   (+ overhead newlib ≈ 55,6 КБ);
-* static RAM 48 768 Б, значит на стек остаётся ≈ **26,7 КБ**
-  (131 072 − 48 768 − 55 616);
+* static RAM 48 836 Б (после B3), значит на стек остаётся ≈ **26,6 КБ**
+  (131 072 − 48 836 − 55 616);
 * пик стека: PendSV `UiDriver_TaskHandler_HighPrioTasks` → FreeDV RX
   (`freedv_comprx_fdmdv_1600`) ≈ **17,6 КБ** (кадр PendSV 160 Б + VLA
   `ademod_in` 1 280 Б + `fdmdv_demod` 15,3 КБ либо `codec2_decode_1300` 9,8 КБ +

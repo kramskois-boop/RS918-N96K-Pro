@@ -80,6 +80,16 @@ python tools\build.py clean        # удалить каталог build\ цел
 `python tests\run_all.py` — после B1 **1754 проверки, 0 failed, 3 known** (в v1.2 было 1134); CI/Docker с pinned
 toolchain и контроль бюджета артефактов — [docs/CI.md](CI.md).
 
+**Сборка с FreeDV (opt-in, B4).** Отдельная прошивка с FreeDV без изменения default-конфигурации:
+
+```powershell
+python tools\build.py all --freedv --build-dir build-freedv --force -j 8
+```
+
+Флаг добавляет `-DN96K_FREEDV` только прошивке (загрузчик не меняется): fw ~565 584 Б, RAM static
+48 836, CCM 63 972 (свободно 1 564). Default-сборка без флага остаётся прежней. Размеры, бюджет,
+ограничения и план стенда — [docs/FREEDV.md](FREEDV.md).
+
 ---
 
 ## 3. Что получается

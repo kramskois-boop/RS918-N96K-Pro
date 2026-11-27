@@ -62,16 +62,18 @@ F3 (A2 — в конфигурации с включённым FreeDV). Неза
 | P1-4 | EEPROM read fallback (закрыт UB `value16`) | `drivers/ui/ui_configuration.c` | audit R7 | реализовано; сборка — PASS |
 | P1-5/CAT | Закрыты EEPROM-VFO-select и clone RX `df.tune_new` при TX; эмуляция 0x65; поправка про get_vfo | `drivers/cat/cat_driver.c` | audit R8, Hamlib 4.3 | реализовано; сборка из чистого HEAD — PASS; с Hamlib/WSJT-X/железом не проверено |
 | P2-1 | Загрузчик upstream 5.0.4: 8 файлов, совместимость API и SBLA/SBLS | `src/bootloader/*`, `src/uhsdr_version.h`, docs/BUILD.md, docs/SAFETY.md | upstream 2.12.2 | реализовано; оба таргета собираются; загрузчик не прошивался |
-| P2-2 | FreeDV/Codec2 rev 4121 + фикс #1749 | `drivers/freedv/**`, files.mak, tools/build.py, Makefile | upstream 2.12.2 | vendor синхронизирован; сборка — PASS; **FreeDV в сборке не включён** (`IS_SMALL_BUILD`); интеграционный слой не пересинхронизирован |
-| P2-3 | CI/Docker с pinned toolchain + host-тесты ЦОС | `Dockerfile`, `docker/verify_artifacts.py`, `.github/workflows/build.yml`, `tests/**`, docs/CI.md | audit §9 | реализовано; host-tests 1134/0/3 — PASS; docker build не запускался |
+| P2-2 | FreeDV/Codec2 rev 4121 + фикс #1749 | `drivers/freedv/**`, files.mak, tools/build.py, Makefile | upstream 2.12.2 | vendor синхронизирован; сборка — PASS; по умолчанию выключен (`IS_SMALL_BUILD`); в **B4** — opt-in сборка (fw 565 584 Б, RAM 48 836, CCM 63 972); интеграционный слой не пересинхронизирован |
+| P2-3 | CI/Docker с pinned toolchain + host-тесты ЦОС | `Dockerfile`, `docker/verify_artifacts.py`, `.github/workflows/build.yml`, `tests/**`, docs/CI.md | audit §9 | реализовано; host-tests 1754/0/3 PASS (B1); CI в Actions зелёный (2026-11-27); docker build локально не запускался (Docker нет) |
 | P2-4 | Бэкпорты AGC restore #1730, Tune Power #1750, CW-decoder #1881 | см. раздел P2-4 | upstream 2.12.2 | порт выполнен; сборка/тесты — PASS; на железе нет |
 
-### v1.2 — этап A (тег планируется)
+### v1.2 — этап A (тег `v1.2`)
 
 | ID | Тема | Файлы (основные) | Источник | Статус |
 |---|---|---|---|---|
 | A1 | VSWR: принудительный минимальный drive при активном foldback; завершение trial в зоне гистерезиса | `drivers/ui/radio_management.c/.h` | S3c F2/F6 (`p-verify2`) | реализовано; `-fsyntax-only`, изолированная сборка (+208 Б), Unicorn-симуляция реальных функций 58/58 PASS (baseline 7 FAIL); на железе нет |
-| A2 | NR+FreeDV #1749: `AudioNr_Prepare()` при выходе из DIGI; NR pass-through при активном FreeDV | `drivers/audio/audio_nr.c/.h`, `audio_driver.c` | S3c F3 (`p-verify2`), upstream `df9ef3f9`/`27945d8b` | реализовано; сборка (+48 Б), RAM/CCM 0, host-tests PASS; **FreeDV в сборке не включён** (гейты — upstream-parity на будущее) |
+| A2 | NR+FreeDV #1749: `AudioNr_Prepare()` при выходе из DIGI; NR pass-through при активном FreeDV | `drivers/audio/audio_nr.c/.h`, `audio_driver.c` | S3c F3 (`p-verify2`), upstream `df9ef3f9`/`27945d8b` | реализовано; сборка (+48 Б), RAM/CCM 0, host-tests PASS; в B4 добавлена opt-in FreeDV-сборка, где гейты активны |
+| B3 | Надёжность/DSP: VLA в audio ISR, согласованный сброс NR, OOB ALC-кольца, диагностика | `drivers/audio/audio_driver.c/.h`, `audio_nr.c/.h`, `codec/uhsdr_hw_i2s.c`, `ui/menu/*` | residual P3 F4/R9/A4, audit §4.6 | реализовано; host-tests 1754 PASS; fw 322 360 (+968), RAM 42 668 (+52), CCM 0, 78 warnings; на железе нет |
+| B4 | FreeDV opt-in: `--freedv`, guard-фиксы, MODEM_STATS, docs/FREEDV.md | `hardware/uhsdr_board.h`, `audio_driver.c`, `audio_filter.c`, `freedv_uhsdr.c`, `drivers/freedv/freedv_api*`, `tools/build.py` | B4 workstream | реализовано; default-сборка байт-в-байт (321 392/42 616/63 476 до B3); FreeDV 565 584/48 836/63 972; на железе нет |
 
 ---
 
@@ -491,6 +493,10 @@ Dockerfile, `verify_artifacts.py` на артефактах v1.0). Первая 
 CI контролирует размеры/бюджеты/наличие, а не SHA. Бюджет-гейт bl (32 768) при 31 620 даёт запас
 1 148 Б — следующий рост кода загрузчика может не влезть.
 
+**Обновление 2026-11-27 (B1/live):** Actions запущены и зелёные (`host-tests` 17 с, `docker-build`
+5 мин 39 с, job `release` проверен на временном теге; см. docs/CI.md §5.2); Docker на машине
+разработки по-прежнему отсутствует.
+
 ## P2-4 — Бэкпорты AGC #1730, Tune Power #1750, CW-decoder #1881
 
 **Проблема.** В базе 2.9.48 отсутствовали исправления upstream, важные для повседневной работы:
@@ -623,6 +629,13 @@ bias ON в гистерезисе; прерванный recovery). Release/OFF/T
    бюджет RAM/flash и ревизия обвязки 2.9.48 против vendor 2.12.2. Утверждать, что FreeDV
    «работает» или «исправлен в бою», **нельзя**.
 
+**Обновление B4 (2026-11-27).** Opt-in FreeDV-сборка теперь существует: `tools/build.py --freedv`
+включает `USE_FREEDV` при сохранении `IS_SMALL_BUILD`; default-сборка не меняется. Исправлены
+6 guard-мест `IS_SMALL_BUILD↔USE_FREEDV`, порядок `struct my_callback_state` и (только в opt-in
+сборке) удалён `MODEM_STATS` (10,6 КБ) из `struct freedv`. FreeDV-вариант: fw 565 584 Б, RAM 48 836,
+CCM 63 972, 78 warnings, 43 FreeDV/Codec2-символа; host-tests 1754 PASS. **На железе не испытывался**
+(CPU/стек/звук) — только после стенда по docs/FREEDV.md можно утверждать, что FreeDV «работает».
+
 ## Проверка документации и версии (v1.2)
 
 - Версия продукта: `UHSDR_PRODUCT_VERSION`: `2.9.48-n96kp2` → **`2.9.48-n96kp3`**; числовые
@@ -632,7 +645,7 @@ bias ON в гистерезисе; прерванный recovery). Release/OFF/T
   (13 символов — та же длина, что n96kp2; буферы UI — `snprintf(out, 32, …)` в
   `ui_menu.c:723-728`, запас большой).
 - `tests/check_versions.py` ждёт `2.9.48-n96kp3`; `python tests/run_all.py` — PASS
-  (**1134 проверки, 0 failed, 3 known, 0 skipped**). Приватная сборка версии n96kp3 — PASS.
+  (**1754 проверки** после B1 (в v1.2 — 1134), 0 failed, 3 known, 0 skipped). Приватная сборка — PASS.
 - Все цифры v1.2 — из **чистой сборки HEAD `557e39f1` + bump `n96kp3`**
   (`_tmp/build-p-docs-v12`, см. [BUILD.md](BUILD.md) §3): `fw-mchf.bin` **321 392 Б**, flash 32,7 %
   (запас **661 648 Б**), RAM **42 616 Б**, **CCM 63 476/65 536** (свободно 2 060), `bl-mchf.bin`

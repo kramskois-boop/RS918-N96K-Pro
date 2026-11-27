@@ -6,7 +6,7 @@
 приём 96 кГц и передача 12 кГц с целочисленными преобразованиями, расширенный ЦОС-тракт, меню и
 спектр — плюс патчи качества и безопасности: P0-1…P0-6 в v1.0, P1/P2 в v1.1 и A1/A2 в v1.2
 (настраиваемая защита по КСВ и её доработки, EEPROM/CAT, загрузчик 5.0.4, воспроизводимая сборка и
-host-тесты; vendor FreeDV/Codec2 обновлён, но **FreeDV в сборке не включён**).
+host-тесты; vendor FreeDV/Codec2 обновлён; **FreeDV по умолчанию выключен, есть opt-in сборка `--freedv`** (B4, docs/FREEDV.md)).
 
 | Параметр | Значение |
 |---|---|
@@ -81,7 +81,7 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
 | Защита PA по КСВ (VSWR foldback), guard `fwd_pwr` | есть (с 2018-12) | портировано **P0-4**; в v1.1 — настраиваемый порог в EEPROM/меню, индикация `SWR!`, быстрое срабатывание и safe retry (**P1-1…P1-3**); в v1.2 — инвариант «смена мощности не возвращает драйв при активной защите» и завершение trial в гистерезисе (**A1**) |
 | TX только в любительских бэндах, блокировка CAT при TX | частично | закрыто **P0-5**; остаточные CAT-лазейки закрыты **P1-5** |
 | Bootloader | 5.0.4 | **5.0.4** (P2-1, обновлён с 4.1.2; проверен сборкой, на железе не испытывался) |
-| FreeDV/Codec2 rev 4121, фикс #1749 | есть | vendor обновлён (**P2-2**, rev 4121); **FreeDV в сборке не включён** (`IS_SMALL_BUILD`, как в форке Nizar) — включение отдельной задачей; NR+FreeDV-гейты — **A2** |
+| FreeDV/Codec2 rev 4121, фикс #1749 | есть | vendor обновлён (**P2-2**, rev 4121); по умолчанию **не включён** (`IS_SMALL_BUILD`); **B4** — opt-in сборка `--freedv` (fw 565 584 Б, RAM 48 836, CCM 63 972), на железе не испытывалась; NR+FreeDV-гейты — **A2** |
 | CAT/Hamlib 4.3: `get_vfo`, фиксы FT-817/WINTEST | есть | фиксы `get_vfo` уже были в базе Nizar; добавлена эмуляция 0x65 (**P1-5**) |
 | AGC restore #1730, Tune Power #1750, CW-декодер #1881 | есть | порт выполнен (**P2-4**, см. docs/PATCHES.md) |
 | EEPROM signature #1675, DMA #1664 | есть | нет (follow-up) |
@@ -110,11 +110,13 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
 | P1-4 | EEPROM read fallback | default-значение при ошибке чтения во всех `UiReadSettingEEPROM_*` (закрыт UB `value16`) |
 | P1-5 | CAT при TX | закрыты EEPROM-VFO-select и clone RX `df.tune_new` во время TX; эмуляция 0x65 FT-817; поправка про `get_vfo` |
 | P2-1 | Загрузчик | UHSDR bootloader 5.0.4 (8 файлов), совместимость API и SBLA/SBLS; 31 620/32 768 Б |
-| P2-2 | FreeDV/Codec2 | vendor rev 4121 + фикс #1749 (`-DFDV_ARM_MATH`); интеграционный слой Nizar не тронут; **FreeDV в сборке не включён** |
+| P2-2 | FreeDV/Codec2 | vendor rev 4121 + фикс #1749 (`-DFDV_ARM_MATH`); интеграционный слой Nizar не тронут; по умолчанию **выключен**; opt-in сборка — **B4** |
 | P2-3 | CI/тесты | Docker с pinned GCC 15.2.1, `docker/verify_artifacts.py`, GitHub Actions (3 job'а, включая release), host-тесты (**1754** проверки после B1) |
 | P2-4 | Бэкпорты AGC/Tune/CW | AGC restore #1730, Tune Power #1750, CW-decoder #1881 (см. docs/PATCHES.md) |
 | A1 | VSWR: инвариант драйва | при активном foldback смена мощности (PWR-энкодер/меню/CAT/Tune) не возвращает полный драйв; trial в зоне гистерезиса завершается mute; `ts.power_level` восстанавливается после release |
-| A2 | NR+FreeDV #1749 | сброс NR-статики и общего буфера при выходе из DIGI (`AudioNr_Prepare()`); NR pass-through при активном FreeDV — гейты «на будущее» (FreeDV в сборке не включён) |
+| A2 | NR+FreeDV #1749 | сброс NR-статики и общего буфера при выходе из DIGI (`AudioNr_Prepare()`); NR pass-through при активном FreeDV — в default-сборке вырезаны, в opt-in FreeDV-сборке B4 активны |
+| B3 | Надёжность/DSP | фиксированный буфер вместо VLA в audio ISR, согласованный сброс NR (A4/R9), фикс OOB ALC-кольца при смене SSB↔AM/FM, DEBUG-диагностика (ISR%/DMA/NR); fw +968 Б |
+| B4 | FreeDV opt-in | `--freedv`: fw 565 584 Б / RAM 48 836 / CCM 63 972; default-сборка не меняется; перед передачей — стенд (docs/FREEDV.md) |
 
 Полный каталог (файлы, обоснование, статус, проверка) — **[docs/PATCHES.md](docs/PATCHES.md)**.
 История версий — [docs/CHANGELOG.md](docs/CHANGELOG.md).
@@ -131,7 +133,10 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
   — Python 3 без внешних зависимостей; после B1 прогон даёт **1754 проверки, 0 failed, 3 known** (в v1.2 было 1134)
   (известные дефекты задокументированы в `tests/known_issues.py`), см. [tests/README.md](tests/README.md).
 - **CI/Docker** (P2-3): `Dockerfile` с pinned xPack GCC 15.2.1-1.1 и `docker/verify_artifacts.py`;
-  GitHub Actions workflow; на машине разработки `docker build` не запускался — см. [docs/CI.md](docs/CI.md).
+  GitHub Actions: `host-tests` + `docker-build` + `release` (по тегу) — живые прогоны PASS (2026-11-27),
+  см. [docs/CI.md](docs/CI.md).
+- **FreeDV (opt-in):** `python tools/build.py all --freedv` — отдельная сборка с FreeDV;
+  default-прошивка не меняется (см. [docs/FREEDV.md](docs/FREEDV.md)).
 - Собирается **только F4** (RS-918/mcHF). `.dfu` и handbook CLI-скриптом не генерируются.
 - Побайтовая воспроизводимость между сборками не гарантируется: в прошивку вшивается дата и
   время сборки (`UHSDR_BUILD_DAT`). Повторная сборка без изменения исходников даёт тот же размер,
@@ -184,15 +189,15 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
   CW-decoder #1881 (P2-4); в v1.2 (этап A) закрыты F2/F6 по VSWR (**A1**) и портированы NR+FreeDV-
   фиксы #1749 (**A2**). **Не перенесены:** EEPROM signature #1675, DMA size #1664; полный merge
   на 2.12.2 не планируется (73 конфликтных файла, смена bootloader и EEPROM).
-- **FreeDV в данной сборке не включён; включение — отдельная задача** (требует `-DUSE_FREEDV`,
-  проверки пре-существующего рассинхрона guard'ов `audio_driver.c:662-723` vs `2434-2435`).
-  Продукт собирается с `IS_SMALL_BUILD`, `USE_FREEDV` не определён (как и в исходном форке
-  Nizar): FreeDV-функций в прошивке нет, режим недоступен из UI. Vendor-дерево FreeDV/Codec2
-  обновлено до rev 4121 (**P2-2**), NR+FreeDV-фиксы #1749 (`df9ef3f9`/`27945d8b`) портированы
-  гейтами под `#ifdef USE_FREEDV` (**A2**) — upstream-parity «на будущее»; в текущей конфигурации
-  они вырезаются препроцессором. Интеграционный слой Nizar (`freedv_uhsdr.c/.h`) остался на API
-  2.9.48; новые возможности 2.12.2 (700D, squelch, выбор режима) не включены. См. docs/PATCHES.md,
-  P2-2/A2.
+- **FreeDV по умолчанию не включён** (сборка с `IS_SMALL_BUILD`, `USE_FREEDV` не определён — как
+  в форке Nizar): в обычной прошивке FreeDV-функций нет. В **B4** сделана **opt-in сборка**:
+  `python tools/build.py all --freedv` (флаг `-DN96K_FREEDV`, `USE_FREEDV` включается при сохранении
+  `IS_SMALL_BUILD`); default-сборка не меняется. FreeDV-вариант: fw **565 584 Б**, RAM static
+  **48 836**, CCM **63 972** (свободно 1 564); бюджет heap/стека сходится только с удалением
+  `MODEM_STATS` (10,6 КБ) из `struct freedv` в opt-in сборке; запас стека ≈7,8 КБ, риск №1 —
+  реальная глубина/CPU на железе. Сборка и host-тесты проходят, **на железе не испытывалась**:
+  перед передачей — стенд по `docs/FREEDV.md`, откат на default-прошивку. NR+FreeDV-фиксы #1749
+  (**A2**) в этой сборке активны; новые возможности 2.12.2 (700D, squelch) не включены.
 - **VSWR-защита (P1-1…P1-3).** Порог настраивается в меню Configuration (1 = OFF, 2..10, default 3),
   есть индикация `SWR!`, реакция ~60 мс (физический минимум одного измерения при 5 выборках);
   recovery-пробы — только на минимальной мощности, после восстановления до ~1,1 с держится
