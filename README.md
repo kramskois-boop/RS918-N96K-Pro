@@ -260,6 +260,8 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
 | [docs/BOOTLOADER.md](docs/BOOTLOADER.md) | загрузчик 5.0.4/4.1.2: проверка версии, обновление SWD/ROM-DFU, откат, коды ошибок |
 | [docs/VSWR.md](docs/VSWR.md) | защита PA по КСВ: порог/меню, индикация, тайминги, калибровка датчика, сценарии проверки |
 | [docs/RELEASE.md](docs/RELEASE.md) | процедура релиза: версия, сборка, артефакты, SHA256, тег, чек-лист, откат |
+| [docs/CHANGES.md](docs/CHANGES.md) | **сводная таблица изменений**: было → стало → что даёт (плюсы), метрики до/после |
+| [docs/CHECKLIST.md](docs/CHECKLIST.md) | **печатный чек-лист must-pass** для полевой проверки (PDF/DOCX — в release/vX/printable/) |
 | [docs/SAFETY.md](docs/SAFETY.md) | правила безопасной эксплуатации и прошивки |
 | [docs/CI.md](docs/CI.md) | CI/Docker: сборка в контейнере, host-тесты, ограничения |
 | [docs/CREDITS.md](docs/CREDITS.md) | атрибуция и лицензии |
