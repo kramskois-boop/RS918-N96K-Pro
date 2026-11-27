@@ -109,7 +109,7 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
 | P1-5 | CAT при TX | закрыты EEPROM-VFO-select и clone RX `df.tune_new` во время TX; эмуляция 0x65 FT-817; поправка про `get_vfo` |
 | P2-1 | Загрузчик | UHSDR bootloader 5.0.4 (8 файлов), совместимость API и SBLA/SBLS; 31 620/32 768 Б |
 | P2-2 | FreeDV/Codec2 | vendor rev 4121 + фикс #1749 (`-DFDV_ARM_MATH`); интеграционный слой Nizar не тронут; **FreeDV в сборке не включён** |
-| P2-3 | CI/тесты | Docker с pinned GCC 15.2.1, `docker/verify_artifacts.py`, GitHub Actions, host-тесты (1134 проверки) |
+| P2-3 | CI/тесты | Docker с pinned GCC 15.2.1, `docker/verify_artifacts.py`, GitHub Actions (3 job'а, включая release), host-тесты (**1754** проверки после B1) |
 | P2-4 | Бэкпорты AGC/Tune/CW | AGC restore #1730, Tune Power #1750, CW-decoder #1881 (см. docs/PATCHES.md) |
 | A1 | VSWR: инвариант драйва | при активном foldback смена мощности (PWR-энкодер/меню/CAT/Tune) не возвращает полный драйв; trial в зоне гистерезиса завершается mute; `ts.power_level` восстанавливается после release |
 | A2 | NR+FreeDV #1749 | сброс NR-статики и общего буфера при выходе из DIGI (`AudioNr_Prepare()`); NR pass-through при активном FreeDV — гейты «на будущее» (FreeDV в сборке не включён) |
@@ -125,8 +125,8 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
   Команды здесь намеренно не дублируются — единственный источник: docs/BUILD.md.
 - Результаты: `build/fw-mchf.bin` (прошивка), `build/bl-mchf.bin` (загрузчик),
   а также `.elf`/`.hex`/`.map` и `warnings.log`.
-- **Host-тесты** (ЦОС-таблицы, `files.mak`, EEPROM-карта, версия/идентификация): `python tests/run_all.py`
-  — Python 3 без внешних зависимостей; в v1.2 прогон даёт **1134 проверки, 0 failed, 3 known**
+- **Host-тесты** (ЦОС-таблицы, `files.mak`, EEPROM-карта и descriptor-binding, версия/идентификация, VSWR/A1-инварианты): `python tests/run_all.py`
+  — Python 3 без внешних зависимостей; после B1 прогон даёт **1754 проверки, 0 failed, 3 known** (в v1.2 было 1134)
   (известные дефекты задокументированы в `tests/known_issues.py`), см. [tests/README.md](tests/README.md).
 - **CI/Docker** (P2-3): `Dockerfile` с pinned xPack GCC 15.2.1-1.1 и `docker/verify_artifacts.py`;
   GitHub Actions workflow; на машине разработки `docker build` не запускался — см. [docs/CI.md](docs/CI.md).
@@ -202,7 +202,7 @@ host-тесты. Полный merge на upstream 2.12.2 **не** планиру
   испытывался**. В `release/v1.1` включены оба: `bl-mchf-5.0.4.bin` (новый, только после
   аппаратного smoke-теста USB-обновления/DFU) и `bl-mchf-4.1.2-known-good.bin` (прежний, для
   отката). Обновлять загрузчик — только с бэкапом/программатором.
-- **CI/Docker (P2-3):** host-тесты есть и проходят (1134/0/3), но `docker build` и GitHub Actions
+- **CI/Docker (P2-3):** host-тесты есть и проходят (1754/0/3 после B1), но `docker build` и GitHub Actions
   не запускались (нет Docker/remote); бюджет flash/CCM дополнительно контролируется вручную.
 - **TX вне любительских диапазонов (R6):** поведение отличается от 2.9.48 — TX OOB по умолчанию
   заблокирован (design P0-5); сообщения пользователю при отказе TX нет.

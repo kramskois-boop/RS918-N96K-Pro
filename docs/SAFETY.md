@@ -99,7 +99,7 @@
   Новые CCM-буферы без пересчёта карты памяти приведут к ошибке линковки, а «подгонка»
   размеров — к порче RAM.
 - Прошивайте только сборки, прошедшие проверку: host-тесты (`python tests/run_all.py` —
-  1134 проверки, 0 failed, 3 known) и сборку с контролем бюджета (`build/build-summary.json`);
+  1754 проверки, 0 failed, 3 known) и сборку с контролем бюджета (`build/build-summary.json`);
   см. docs/PATCHES.md и docs/CI.md. Непроверенная сборка может зависнуть в эфире или повредить
   настройки.
 - Бюджет flash/RAM/CCM проверяйте по `build/build-summary.json` и `.map` (docs/BUILD.md);

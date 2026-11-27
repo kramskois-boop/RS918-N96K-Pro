@@ -77,7 +77,7 @@ python tools\build.py clean        # удалить каталог build\ цел
 от него файлы (учёт заголовков в `*.d` исправлен, см. §4).
 
 **Проверки после сборки.** Host-тесты (ЦОС-таблицы, `files.mak`, карта EEPROM, версия/идентификация):
-`python tests\run_all.py` — в v1.2 **1134 проверки, 0 failed, 3 known**; CI/Docker с pinned
+`python tests\run_all.py` — после B1 **1754 проверки, 0 failed, 3 known** (в v1.2 было 1134); CI/Docker с pinned
 toolchain и контроль бюджета артефактов — [docs/CI.md](CI.md).
 
 ---

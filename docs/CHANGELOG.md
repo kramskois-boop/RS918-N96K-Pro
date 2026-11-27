@@ -2,11 +2,53 @@
 
 Формат — по мотивам Keep a Changelog; версии соответствуют тегам git.
 Для этого репозитория: `2.9.48` (база upstream) → `nizar-baseline` (импорт дерева Nizar) →
-`cleanup-done` (чистка) → `v1.0` (тег) → `v1.1` (тег) → `v1.2` (тег планируется).
+`cleanup-done` (чистка) → `v1.0` (тег) → `v1.1` (тег) → `v1.2` (тег 2026-11-27).
 
-## [v1.2] — планируется (тег `v1.2`)
+## [Unreleased] — B1 (2026-11-27): тесты, CI и авто-релиз
 
-Дата не назначена: релизная сборка `release/v1.2` и тег ещё не сделаны; прошивка не проходила
+B1 — инструментальный этап: прошивка, загрузчик и релизные артефакты v1.2 **не менялись**
+(fw 321 392 Б, bl 31 620 Б, 78 предупреждений — как в v1.2). Изменены тесты, CI и документация.
+
+### Тесты
+
+- **F5 (p-verify2):** `check_versions.py` больше не принимает `UHSDR_BOOT_VERS=4.1.2` как KNOWN —
+  целевой загрузчик только **5.0.4**; откат версии теперь даёт FAIL (мутация проверена).
+- **F11:** `check_eeprom.py` проверяет фактический контракт персистентности — таблицу
+  `ConfigEntryInfo[]` (259 дескрипторов, 265 адресов): структура, уникальность адресов,
+  Int32-спаны, согласованность с `Ui*SettingEEPROM_*`, использование таблицы в Read/Write и
+  `UiConfiguration_GetEntry()`; добавлен golden-снапшот `tests/eeprom_descriptor_map.txt`
+  (обновление — `python3 tests/check_eeprom.py --update-golden` при осознанном изменении карты).
+- **VSWR/A1-регресс:** новый `tests/check_vswr.py` (92 проверки): константы автомата, порог
+  EEPROM 426 / меню / 1=OFF, A1-clamp, guard `fwd_pwr` и cap 49, recovery на минимальной
+  мощности, индикация `SWR!`, TX-interlock.
+- Итог: **1754 проверки, 0 failed, 3 known, 0 skipped — PASS** (+620 к v1.2); мутационный
+  набор 20/20 ловится (7 по F5/F11, 13 по VSWR).
+
+### CI и релиз
+
+- `.github/workflows/build.yml`: удалён дублирующийся блок `env:`/`jobs:` (F12); добавлен job
+  **release** (только тег `v*`): скачивает артефакты docker-build, упаковывает `tools/release.py`,
+  проверяет `sha256sum -c` и публикует GitHub Release.
+- Новый `tools/release.py` (stdlib): каталог `release/vX` из `build/` (14 файлов с known-good,
+  13 сумм; без known-good — 13/12), `SHA256SUMS.txt` в формате v1.0–v1.2, `RELEASE-NOTES.md`
+  из `--notes` / `docs/release-notes/<v>.md` / шаблона, проверка через `docker/verify_artifacts.py`.
+- Новый `tools/check_workflow.py`: stdlib-детектор дублей top-level ключей YAML.
+- Dockerfile: комментарий `.sha256`→`.sha` (F12); `.gitattributes`: `Dockerfile eol=lf`.
+- **Статус:** `docker build` и GitHub Actions вживую не исполнялись (нет Docker/remote) — YAML
+  проверен статически (`check_workflow.py`), release.py — на реальной сборке и фикстуре
+  `release/v1.2`. Первый живой прогон — после появления remote и push тега.
+
+### Документация
+
+- `docs/CI.md`: 3 job'а, `tools/release.py` (§5.1), статус «Actions не исполнялись» (§5.2),
+  исправлены побитые code-блоки.
+- `docs/RELEASE.md`: §4.5 автоматизация, §6.3, чек-лист.
+- `PLAN-DEV.md`: этапы v1.1/v1.2/B1/B2, статус релизов, решения (**F7/H7 сохранены**).
+- README / docs/BUILD / docs/SAFETY / docs/CHANGES / tests/README: актуальное число тестов 1754.
+
+## [v1.2] — 2026-11-27 (тег `v1.2`)
+
+Релизная сборка `release/v1.2` и тег созданы 2026-11-27; прошивка не проходила
 полевых испытаний. Этап A — закрытие остаточных P2/P3-замечаний независимого ревью v1.1 (S3c,
 агент p-verify2): **A1** (VSWR foldback) и **A2** (NR+FreeDV #1749). Числовые `UHSDR_VER_*` =
 2.9.48 сохранены; версия продукта — **`2.9.48-n96kp3`**; загрузчик — **UHSDR 5.0.4**. Статусы,

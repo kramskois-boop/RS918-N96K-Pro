@@ -37,8 +37,8 @@
 | 23 | AGC/Tune/CW-декодер | Настройки AGC «Clarity» не сохранялись; Tune не восстанавливал уровень/PWR; CW-настройки не сохранялись | Бэкпорты #1730, #1750, #1881: EEPROM слоты 524 (AGC) и 430 (CW), корректное восстановление после Tune | Настройки не теряются, Tune предсказуем |
 | 24 | NR + FreeDV (#1749) | После FreeDV+NR возможна «тишина»/NaN-остатки | AudioNr_Prepare() + NR pass-through при FreeDV (A2) | Нет тишины/NaN при будущем включении FreeDV |
 | | **Инструменты и качество** | | | |
-| 25 | Тесты | Нет | tests/ — **1134 проверки**: ЦОС-таблицы (FIR/IIR/IQ), files.mak, версии, карта EEPROM; 3 known | Автопроверки целостности фильтров и сборки |
-| 26 | CI | Нет | Dockerfile (pinned GCC 15.2.1 + SHA256), GitHub Actions (host-tests + docker-build), docker/verify_artifacts.py | Повторяемая сборка и автоматические гейты при наличии remote/Docker |
+| 25 | Тесты | Нет | tests/ — **1754 проверки** (B1; в v1.2 — 1134): ЦОС-таблицы (FIR/IIR/IQ), files.mak, версии, карта EEPROM + descriptor-binding, VSWR/A1-инварианты; 3 known | Автопроверки целостности фильтров, EEPROM-контракта и защиты PA |
+| 26 | CI | Нет | Dockerfile (pinned GCC 15.2.1 + SHA256), GitHub Actions (host-tests + docker-build + release по тегу), docker/verify_artifacts.py, tools/release.py | Повторяемая сборка, гейты и авто-релиз при наличии remote/Docker |
 | 27 | Документация | 4 базовых файла upstream | 14 документов: README, PATCHES, CHANGELOG, SAFETY, BUILD, CI, CREDITS, TESTPLAN, BOOTLOADER, VSWR, RELEASE, PLAN-DEV, CHANGES, CHECKLIST | Передаваемость, полевые испытания, безопасность, аудит |
 | 28 | Аудит и бэкап | Нет | REPORT.md (293 строки) + parts + артефакты (patch, numstat, manifest SHA256) + полная резервная копия 758 МБ | Доказательная база и возврат к исходнику |
 | | **Сохранено от Nizar** | | | |
@@ -55,7 +55,7 @@
 | RAM / CCM | — / 63 476 (96,9 %) | 42 616 / **63 476 из 65 536** (свободно 2 060) |
 | Загрузчик | 31 496 Б (4.1.2, 96,1 %) | **31 620 Б** (5.0.4, 96,5 %, запас 1 148) |
 | Предупреждения | — | 78 строк (64 компилятора + 14 линковки), все предсуществующие; новых от патчей 0 |
-| Тесты | 0 | 1134 проверки, 0 failed, 3 known |
+| Тесты | 0 | 1754 проверки (B1), 0 failed, 3 known |
 | Документов | 4 | 14 |
 | Строк кода Nizar | 150 файлов, +38 906/−19 299 | сохранены без отката функций |
 
