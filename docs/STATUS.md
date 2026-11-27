@@ -1,12 +1,12 @@
 # RS918 N96K-Pro — статус проекта
 
-**Обновлено:** 2026-11-27 (этап docs-sync, после misc-фиксов и финальных сборок B6).
-**Ветка продукта:** main, HEAD **ee5e06ed** = v1.2 + B1 + B2 + B3 + B4 + B5.
-**Текущая работа:** ветка nizar-review (от main), HEAD **69ccd736**: Nizar-audit; фиксы
-H1/H2/H3 (aa5fdcb9), H5 (a4042337), H4/H6/H9/H10/H11/H13 (69ccd736); opt-in --full (e8a78590);
-docs-rebuild (22fce856); cleanup. Финальные сборки выполнены (default/FreeDV/full/O3), печатные
-PDF готовы (task-47); пакет release/bench-2026-11-27 собирает lead. В main изменения второй волны
-ещё не влиты.
+**Обновлено:** 2026-11-27 (финальный срез B6: PR #3 влит, пакет для стенда готов).
+**Ветка продукта:** main, HEAD **77d9899a** = v1.2 + B1…B5 + B6 (merge PR #3).
+**Сделано:** Nizar-audit; фиксы H1/H2/H3 (aa5fdcb9), H5 (a4042337), H4/H6/H9/H10/H11/H13
+(69ccd736); opt-in --full (e8a78590); docs-rebuild/docs-sync (a06eb86e); cleanup (~23 ГиБ);
+финальные сборки default/FreeDV/full/O3; печатные PDF; пакет **release/bench-2026-11-27**
+(29 файлов + SHA256SUMS + zip) и его независимая проверка (b6-package-verify: готов к стенду).
+**Ветка nizar-review** = a06eb86e (запушена, PR #3 смержен). Живой CI на main — PASS.
 
 Легенда: ✅ сделано · 🔄 в процессе · ⏳ план · ⛔ блок.
 
@@ -33,11 +33,12 @@ PDF готовы (task-47); пакет release/bench-2026-11-27 собирает
 | Cleanup (task-41) | ✅ сделано | освобождено ≈23,2 ГиБ (рабочая папка 24,8 → 2,8 ГиБ); _audit/dev/cleanup.md |
 | Docs-rebuild (task-42) | ✅ сделано | коммит 22fce856: STATUS/CHANGES/CHANGELOG/PATCHES/README/PLAN-DEV/CI/RELEASE |
 | Docs-final (task-46) | ✅ сделано | актуализация docs по итогам Nizar-review (a4042337); отчёт _audit/dev/docs-final.md |
-| Docs-sync (task-49) | 🔄 в процессе | этот срез: финальные числа/статусы после 69ccd736 + исправление D2–D5 из b6-verify (AGC Hang, H13-остаток, override-мощность, H14/H15/H16/N11); отчёт _audit/dev/docs-sync.md |
+| Docs-sync (task-49) | ✅ сделано | финальные числа/статусы после 69ccd736 + исправление D1–D7 из b6-verify (AGC Hang, H13-остаток, override-мощность, H14/H15/H16/N11); отчёт _audit/dev/docs-sync.md |
 | Финальные сборки B6 | ✅ сделано | default 323 304/42 684/63 476; FreeDV 567 040/48 840/63 972; full 573 088/48 840/63 972; O3 428 236/42 700/63 476; bl 31 620; 73 warnings; 1754 теста |
 | B6-verify (task-48) | ✅ сделано | независимая проверка: код H1…H13 — PASS; host-тесты 1754 PASS, warning-гейт 73/73, ELF-дескрипторы H5 идентичны; H13 — PARTIAL (TP_IRQ исправлен, nr_first_time — стенд); документарные дефекты D1–D5 исправлены в docs-sync |
-| Печатные PDF B6 (task-47) | ✅ сделано | release/bench-2026-11-27/printable/: чек-лист 2 стр., сводка 4 стр. с финальными числами; после docs-sync пересобираются отдельным агентом из обновлённых CHECKLIST/CHANGES |
-| Пакет release/bench-2026-11-27 | 🔄 в процессе | собирает lead: default/freedv/full/o3/bl, build-summary/warnings, docs, printable, rollback-v1.2, README, SHA256SUMS |
+| Печатные PDF B6 (task-47/50) | ✅ сделано | release/bench-2026-11-27/printable/: чек-лист 2 стр., сводка 4 стр.; пересобраны после docs-sync (task-50), финальные числа, AGC Hang не обещан |
+| Пакет release/bench-2026-11-27 | ✅ сделано | default/freedv/full/o3 + bl + rollback-v1.2 + docs + printable + README + SHA256SUMS (29/29 OK); zip `release/RS918_N96K-Pro-bench-2026-11-27.zip` |
+| B6-package-verify (task-51) | ✅ сделано | независимая проверка пакета: SHA 29/29, бинарники/build-summary/hex/README сходятся, docs/PDF актуальны; вердикт «готов к стенду»; отчёт _audit/dev/b6-package-verify.md |
 | Стенд H7/H8/H12/VID-PID и проверка фиксов | ⏳ план | docs/CHECKLIST.md: H1/H2/H3/H5/H4/H6/H9/H10/H11/H13 + H7/H8/H12; H13-nr_first_time |
 | Полевые испытания (этап C) | ⏳ план | docs/TESTPLAN.md, docs/CHECKLIST.md; требует железа |
 | v1.3 | ⏳ план | после пакета/стенда и решения lead: тег и release-пакет по docs/RELEASE.md |
