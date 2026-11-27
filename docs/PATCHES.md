@@ -6,7 +6,8 @@
 Нумерация: **P0** — исправления до любого применения прошивки (v1.0); **P1** — качество,
 безопасность и конфигурация (v1.1); **P2** — бэкпорты upstream и инфраструктура (v1.1);
 **A1/A2** — этап A (v1.2): закрытие остаточных P2/P3-замечаний независимого ревью S3c по VSWR
-и порт NR+FreeDV #1749.
+и порт NR+FreeDV #1749; **B1–B5** — инструментальные этапы после v1.2 (тесты/CI/релиз,
+документация, аудио/DSP-hardening, opt-in FreeDV, warning-гейт/фиксы/оптимизация).
 Историческое замечание: в PLAN-DEV.md патч гигиены репозитория носил номер P1-1; в v1.1 номера
 P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающая с маркерами в коде, а патч гигиены ниже
 для однозначности называется **P1-H**.
@@ -15,18 +16,22 @@ P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающ
 диффы минимальные; поведение и алгоритмы Nizar не меняются — только исправление дефекта или
 добавление защиты.
 
-Срез статусов — 2026-11-26, HEAD `557e39f1` (этап A, v1.2); теги **v1.0** = `82056486` и
-**v1.1** (финальная сборка — артефакты `release/v1.1`). Цифры v1.2 — чистая сборка HEAD
-`557e39f1` + bump `n96kp3` (`_tmp/build-p-docs-v12`); финальные артефакты `release/v1.2` и
-тег v1.2 — при упаковке релиза; остальные цифры — из `release/v1.0`/`release/v1.1` и
-[BUILD.md](BUILD.md). Статусы:
+Срез статусов — 2026-11-27, `main` HEAD **ee5e06ed** = v1.2 + B1–B5; рабочая ветка
+**`nizar-review`** (вторая волна: Nizar-audit/full-build, cleanup, docs-rebuild) — в процессе,
+её изменения в этот каталог ещё не входят. Теги: **v1.0** = `82056486`, **v1.1** = `cf43b068`,
+**v1.2** = annotated `4ca85bba` → commit `dc204cc1` (сборка/версия `619e9187`); артефакты —
+`release/v1.0`…`release/v1.2` и тестовый пакет `release/fieldtest-2026-11-27`. Цифры main —
+из свежих проверочных сборок `build-test`/`build-test-freedv`/`build-test-o3` (2026-11-27);
+v1.0/v1.1/v1.2 — из `release/*` и [BUILD.md](BUILD.md). Живой CI: Actions
+(`host-tests` + `docker-build` + release-job по тегу) — см. [CI.md](CI.md) §5.2. Статусы:
 «реализовано» = код в дереве; «сборка подтверждена» = `python tools/build.py firmware` завершился
 с exit 0; «на железе не проверялось» = полевых испытаний не было.
 
 Независимое ревью v1.1 (S3c, агент p-verify2) завершено: P1-дефектов в коде не найдено,
 замечания F1–F13 — `_audit/dev/p-verify2.md` (вне репозитория); этап A закрывает F2/F6 (A1) и
-F3 (A2 — в конфигурации с включённым FreeDV). Независимое ревью v1.2 (S3d, агент p-verify3) на
-момент среза в процессе — его замечания могут скорректировать статусы/риски ниже.
+F3 (A2 — в конфигурации с включённым FreeDV). Независимое ревью v1.2 (S3d, агент p-verify3)
+завершено 2026-11-27: A1/A2/сборка/тесты — PASS, P1/P2-дефектов нет, находки только P3
+(`_audit/dev/p-verify3.md`); его замечания по PLAN-DEV закрыты в B1–B5.
 
 Проверенные размеры: **v1.0** — `fw-mchf.bin` 320 024 Б (32,6 %), RAM 42 616 Б, CCM 63 476/65 536;
 `bl-mchf.bin` 31 496 Б (загрузчик 4.1.2). **v1.1** — `fw-mchf.bin` 321 128 Б (32,7 %, финальная
@@ -37,6 +42,11 @@ F3 (A2 — в конфигурации с включённым FreeDV). Неза
 Предупреждений: v1.0 — 80 строк; v1.1/v1.2 — **78 строк** (64 предупреждения компилятора,
 24 уникальных текста + 14 строк линковки: 13 newlib-nano + lto-wrapper); этап A новых
 предупреждений не добавил.
+
+**main ee5e06ed (v1.2 + B1–B5):** default `fw-mchf.bin` **322 312 Б** (RAM 42 668, CCM 63 476/65 536,
+запас flash 660 728), `bl-mchf.bin` 31 620 Б (5.0.4), предупреждений **73** (35 текстов; warning-гейт,
+см. B5); FreeDV opt-in **565 552 Б** (RAM 48 836, CCM 63 972); O3 opt-in **425 500 Б** (RAM 42 696,
+CCM 63 476); host-тесты **1754 PASS** (0 failed, 3 known). Сводка статусов — [STATUS.md](STATUS.md).
 
 ## Сводная таблица
 
@@ -62,18 +72,19 @@ F3 (A2 — в конфигурации с включённым FreeDV). Неза
 | P1-4 | EEPROM read fallback (закрыт UB `value16`) | `drivers/ui/ui_configuration.c` | audit R7 | реализовано; сборка — PASS |
 | P1-5/CAT | Закрыты EEPROM-VFO-select и clone RX `df.tune_new` при TX; эмуляция 0x65; поправка про get_vfo | `drivers/cat/cat_driver.c` | audit R8, Hamlib 4.3 | реализовано; сборка из чистого HEAD — PASS; с Hamlib/WSJT-X/железом не проверено |
 | P2-1 | Загрузчик upstream 5.0.4: 8 файлов, совместимость API и SBLA/SBLS | `src/bootloader/*`, `src/uhsdr_version.h`, docs/BUILD.md, docs/SAFETY.md | upstream 2.12.2 | реализовано; оба таргета собираются; загрузчик не прошивался |
-| P2-2 | FreeDV/Codec2 rev 4121 + фикс #1749 | `drivers/freedv/**`, files.mak, tools/build.py, Makefile | upstream 2.12.2 | vendor синхронизирован; сборка — PASS; по умолчанию выключен (`IS_SMALL_BUILD`); в **B4** — opt-in сборка (fw 565 584 Б, RAM 48 836, CCM 63 972); интеграционный слой не пересинхронизирован |
-| P2-3 | CI/Docker с pinned toolchain + host-тесты ЦОС | `Dockerfile`, `docker/verify_artifacts.py`, `.github/workflows/build.yml`, `tests/**`, docs/CI.md | audit §9 | реализовано; host-tests 1754/0/3 PASS (B1); CI в Actions зелёный (2026-11-27); docker build локально не запускался (Docker нет) |
+| P2-2 | FreeDV/Codec2 rev 4121 + фикс #1749 | `drivers/freedv/**`, files.mak, tools/build.py, Makefile | upstream 2.12.2 | vendor синхронизирован; сборка — PASS; по умолчанию выключен (`IS_SMALL_BUILD`); в **B4** — opt-in сборка (после B5: fw 565 552 Б, RAM 48 836, CCM 63 972); интеграционный слой не пересинхронизирован |
+| P2-3 | CI/Docker с pinned toolchain + host-тесты ЦОС | `Dockerfile`, `docker/verify_artifacts.py`, `.github/workflows/build.yml`, `tests/**`, docs/CI.md | audit §9 | реализовано; host-tests 1754/0/3 PASS (B1); в **B5** добавлен warning-гейт; CI в Actions зелёный (2026-11-27, PR #1/#2, run main `ee5e06ed`); docker build локально не запускался (Docker нет) — воспроизводимость даёт CI |
 | P2-4 | Бэкпорты AGC restore #1730, Tune Power #1750, CW-decoder #1881 | см. раздел P2-4 | upstream 2.12.2 | порт выполнен; сборка/тесты — PASS; на железе нет |
 
-### v1.2 — этап A (тег `v1.2`)
+### v1.2 — этап A (тег `v1.2`) и этапы B3–B5 (main `ee5e06ed`)
 
 | ID | Тема | Файлы (основные) | Источник | Статус |
 |---|---|---|---|---|
 | A1 | VSWR: принудительный минимальный drive при активном foldback; завершение trial в зоне гистерезиса | `drivers/ui/radio_management.c/.h` | S3c F2/F6 (`p-verify2`) | реализовано; `-fsyntax-only`, изолированная сборка (+208 Б), Unicorn-симуляция реальных функций 58/58 PASS (baseline 7 FAIL); на железе нет |
 | A2 | NR+FreeDV #1749: `AudioNr_Prepare()` при выходе из DIGI; NR pass-through при активном FreeDV | `drivers/audio/audio_nr.c/.h`, `audio_driver.c` | S3c F3 (`p-verify2`), upstream `df9ef3f9`/`27945d8b` | реализовано; сборка (+48 Б), RAM/CCM 0, host-tests PASS; в B4 добавлена opt-in FreeDV-сборка, где гейты активны |
 | B3 | Надёжность/DSP: VLA в audio ISR, согласованный сброс NR, OOB ALC-кольца, диагностика | `drivers/audio/audio_driver.c/.h`, `audio_nr.c/.h`, `codec/uhsdr_hw_i2s.c`, `ui/menu/*` | residual P3 F4/R9/A4, audit §4.6 | реализовано; host-tests 1754 PASS; fw 322 360 (+968), RAM 42 668 (+52), CCM 0, 78 warnings; на железе нет |
-| B4 | FreeDV opt-in: `--freedv`, guard-фиксы, MODEM_STATS, docs/FREEDV.md | `hardware/uhsdr_board.h`, `audio_driver.c`, `audio_filter.c`, `freedv_uhsdr.c`, `drivers/freedv/freedv_api*`, `tools/build.py` | B4 workstream | реализовано; default-сборка байт-в-байт (321 392/42 616/63 476 до B3); FreeDV 565 584/48 836/63 972; на железе нет |
+| B4 | FreeDV opt-in: `--freedv`, guard-фиксы, MODEM_STATS, docs/FREEDV.md | `hardware/uhsdr_board.h`, `audio_driver.c`, `audio_filter.c`, `freedv_uhsdr.c`, `drivers/freedv/freedv_api*`, `tools/build.py` | B4 workstream | реализовано; default-сборка не меняется; FreeDV 565 584/48 836/63 972 (после B5 — 565 552); на железе нет |
+| B5 | Warning-гейт, два реальных дефекта `-Waddress`, bounded `float2fixedstr`, docs/LIBS.md, `--opt-level {O2,O3,Os}` | `ui_driver.c`, `ui_vkeybrd.c`, `ui_menu.c`, `tools/check_warnings.py`, `tests/warnings-baseline.txt`, `tools/build.py`, `docs/LIBS.md`, docs/CI.md | B5 (b5-warn/libs/opt, task-35/36/37/38) | реализовано; default 322 312/42 668/63 476/73 warnings; O3 425 500/42 696/63 476/73; host-tests 1754 PASS; warning-гейт в CI; на железе нет |
 
 ---
 
@@ -633,8 +644,65 @@ bias ON в гистерезисе; прерванный recovery). Release/OFF/T
 включает `USE_FREEDV` при сохранении `IS_SMALL_BUILD`; default-сборка не меняется. Исправлены
 6 guard-мест `IS_SMALL_BUILD↔USE_FREEDV`, порядок `struct my_callback_state` и (только в opt-in
 сборке) удалён `MODEM_STATS` (10,6 КБ) из `struct freedv`. FreeDV-вариант: fw 565 584 Б, RAM 48 836,
-CCM 63 972, 78 warnings, 43 FreeDV/Codec2-символа; host-tests 1754 PASS. **На железе не испытывался**
+CCM 63 972, 78 warnings (после B5-фиксов — fw 565 552, 73 warnings), 43 FreeDV/Codec2-символа;
+host-tests 1754 PASS. **На железе не испытывался**
 (CPU/стек/звук) — только после стенда по docs/FREEDV.md можно утверждать, что FreeDV «работает».
+
+## B5 — Warning-гейт, два реальных дефекта `-Waddress`, bounded `float2fixedstr`, docs/LIBS.md, `--opt-level`
+
+**Проблема (C-7/C-8 из `_audit/dev/b3-audit.md`).** 78 строк предупреждений компилятора/линкера
+маскировали новые; среди них были два реальных дефекта: `char*`-указатели сравнивались со
+строковыми литералами через `==` (работало только благодаря LTO-склейке литералов — без неё
+терялся маркер `LPF*` и кнопка HPF переключала полосу вместо HPF), а `float2fixedstr`
+(`ui_menu.c`) писал `.` и финальный NUL без проверки `maxchar`, ограничивал дробную часть по
+чужому индексу и мог уйти в отрицательный стартовый индекс — потенциальный OOB (виден под
+`-O3`/LTO как `-Wstringop-overflow`). Кандидаты на обновление библиотек требовали проверки:
+обновление могло сломать вендорный код.
+
+**Исправление (маркеры `// N96K B5:`).**
+- `drivers/ui/ui_driver.c` (`UiDriver_DisplayFilter`), `drivers/ui/ui_vkeybrd.c`
+  (`UiVk_HPF_UP_TouchScreen`): сравнения указателей заменены на `!strcmp` (3 места,
+  5 предупреждений).
+- `drivers/ui/ui_menu.c` (`float2fixedstr`): полный bound по `maxchar`, индекс дробной части
+  в пределах буфера, неотрицательный стартовый индекс; эквивалентность вывода проверена
+  симуляцией на всём домене `freq_cal` (2999 значений) — 0 расхождений (+32 Б).
+- **Warning-гейт:** `tools/check_warnings.py` + `tests/warnings-baseline.txt`
+  (**73 предупреждения / 35 текстов**); шаг в CI job `docker-build`; новое/участившееся
+  предупреждение валит сборку, исчезнувшие — OK; нормализация путей/строк делает baseline
+  кроссплатформенным (Windows-хост и Linux-образ).
+- **`docs/LIBS.md`** (b5-libs): пины версий и SHA-1 деревьев CMSIS Core/Device/DSP, HAL F4,
+  USB Device/Host, FatFs, Codec2 rev 4121; сравнение с UHSDR 2.12.2; вывод — безопасных
+  обновлений нет (CMSIS 5/6, DSP 1.18, HAL 1.8.3, FatFs R0.15 — API-breaking без стенда),
+  вендорный код не менялся; CREDITS обновлён.
+- **`--opt-level {O2,O3,Os}`** в `tools/build.py`: default **O2** (историческая сборка не
+  меняется; загрузчик всегда `-Os`); `-Os` не линкуется из-за C99-`inline` в заголовках;
+  LTO-настройки проверены (выигрыша нет, `-flto-partition=one` хуже); микрооптимизации кода не
+  применялись (обоснование — в отчёте b5-opt).
+
+**Проверки.** default fw **322 312** (RAM 42 668, CCM 63 476, 73 warnings; было 322 360/78);
+FreeDV opt-in **565 552** (48 836/63 972/73); O3 **425 500** (42 696/63 476/73), O3+FreeDV 703 928;
+host-tests **1754 PASS** (0 failed, 3 known); warning-гейт OK для default и O3; workflow-линт OK;
+загрузчик не менялся (31 620 Б, тот же SHA). На железе не проверялось: правки — UI/отображение,
+проверка только по коду и сборке.
+
+## Nizar-review (вторая волна, в процессе)
+
+Ветка `nizar-review` (от `main` `ee5e06ed`); на момент среза изменения не закоммичены
+(коммитит lead), поэтому статусов «закрыто» здесь нет:
+
+- **Nizar-audit** (task-39): классификация diff `ae93edf6..nizar-baseline` — что вредит/критично
+  (`IS_SMALL_BUILD`, лимиты мощности/усиления, выключенные функции/меню, буферы 96k/12k) и что
+  стоит внести в общую сборку; отчёт `_audit/dev/nizar-audit.md`.
+- **Nizar-full** (task-40): opt-in `--full` (снятие `IS_SMALL_BUILD`; FreeDV + predefined FFT
+  windows) — сборка/замеры flash/RAM/CCM/warnings, host-тесты; default не меняется; отчёт
+  `_audit/dev/nizar-full.md`. На момент среза в работе `tools/build.py` + `hardware/uhsdr_board.h`.
+- **Cleanup** (task-41): удаление мусора вне исходников/бэкапа/аудита/релизов; отчёт
+  `CLEANUP-REPORT.md`.
+- **Docs-rebuild** (task-42): `docs/STATUS.md`, `docs/CHANGES.md`, обновление README/PLAN-DEV/
+  CHANGELOG/PATCHES/CI/RELEASE, подготовка CHECKLIST/CHANGES к пересборке PDF.
+
+Итоговые цифры второй волны (включая `--full`) появятся после сборок; до этого они не являются
+финальными.
 
 ## Проверка документации и версии (v1.2)
 
@@ -653,7 +721,9 @@ CCM 63 972, 78 warnings, 43 FreeDV/Codec2-символа; host-tests 1754 PASS. 
   24 уникальных текста + 14 строк линковки: 13 newlib-nano + lto-wrapper; новых от этапа A нет).
   **Размер зависит от содержимого строки версии:** тот же код с `n96kp2` даёт 321 384 Б, с
   `n96kp3` — 321 392 Б (+8 Б; проверено A/B-сборками одного дерева, различие — только
-  `uhsdr_version.h`). Финальные артефакты `release/v1.2` и тег v1.2 — при упаковке релиза.
+  `uhsdr_version.h`). Артефакты `release/v1.2` упакованы, тег **v1.2** — annotated
+  `4ca85bba` → commit `dc204cc1` (включает B2-документацию); v1.0/v1.1/v1.2 опубликованы; `main`
+  `ee5e06ed` = v1.2 + B1–B5, CI зелёный — статус в [STATUS.md](STATUS.md).
 
 ## Что не менялось
 
@@ -664,10 +734,13 @@ CCM 63 972, 78 warnings, 43 FreeDV/Codec2-символа; host-tests 1754 PASS. 
   новые записи добавлены в свободные/резервные id: 426 (P1-1), 430 и 524 (P2-4),
   `EEPROM_FIRST_UNUSED` 524 → 525, `MAX_VAR_ADDR` 523 → 524 (см. P2-4).
 - CMSIS/HAL и прочие вендорные библиотеки — не переписывались; Codec2/FreeDV обновлён только
-  в P2-2 (до upstream rev 4121, с одним задокументированным compat-блоком); в сборке FreeDV
-  отключён (`IS_SMALL_BUILD`, см. P2-2/A2).
+  в P2-2 (до upstream rev 4121, с одним задокументированным compat-блоком); в default-сборке
+  FreeDV отключён (`IS_SMALL_BUILD`, см. P2-2/A2), есть opt-in `--freedv` (B4).
 - Доработки Nizar не откатывались: изменения v1.1 — аддитивные (новые поля/пункты/enum в конец,
   новые ветки), а заменённый в P1-3 блок foldback — код самого v1.0-патча P0-4, не Nizar.
+- B5 поведение прошивки не меняет, кроме исправления двух UI-дефектов (`!strcmp` вместо
+  сравнения указателей) и bounds-проверок `float2fixedstr`; warning-гейт/LIBS/`--opt-level` —
+  инфраструктура, default-сборка остаётся O2.
 - Этап A (v1.2) поведение Nizar не менял: A1 сохраняет прежнее поведение вне foldback
   (`effective_power_level == ts.power_level`), A2 только сбрасывает NR-состояние после DIGI и
   добавляет гейты под `#ifdef USE_FREEDV`; ЦОС-коэффициенты, фильтры, EEPROM-раскладка и UI не
