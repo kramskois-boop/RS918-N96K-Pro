@@ -584,6 +584,14 @@ const MenuDescriptor infoGroup[] =
 const MenuDescriptor debugGroup[] =
 {
     { MENU_DEBUG, MENU_ITEM, MENU_DEBUG_ENABLE_INFO                , NULL,"Enable Debug Info Displ", UiMenuDesc("Enable debug outputs on LCD for testing purposes (touch screen coordinates, load) and audio interrupt duration indication via green led") },
+#ifdef DEBUG_BUILD
+    // N96K B3: read-only audio/CPU diagnostics (counters are defined in audio_driver.h/AudioDiag_t)
+    { MENU_DEBUG, MENU_INFO, INFO_AUDIO_LATE, NULL, "Audio late/DMA err", UiMenuDesc("N96K B3: audio real-time deadline misses (ISR late by more than a quarter block) and I2S DMA errors since power on.") },
+#ifdef USE_ALTERNATE_NR
+    { MENU_DEBUG, MENU_INFO, INFO_AUDIO_NR , NULL, "NR under/over, in/out", UiMenuDesc("N96K B3: noise reduction diagnostics: output FIFO underruns / input FIFO overflows and the current input/output queue levels.") },
+#endif
+    { MENU_DEBUG, MENU_INFO, INFO_AUDIO_ISR, NULL, "Audio ISR max load %", UiMenuDesc("N96K B3: longest audio interrupt since power on in % of the 0.667 ms audio block period.") },
+#endif
 	{ MENU_DEBUG, MENU_ITEM, MENU_DEBUG_COEFF_1                    , NULL,"Debug Coeff 1 value "           , UiMenuDesc("Enable debug outputs on LCD for testing purposes (touch screen coordinates, load) and audio interrupt duration indication via green led") },
 	{ MENU_DEBUG, MENU_ITEM, MENU_DEBUG_COEFF_2                    , NULL,"Debug Coeff 2 value "           , UiMenuDesc("Enable debug outputs on LCD for testing purposes (touch screen coordinates, load) and audio interrupt duration indication via green led") },
 	//  { MENU_DEBUG, MENU_ITEM, MENU_DEBUG_TX_AUDIO                   , NULL,"TX Audio via USB"         , UiMenuDesc("If enabled, send generated audio to PC during TX.") },

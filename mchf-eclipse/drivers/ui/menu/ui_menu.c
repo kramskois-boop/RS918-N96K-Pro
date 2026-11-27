@@ -752,6 +752,31 @@ const char* UiMenu_GetSystemInfo(uint32_t* m_clr_ptr, int info_item)
 						snprintf(out,32, "%s", ts.codec_present?"Yes":"N/A");
 					}
 					break;
+
+#ifdef DEBUG_BUILD
+    case INFO_AUDIO_LATE:
+					{
+						// N96K B3: audio deadline misses / I2S DMA errors since power on
+						snprintf(out,32, "%u/%u", (unsigned)audio_diag.isr_late, (unsigned)audio_diag.dma_err);
+						if ( audio_diag.isr_late != 0 || audio_diag.dma_err != 0 ) { *m_clr_ptr = Red; }
+					}
+					break;
+#ifdef USE_ALTERNATE_NR
+    case INFO_AUDIO_NR:
+					{
+						// N96K B3: NR output underruns / input overflows and the current FIFO levels (in/out)
+						snprintf(out,32, "%u/%u %d/%d", (unsigned)audio_diag.nr_out_empty, (unsigned)audio_diag.nr_in_full,
+								 NR_in_has_data(), NR_out_has_data());
+					}
+					break;
+#endif
+    case INFO_AUDIO_ISR:
+					{
+						// N96K B3: longest audio interrupt in % of the 0.667 ms block period (1.5 kHz ISR rate)
+						snprintf(out,32, "%u", (unsigned)(audio_diag.isr_max_cycles / AUDIO_ISR_CYCLES_PER_PERCENT));
+					}
+					break;
+#endif
     	case INFO_LICENCE:
 					{
 						snprintf(out,32, "%s", UHSDR_LICENCE);

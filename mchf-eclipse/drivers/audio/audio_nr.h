@@ -109,6 +109,15 @@ extern NoiseReduction2  NR2; // declaration, definition is in audio_nr.c
 // union (mmb), so the NR state and buffers have to be reset when leaving FreeDV.
 void AudioNr_Prepare(void);
 
+// N96K B3: coherent NR pipeline restart (audit R9/A4). AudioNr_Prepare() (UI context) only raises
+// this request; the audio DMA ISR consumes it and drops its partially filled input block plus both
+// FIFO directions in the context owning them (AudioNr_IsrRestart()).
+extern __IO bool NR_restart_request;
+void AudioNr_IsrRestart(void);
+
+// N96K B3: restarts the NR pipeline on every NR off->on transition, whichever UI path did it.
+void AudioNr_UpdateEnableState(bool nr_enabled);
+
 void alternateNR_handle();
 
 void do_alternate_NR();

@@ -529,6 +529,37 @@ enum	{
 #define	AUDIO_DELAY_BUFSIZE		(BUFF_LEN/2)*5	// 320=(128/2)*5  Size of AGC delaying audio buffer - Must be a multiple of BUFF_LEN/2.
 // This is divided by the decimation rate so that the time delay is constant.
 
+//
+// N96K B3: cheap audio/CPU diagnostics (audit P3). The counters saturate, are updated with a few
+// cycles in the audio path and are read by the read-only INFO menu items of the DEBUG menu group.
+// They are only compiled into DEBUG_BUILD (the size impact is a handful of bytes of RAM).
+//
+#ifdef DEBUG_BUILD
+// audio interrupt rate is 1500 Hz (96 kHz codec / 64 samples per half DMA buffer), CPU is 168 MHz
+#define AUDIO_ISR_CYCLE_BUDGET        (168000000u / 1500u)           // 112000 cycles == 0.667 ms block period
+#define AUDIO_ISR_CYCLES_PER_PERCENT  (AUDIO_ISR_CYCLE_BUDGET / 100u) // 1120 cycles == 1 % of the block period
+#define AUDIO_ISR_CYCLE_WRAP_LIMIT    1000000u                        // ignore DWT counter wrap artefacts
+
+typedef struct
+{
+    __IO uint16_t dma_err;          // I2S DMA error callbacks (DMA transfer errors, e.g. TEIF on a stream)
+    __IO uint16_t isr_late;         // audio ISR started later than 1.25 block periods (real-time deadline miss)
+    __IO uint16_t nr_out_empty;     // NR output FIFO underruns (silence inserted into the RX audio)
+    __IO uint16_t nr_in_full;       // NR input FIFO overflows (NR FFT fell behind the audio ISR)
+    __IO uint32_t isr_max_cycles;   // longest audio interrupt since power on (DWT cycles)
+} AudioDiag_t;
+
+extern AudioDiag_t audio_diag;
+
+static inline void AudioDriver_DiagInc(__IO uint16_t* counter)
+{
+    if (*counter < 0xFFFFu) { (*counter)++; }
+}
+#define N96K_DIAG_INC(counter)  AudioDriver_DiagInc(&(counter))
+#else
+#define N96K_DIAG_INC(counter)  do { } while (0)
+#endif
+
 #define CLOCKS_PER_DMA_CYCLE	10656			// Number of 16 MHz clock cycles per DMA cycle
 #define	CLOCKS_PER_CENTISECOND	160000			// Number of 16 MHz clock cycles per 0.01 second timing cycle
 //
