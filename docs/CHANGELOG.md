@@ -34,9 +34,13 @@ B1 — инструментальный этап: прошивка, загруз
   из `--notes` / `docs/release-notes/<v>.md` / шаблона, проверка через `docker/verify_artifacts.py`.
 - Новый `tools/check_workflow.py`: stdlib-детектор дублей top-level ключей YAML.
 - Dockerfile: комментарий `.sha256`→`.sha` (F12); `.gitattributes`: `Dockerfile eol=lf`.
-- **Статус:** `docker build` и GitHub Actions вживую не исполнялись (нет Docker/remote) — YAML
-  проверен статически (`check_workflow.py`), release.py — на реальной сборке и фикстуре
-  `release/v1.2`. Первый живой прогон — после появления remote и push тега.
+- **Живой прогон (2026-11-27):** репозиторий опубликован —
+  <https://github.com/kramskois-boop/RS918-N96K-Pro> (public, `main` + теги `v1.0/v1.1/v1.2`).
+  CI на push в `main`: `host-tests` **success** (17 с), `docker-build` **success** (5 мин 39 с,
+  pinned GCC 15.2.1, бюджеты и `SHA256SUMS` проверены), `release` skipped (не тег). Job
+  `release` проверен на временном теге `v0.0.0-citest` — **success** (артефакты → release.py →
+  `sha256sum -c` → GitHub Release); тестовый релиз и тег удалены. Локального `docker build`
+  по-прежнему нет (Docker не установлен на машине разработки).
 - **Локальная подготовка к публикации (B5, часть):** `docs/GITHUB.md` и `tools/github-setup.ps1` —
   настройка `origin`, проверка доступа (Git Credential Manager), первый push `main` + теги
   `v1.0/v1.1/v1.2`; upstream-проект сохранён как remote `upstream`. Ждёт логина GitHub.

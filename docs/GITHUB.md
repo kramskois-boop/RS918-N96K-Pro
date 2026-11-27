@@ -1,29 +1,34 @@
 # Публикация на GitHub (свой репозиторий + CI/Release)
 
-Локальная часть уже подготовлена: дерево чистое, теги `v1.0`/`v1.1`/`v1.2` на месте,
-история 4120 коммитов, upstream-проект сохранён как remote `upstream`, Git Credential Manager
-(GCM 2.9.1) доступен. Не хватает только **аккаунта и имени репозитория** — после этого всё
-делается одной командой (см. §3).
+**Репозиторий опубликован 2026-11-27:** <https://github.com/kramskois-boop/RS918-N96K-Pro>
+(public, ветка `main`, теги `v1.0`/`v1.1`/`v1.2`). CI (`host-tests` + `docker-build`) прошёл
+вживую, job `release` проверен на временном теге. Ниже — как это устроено и как повторить
+для форка/переименования.
 
-## 1. Что нужно от вас
+## 1. Параметры публикации (использованы)
 
-| Параметр | Пример | Обязательно |
-|---|---|---|
-| GitHub-логин | `krams` | да |
-| Имя репозитория | `RS918-N96K-Pro` (по умолчанию) | нет |
-| Видимость | public (рекомендуется: релизы/CI видны и бесплатны) или private | нет |
-| Способ входа | OAuth через GCM (рекомендуется), SSH-ключ или PAT | нет |
+| Параметр | Значение |
+|---|---|
+| GitHub-логин | **kramskois-boop** |
+| Репозиторий | **RS918-N96K-Pro** (public) |
+| Способ входа | OAuth через GCM (браузер); токен хранится в Windows Credential Manager |
+| Первый push | `main` + теги `v1.0`, `v1.1`, `v1.2` (2026-11-27) |
 
 Пароль от GitHub **не нужен**: используется OAuth-вход GCM (браузер или device-код), токен
 хранится в Windows Credential Manager и никогда не попадает в файлы репозитория.
 
 ## 2. Создать пустой репозиторий на GitHub
 
+> Для текущего продукта уже выполнено: репозиторий создан пустым и заполнен первым push.
+
 1. <https://github.com/new> → Repository name: `RS918-N96K-Pro`.
 2. **Не** добавляйте README, .gitignore и лицензию — репозиторий должен быть пустым.
 3. Public/Private — по желанию; для private также работают Actions (с лимитами минут).
 
 ## 3. Одна команда: настроить remote, проверить вход, запушить
+
+> Для текущего продукта уже выполнено (origin = `https://github.com/kramskois-boop/RS918-N96K-Pro.git`,
+> `main` и теги запушены). Инструкция ниже — для повторной настройки/форка.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\github-setup.ps1 -User <ваш-логин>
@@ -65,11 +70,11 @@ powershell -ExecutionPolicy Bypass -File tools\github-setup.ps1 -User <ваш-л
 GCM спросит логин/пароль: в качестве пароля вставить токен. Токен сохранится в Windows
 Credential Manager, не в git config.
 
-## 4. После первого push
+## 4. После первого push (проверено)
 
-1. **Actions**: <https://github.com/<логин>/RS918-N96K-Pro/actions> — должны пройти
-   `host-tests` (быстро) и `docker-build` (сборка в pinned GCC 15.2.1, ~1–2 мин после кэша).
-   Job `release` запускается только на тег `v*`.
+1. **Actions**: <https://github.com/kramskois-boop/RS918-N96K-Pro/actions> — прошли
+   `host-tests` (17 с) и `docker-build` (5 мин 39 с, cold cache; далее быстрее за счёт кэша).
+   Job `release` запускается только на тег `v*` и проверен на временном теге (релиз удалён).
 2. **Settings → Actions → General**: разрешить Actions; для job `release` нужен доступ
    `contents: write` (уже прописан в workflow). Если организация/политика ограничивает
    token — разрешить «Read and write permissions» в Workflow permissions.
@@ -117,12 +122,26 @@ git ls-remote origin | Select-Object -First 5
 | Настройка | Значение |
 |---|---|
 | `remote.upstream` | `https://github.com/df8oe/UHSDR.git` (исходный проект, только для справки) |
-| `remote.origin` | добавит `tools/github-setup.ps1` после получения логина |
+| `remote.origin` | `https://github.com/kramskois-boop/RS918-N96K-Pro.git` (настроен) |
 | `user.name` / `user.email` | `N96K-Pro Maintainer` / `maintainer@n96k.pro` (для истории) |
 | `core.autocrlf` / `core.longpaths` / `fetch.prune` | `false` / `true` / `true` |
 | Credentials | Git Credential Manager 2.9.1 + Windows Credential Manager |
-| Теги к отправке | `v1.0`, `v1.1`, `v1.2` |
-| Ветка | `main` |
+| Отправленные теги | `v1.0`, `v1.1`, `v1.2` (в GitHub и локально) |
+| Ветка | `main` (upstream `origin/main`) |
+| CI | зелёный: `host-tests` + `docker-build`; `release` проверен на теге |
 
 > Локальная настройка не меняет историю и не трогает исходную архив-папку. Скрипт можно
 > запускать повторно; он идемпотентен (кроме первого переименования `origin` → `upstream`).
+
+## 8. Текущий статус (2026-11-27)
+
+| Пункт | Статус |
+|---|---|
+| Репозиторий | <https://github.com/kramskois-boop/RS918-N96K-Pro> (public) |
+| Ветка main | запушена (4120 коммитов истории) |
+| Теги | v1.0, v1.1, v1.2 запушены |
+| CI на main | **PASS**: host-tests (17 с) + docker-build (5 мин 39 с), бюджеты flash/CCM и SHA256SUMS проверены |
+| Job release | **проверен** на временном теге v0.0.0-citest: артефакты + GitHub Release; тестовый релиз и тег удалены |
+| Аутентификация | GCM OAuth, аккаунт kramskois-boop в Windows Credential Manager |
+| Защита | рекомендуется включить защиту тегов v* и запрет force-push в main (Settings → Tags/Branches) |
+

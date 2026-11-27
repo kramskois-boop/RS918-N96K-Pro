@@ -177,14 +177,24 @@ python tools/release.py --version v1.3 --build-dir build --out release/v1.3 \
   `build/` и корень `release/`. Код возврата: 0 — успех, 1 — ошибка упаковки
   или проверки, 2 — ошибка аргументов.
 
-### 5.2. Статус: Actions ещё не исполнялись
+### 5.2. Статус: Actions запускаются и проходят (2026-11-27)
 
-Workflow **ни разу не запускался**: у продукта нет публичного remote и раннера;
-`docker build` локально тоже не выполнялся (Docker не установлен). Проверено:
-YAML — `tools/check_workflow.py` (дубли ключей и набор job'ов),
-`tools/release.py` — на реальной локальной сборке и на фикстуре
-`release/v1.2`. Полный прогон, включая job `release`, возможен после появления
-remote (см. §6.1 [docs/RELEASE.md](RELEASE.md)) и push тега `vX`.
+Репозиторий опубликован: <https://github.com/kramskois-boop/RS918-N96K-Pro> (public).
+Живой прогон workflow после первого push в `main`:
+
+| Job | Результат | Детали |
+|---|---|---|
+| `host-tests` | **success** | 07:04:46–07:05:03 UTC (17 с): `tests/run_all.py` PASS + YAML-линт |
+| `docker-build` | **success** | 07:05:06–07:10:45 UTC (5 мин 39 с): сборка в pinned GCC 15.2.1, бюджеты и `SHA256SUMS.txt` |
+| `release` | skipped | push в `main` — не тег (ожидаемо) |
+
+Job `release` проверен отдельно на временном теге `v0.0.0-citest`: `download-artifact` →
+`tools/release.py` → `sha256sum -c` → `softprops/action-gh-release` — **success**,
+GitHub Release с артефактами создан; после проверки тестовый релиз и тег удалены
+(в репозитории остаются только `v1.0`, `v1.1`, `v1.2`).
+
+Локальный `docker build` на машине разработки по-прежнему не выполнялся (Docker не
+установлен) — но Docker-сборка теперь воспроизводится в Actions.
 
 ---
 
@@ -212,12 +222,9 @@ remote (см. §6.1 [docs/RELEASE.md](RELEASE.md)) и push тега `vX`.
   установлен. Проверено статически: Dockerfile-синтаксис, URL/хэш/раскладка
   архива тулчейна (HTTP range-запрос; xPack публикует `.sha`, digest также есть
   в GitHub API), `docker/verify_artifacts.py` на реальных артефактах v1.0/v1.2.
-* GitHub Actions workflow **не запускался** (нет удалённого репозитория/раннера):
-  YAML проверен локальным скриптом `tools/check_workflow.py` (дубли ключей и
-  набор job'ов, PyYAML не нужен) и вручную; `tools/release.py` — на реальной
-  локальной сборке и на фикстуре `release/v1.2`.
-* Job `release` и `softprops/action-gh-release` вживую не проверялись — нужен
-  публичный remote; полный прогон CI/Release возможен после его появления
-  (см. §6.1 [docs/RELEASE.md](RELEASE.md)).
+* GitHub Actions **проверены вживую** (2026-11-27): `host-tests` и `docker-build`
+  зелёные на push в `main`, job `release` — на временном теге; см. §5.2.
+  Локального `docker build` по-прежнему нет (Docker не установлен на машине
+  разработки), поэтому воспроизводимость обеспечивает CI-раннер.
 * В `docs/BUILD.md` ссылку на этот документ стоит добавить владельцу
   `BUILD.md` (файл вне зоны задачи P2-2).

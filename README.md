@@ -1,5 +1,7 @@
 # RS918 N96K-Pro
 
+[![N96K firmware build](https://github.com/kramskois-boop/RS918-N96K-Pro/actions/workflows/build.yml/badge.svg)](https://github.com/kramskois-boop/RS918-N96K-Pro/actions/workflows/build.yml)
+
 **Прошивка SDR-трансиверов mcHF / RS-918** на базе UHSDR 2.9.48 с доработками Nizar (3V8MN):
 приём 96 кГц и передача 12 кГц с целочисленными преобразованиями, расширенный ЦОС-тракт, меню и
 спектр — плюс патчи качества и безопасности: P0-1…P0-6 в v1.0, P1/P2 в v1.1 и A1/A2 в v1.2
@@ -15,7 +17,7 @@ host-тесты; vendor FreeDV/Codec2 обновлён, но **FreeDV в сбо�
 | Исходные доработки | Nizar (3V8MN), «Tx 12KHz / Rx 96KHz integer» |
 | Аппаратная цель | mcHF / RS-918 rev.1: STM32F407, 1 МиБ flash, 128 КиБ RAM + 64 КиБ CCM |
 | Загрузчик | UHSDR bootloader **5.0.4** (`UHSDR_BOOT_VERS`, P2-1; 4.1.2 тоже совместим) |
-| Репозиторий продукта | локальное git-дерево, публичного remote пока нет |
+| Репозиторий продукта | **публичный:** [github.com/kramskois-boop/RS918-N96K-Pro](https://github.com/kramskois-boop/RS918-N96K-Pro) — CI (host-тесты + Docker-сборка) зелёный |
 | Лицензия | GNU GPLv3 — [LICENCE.md](LICENCE.md), атрибуция — [docs/CREDITS.md](docs/CREDITS.md) |
 | Состояние | теги **v1.0**, **v1.1**, **v1.2** (v1.2 — annotated `15af8d1f`, сборка `619e9187`; fw **321 392 Б**, bl 5.0.4 31 620 Б); полевых испытаний не было — см. дисклеймер ниже |
 
