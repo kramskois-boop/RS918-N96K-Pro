@@ -15,7 +15,7 @@ reading the very same make include files that the original Makefile uses:
 
 and by using the same compiler/linker flags as Makefile for BUILDFOR=F4:
 
-  firmware   : MACHFLAGS_F4 + COMPILEFLAGS + -O2
+  firmware   : MACHFLAGS_F4 + COMPILEFLAGS + -O2 (or -O3/-Os with --opt-level)
                linker/arm-gcc-link_f4_flash1024k.ld
   bootloader : MACHFLAGS_F4 + COMPILEFLAGS + -Os -DBOOTLOADER_BUILD
                linker/arm-gcc-link-bootloader_f4.ld
@@ -372,7 +372,9 @@ class Builder:
             "firmware": BuildPlan(
                 name="firmware",
                 linker_script=LINKER_SCRIPT_FIRMWARE,
-                optflags=["-O2"],
+                # N96K B5: --opt-level selects the firmware -O level for experiments
+                # (default stays -O2, i.e. the historical build is unchanged).
+                optflags=["-" + self.args.opt_level],
                 # N96K B4: --freedv enables the opt-in FreeDV build (USE_FREEDV in uhsdr_board.h)
                 # without touching IS_SMALL_BUILD.  The default build keeps defines=[] so it is
                 # byte-for-byte the same configuration as before.
@@ -760,8 +762,9 @@ class Builder:
         start = time.time()
         for target in targets:
             if target == "firmware":
-                self.info("=== firmware (BUILDFOR=F4, -O2%s, %s) ==="
-                          % (", FreeDV" if self.args.freedv else "", LINKER_SCRIPT_FIRMWARE))
+                self.info("=== firmware (BUILDFOR=F4, -%s%s, %s) ==="
+                          % (self.args.opt_level,
+                             ", FreeDV" if self.args.freedv else "", LINKER_SCRIPT_FIRMWARE))
                 results["firmware"] = self.build_target("firmware")
             elif target == "bootloader":
                 self.info("=== bootloader (BUILDFOR=F4, -Os -DBOOTLOADER_BUILD, %s) ==="
@@ -802,6 +805,14 @@ def parse_args(argv):
     parser.add_argument("--freedv", action="store_true",
                         help="opt-in FreeDV build: -DN96K_FREEDV (defines USE_FREEDV, keeps "
                              "IS_SMALL_BUILD); firmware only, default build is unchanged")
+    # N96K B5: firmware optimization level. The default must stay O2 (historical
+    # build); O3/Os are opt-in experiments, the bootloader always keeps -Os.
+    parser.add_argument("--opt-level", default="O2", choices=["O2", "O3", "Os"],
+                        type=lambda s: s[0].upper() + s[1:].lower(),
+                        help="firmware optimization level (default: O2); "
+                             "bootloader is always compiled with -Os. Os is for size "
+                             "experiments only: the tree's C99 'inline' header functions "
+                             "currently do not link at -Os")
     parser.add_argument("--verbose", "-v", action="store_true", help="show every compiler call")
     args = parser.parse_args(argv)
     targets = []
