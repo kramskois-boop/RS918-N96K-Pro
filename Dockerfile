@@ -31,7 +31,7 @@ ARG XPACK_ARCHIVE=xpack-arm-none-eabi-gcc-${XPACK_VERSION}-linux-x64.tar.gz
 # NOTE: GCC 9.3.1 is REQUIRED: firmware built with GCC 15.2.1 links and passes
 # the host tests but HANGS on the real RS-918 after the start-up screen (see
 # docs/BUILD.md "Toolchain").
-ARG XPACK_SHA256=4845d261b000d921887fc801427542eed2df1616f63a2969a2640f8be2593686
+ARG XPACK_SHA256=9045d261b000d921887fc801427542eed2df1616f63a2969a2640f8be2593686
 ARG XPACK_URL=https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v${XPACK_VERSION}/${XPACK_ARCHIVE}
 
 RUN apt-get update \
