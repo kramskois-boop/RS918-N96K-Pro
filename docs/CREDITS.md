@@ -16,13 +16,15 @@ RS918 N96K-Pro — производная работа на базе свобо�
 
 | Компонент | Лицензия/авторы |
 |---|---|
-| CMSIS DSP (доработанные функции `*_Nizar` — копии) | Arm Limited; CMSIS — Apache-2.0/BSD-3-Clause (как в upstream) |
-| STM32 HAL / USB Device Library | STMicroelectronics (условия — в заголовках файлов, как в upstream) |
-| FreeDV / Codec2 (в составе UHSDR 2.9.48) | авторы FreeDV/Codec2 и контрибьюторы UHSDR |
+| CMSIS Core V4.30 / CMSIS-DSP V1.4.5b (доработанные функции `*_Nizar` — копии) | Arm Limited; CMSIS — Apache-2.0/BSD-3-Clause (как в upstream) |
+| STM32F4 HAL 1.6.0 / USB Device Library 2.4.2 / USB Host Library 3.2.2 | STMicroelectronics (условия — в заголовках файлов, как в upstream) |
+| FreeDV / Codec2 rev 4121, FreeDV API v12 (из UHSDR 2.12.2, `b606547f`) | авторы FreeDV/Codec2 и контрибьюторы UHSDR |
+| FatFs R0.11 | ChaN (условия — в `ff.h`) |
 | Остальные библиотеки и таблицы | согласно заголовкам файлов в исходном дереве |
 
 Лицензии сторонних компонентов сохраняются в соответствующих файлах исходного дерева; этот
-продукт их не меняет.
+продукт их не меняет. Точные версии, зафиксированные деревья (SHA-1) и политика обновления —
+[LIBS.md](LIBS.md).
 
 ## Как указывать происхождение
 
