@@ -408,7 +408,10 @@ void UiVk_HPF_UP_TouchScreen()  //**** Changer le audio HPF : 50Hz , 75Hz , 80 H
 	else 						 {	filter_ptr = " ";		      }
 
 
-	if ((filter_ptr =="LPF") || (filter_ptr =="LPF*") || ( ts.dmod_mode == DEMOD_SAM) || ( ts.dmod_mode == DEMOD_AM))  /// pour afficher le passe haut et au dessous le passe bas
+	// N96K B5: compare the filter path NAME by value. Pointer comparison with string
+	// literals is unspecified behaviour (-Waddress) and only worked via LTO string merging;
+	// this decides whether the vkey changes the HPF (LPF paths) or the bandwidth (BPF).
+	if ((!strcmp(filter_ptr,"LPF")) || (!strcmp(filter_ptr,"LPF*")) || ( ts.dmod_mode == DEMOD_SAM) || ( ts.dmod_mode == DEMOD_AM))  /// pour afficher le passe haut et au dessous le passe bas
 	{
 		ts.rx_hp_filter++;   if ( ts.rx_hp_filter > 6 ) { ts.rx_hp_filter = 1; } ; // il y a 6 filtres HPF en tout
 		AudioDriver_Rx_HP_Filter_Init();
