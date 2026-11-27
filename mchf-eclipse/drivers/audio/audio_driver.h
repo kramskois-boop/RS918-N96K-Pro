@@ -368,7 +368,7 @@ typedef struct SMeter
 //
 #define	ALC_POSTFILT_GAIN_MIN	    1
 #define	ALC_POSTFILT_GAIN_MAX	    50
-#define	ALC_POSTFILT_GAIN_DEFAULT	11
+#define	ALC_POSTFILT_GAIN_DEFAULT	1  // N96K NIZ-fix H2: was 11 (upstream 1)
 //
 #define	SSB_ALC_GAIN_CORRECTION  	1.00		// This scales the output of the ALC for 100% modulation for SSB transmission
 //

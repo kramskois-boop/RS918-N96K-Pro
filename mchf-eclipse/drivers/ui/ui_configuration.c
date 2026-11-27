@@ -194,7 +194,7 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
     { ConfigEntry_Int32_16 , EEPROM_TREBLE_GAIN               ,&ts.treble_gain,0,-20,20},
     { ConfigEntry_UInt8    , EEPROM_TX_FILTER                 ,&ts.tx_filter, TX_FILTER_BASS, 0 ,TX_FILTER_WIDE },
 	{ ConfigEntry_Int32_16 , EEPROM_TX_BASS_GAIN              ,&ts.tx_bass_gain,   3,-20,20},
-    { ConfigEntry_Int32_16 , EEPROM_TX_TREBLE_GAIN            ,&ts.tx_treble_gain, 20 ,-30,30},
+    { ConfigEntry_Int32_16 , EEPROM_TX_TREBLE_GAIN            ,&ts.tx_treble_gain, 4 ,-30,30},  // N96K NIZ-fix H2: was 20 (+10 dB)
     { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_LOCKING_RANGE     ,&ads.pll_fmax_int,2500,50,8000},
     { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_STEP_RESPONSE     ,&ads.zeta_int,65,1,100},
     { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_BANDWIDTH         ,&ads.omegaN_int, 250,15,1000},
@@ -260,7 +260,7 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
 	// (noise cancel, spike cancel, 3 Goertzels, snap, CW LED) in one EEPROM word.
 	{ ConfigEntry_UInt16  , EEPROM_CW_DECODER_FLAGS     ,  &cw_decoder_config.flags,CW_DECODER_FLAGS_DEFAULT,0,0x7fff},
 	{ ConfigEntry_UInt8   , EEPROM_LCD_BRIGHTNESS       ,  &ts.lcd_backlight_brightness,3,0,5},
-	{ ConfigEntry_Int16   , EEPROM_TX_COMPRESS_OUT_GAIN ,  &ts.tx_comp_out_gain,25,10,40},
+	{ ConfigEntry_Int16   , EEPROM_TX_COMPRESS_OUT_GAIN ,  &ts.tx_comp_out_gain,10,10,40},  // N96K NIZ-fix H2: was 25 (x2.5)
 	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_THRESH ,  &ts.agc_wdsp_hang_thresh, 40,1,120},
 	{ ConfigEntry_UInt8   , EEPROM_AGC_WDSP_ATTACK      ,  &ts.agc_wdsp_Attackk, 20 , 10, 90},
 	{ ConfigEntry_UInt8   , EEPROM_TX_BASS_EQUAL_FREQ   ,  &ts.tx_bass_filter_freq,  75, 0, 255},

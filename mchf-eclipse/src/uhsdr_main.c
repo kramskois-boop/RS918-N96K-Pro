@@ -213,8 +213,8 @@ void    TransceiverStateInit ( void )
     ts.alc_tx_custom_comp_gain	    = ALC_POSTFILT_GAIN_DEFAULT;	// Post-filter added gain default (used for speech processor/ALC)
     ts.alc_tx_postfilt_gain_var  	= ALC_POSTFILT_GAIN_DEFAULT;	// Post-filter added gain default (used for speech processor/ALC)
     ts.tx_comp_level	            = 0;					// 0=Release Time/Pre-ALC gain manually adjusted, >=1:  Value calculated by this parameter
-    ts.tx_comp_out_gain             = 25;
-    ts.tx_comp_out_gain_float       = 2.5;
+    ts.tx_comp_out_gain             = 10;  // N96K NIZ-fix H2: was 25 (x2.5 -> x1.0)
+    ts.tx_comp_out_gain_float       = 1.0;  // N96K NIZ-fix H2: was 2.5
     //
     ts.freq_step_config		        = 0;				// disabled both marker line under frequency and swapping of STEP buttons
     //
@@ -247,7 +247,7 @@ void    TransceiverStateInit ( void )
     ts.version_number_major         = 0;			// version build - used to detect firmware change
     ts.nb_agc_time_const	        = 0;			// used to calculate the AGC time constant
     ts.cw_offset_mode	            = CW_OFFSET_USB_RX;	// CW offset mode (USB, LSB, etc.)
-    ts.cw_lsb			            = true;		// Flag that indicates CW operates in LSB mode when TRUE
+    ts.cw_lsb			            = false;		// Flag that indicates CW operates in LSB mode when TRUE  // N96K NIZ-fix H3: was forced true (upstream false)
     ts.iq_freq_mode		            = FREQ_IQ_CONV_MODE_DEFAULT;	// used to set/configure the I/Q frequency/conversion mode
     ts.conv_sine_flag	            = 0;			// FALSE until the sine tables for the frequency conversion have been built (normally zero, force 0 to rebuild)
     ts.lsb_usb_auto_select	        = 0;			// holds setting of LSB/USB auto-select above/below 10 MHz
@@ -323,7 +323,7 @@ void    TransceiverStateInit ( void )
     ts.bass_gain                       = 3;		// gain of the RX low  shelf EQ filter
     ts.treble_gain					   = 0;		// gain of the RX high shelf EQ filter
     ts.tx_bass_gain 				   = 3;		// gain of the TX low  shelf EQ filter
-    ts.tx_treble_gain                  = 20;	// gain of the TX high shelf EQ filter
+    ts.tx_treble_gain                  = 4;	// gain of the TX high shelf EQ filter  // N96K NIZ-fix H2: was 20 (+10 dB)
     ts.s_meter                         = 1;		// S-Meter configuration, 0 = old school, 1 = dBm-based, 2=dBm/Hz-based
     ts.display_dbm                     = 0;						// style of dBm display, 0=OFF, 1= dbm, 2= dbm/Hz
 //  ts.dBm_count                       = 0;						// timer start
@@ -432,7 +432,7 @@ void    TransceiverStateInit ( void )
  // ts.cmpt_volume                = 0;
     ts.reverberation_rate         = 10;   // 16 %
     ts.reverberation_delay        = 48;   // 64 ms = 96 x 0.666666 ms
-    ts.reverberation_enable       = 16;    // 16 + 0  : tx equaliser treble7 , Windows+Android, auto step size = on , Reverberation  OFF
+    ts.reverberation_enable       = 0;     // N96K NIZ-fix H2: was 16 (= TX EQ preset Trebl7), 0 = custom EQ / Win+Linux / auto-step off / reverb off
     ts.enable_display_on_screen   = true;
     ts.FFT_sampling_enable        = true;
     ts.FFT_stand_by               = 0;
@@ -462,7 +462,7 @@ void    TransceiverStateInit ( void )
     ts.pdp_betta_int              = 500;
     // ts.raie_zero                  = 0;
     ts.twenty_watt_meter          = false;
-    ts.tx_equalizer               = 1;
+    ts.tx_equalizer               = 0;  // N96K NIZ-fix H2: was 1 (TX EQ preset Trebl7)
     ts.EQ_custom_display          = false;
     ts.agc_wdsp_pop_thres         = 95;
     ts.float_agc_wdsp_pop_thres   = 4.00 + 0.01 * ts.agc_wdsp_pop_thres;

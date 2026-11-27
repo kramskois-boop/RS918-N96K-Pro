@@ -1171,7 +1171,7 @@ static void CatDriver_HandleCommands()
 								{
 									case 0   : new_mode = DEMOD_LSB;			              break; // LSB
 									case 1   : new_mode = DEMOD_USB;			              break; // USB
-									case 2   : new_mode = DEMOD_CW;   new_cwlsb = true;       break; // CW // NIZZ forcer toujour ts.cw_lsb a true  (mode unique)
+									case 2   : new_mode = DEMOD_CW;   new_cwlsb = false;       break; // CW = CW-USB // N96K NIZ-fix H3: was forced LSB (mode unique)
 									case 3   : new_mode = DEMOD_CW;   new_cwlsb = true;       break; // CW-R
 									case 4   : new_mode = DEMOD_AM;  			              break; // AM
 									case 8   : new_mode = DEMOD_FM;   new_fmdev5khz = true;   break; // FM
@@ -1187,7 +1187,7 @@ static void CatDriver_HandleCommands()
 										ts.cat_band_index = ts.band;
 									}
 									RadioManagement_FmDevSet5khz ( new_fmdev5khz );
-									ts.cw_lsb = true;  // new_cwlsb;   // true; // new_cwlsb;   // a tester
+									ts.cw_lsb = new_cwlsb;  // N96K NIZ-fix H3: apply CW/CW-R selection (was forced true)
 									RadioManagement_SetDemodMode ( new_mode , true);
 									UiDriver_UpdateDisplayAfterParamChange();
 								}

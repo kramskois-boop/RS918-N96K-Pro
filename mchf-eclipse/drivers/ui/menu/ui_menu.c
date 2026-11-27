@@ -1823,7 +1823,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 								break;
 
     case MENU_ALC_CMP_OUTPUT_GAIN :
-							var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.tx_comp_out_gain,  10,  40,  25,  1	 );
+							var_change = UiDriverMenuItemChangeInt16(var, mode, &ts.tx_comp_out_gain,  10,  40,  10,  1	 ); // N96K NIZ-fix H2: reset default was 25
 							ts.tx_comp_out_gain_float     = ((float32_t) ts.tx_comp_out_gain) / 10;
 							snprintf(options,32,"%3.1f",   ts.tx_comp_out_gain_float);
 							break;
@@ -1949,7 +1949,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 								snprintf(options,32, "%3ums", ts.cw_rx_delay*10);
 								break;
 
-/*
+    // N96K NIZ-fix H3: restored CW LSB/USB sideband selection handler (was commented out)
     case MENU_CW_AUTO_MODE_SELECT:     // Enable/Disable auto LSB/USB select
 								{
 									const cw_mode_map_entry_t* curr_mode = RadioManagement_CWConfigValueToModeEntry(ts.cw_offset_mode);
@@ -1966,7 +1966,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 										new_mode.dial_mode      = curr_mode->dial_mode;
 										new_mode.sideband_mode  = temp_var_u8;
 										ts.cw_offset_mode       = RadioManagement_CWModeEntryToConfigValue(&new_mode);
-										ts.cw_lsb               = true; // RadioManagement_CalculateCWSidebandMode();
+										ts.cw_lsb               = RadioManagement_CalculateCWSidebandMode();
 										UiDriver_DisplayDemodMode();
 										UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display and local oscillator
 									}
@@ -1979,8 +1979,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 									}
 									break;
 								}
-								*/
-	/*
+    // N96K NIZ-fix H3: restored CW frequency offset mode handler (was commented out)
     case MENU_CW_OFFSET_MODE:   // CW offset mode (e.g. USB, LSB, etc.)
 								{
 									const cw_mode_map_entry_t* curr_mode = RadioManagement_CWConfigValueToModeEntry(ts.cw_offset_mode);
@@ -1999,7 +1998,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 										new_mode.dial_mode     = temp_var_u8;
 										ts.cw_offset_mode      = RadioManagement_CWModeEntryToConfigValue(&new_mode);
 
-										ts.cw_lsb              = true; // RadioManagement_CalculateCWSidebandMode();
+										ts.cw_lsb              = RadioManagement_CalculateCWSidebandMode();
 										UiDriver_DisplayDemodMode();
 										UiDriver_FrequencyUpdateLOandDisplay(true); // update frequency display and local oscillator
 									}
@@ -2011,7 +2010,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 										case CW_OFFSET_SHIFT:  txt_ptr = "SHIFT";       break;
 									}
 									break;
-								}   */
+								}
 
     case MENU_CW_DECODER_THRESH:   //
 								var_change = UiDriverMenuItemChangeUInt32 ( var, mode, &cw_decoder_config.thresh,
@@ -3771,7 +3770,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
 		case CONFIG_SSB_TX_EQUALIZER:  // Type of SSB TX audio filter
 												var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.tx_equalizer,
-																				                   0, 14, 4, 1);  // TX_FILTER_SOPRANO   NIZZZ
+																				                   0, 14, 0, 1);  // TX_FILTER_SOPRANO   NIZZZ // N96K NIZ-fix H2: reset default was preset 4 (Trebl4)
 
 												ts.EQ_custom_display = false;
 												switch(ts.tx_equalizer)
@@ -3942,7 +3941,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 		case CONFIG_SSB_TX_TREB_FILTER_GAIN : /// NIZZZ :
 											temp_var_u8 = (ts.tx_treble_gain + 30);
 
-											var_change  = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,	0, 60, 50, 1);  // TX_FILTER_SOPRANO   NIZZZ
+											var_change  = UiDriverMenuItemChangeUInt8(var, mode, &temp_var_u8,	0, 60, 34, 1);  // TX_FILTER_SOPRANO   NIZZZ // N96K NIZ-fix H2: reset default +4 -> +2.0 dB (34-30)
 
 											if (var_change)
 											{

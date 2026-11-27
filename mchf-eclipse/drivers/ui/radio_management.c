@@ -468,12 +468,46 @@ void RadioManagement_MuteTemporarilyRxAudio()
     ts.audio_dac_output_muting_buffer_count  = 13 * 15;  // Mute sortie codec vers Speaker
 }
 
+/**
+ * @brief N96K NIZ-fix H1: is this TX dial frequency inside the amateur part of its band?
+ *
+ * Nizar's band table is wider than the amateur bands for RX (10 m, 4 m, 2 m, 70 cm).
+ * RadioManagement_ValidateFrequencyForTX() must not drive the PA outside the amateur
+ * segments with a wrong LPF, so these four bands have separate TX limits in uhsdr_board.h
+ * (BAND_TX_FREQ_10..70 / BAND_TX_SIZE_10..70).  All other bandInfo[] bands already use the upstream
+ * amateur limits.  RX tuning/coverage is not restricted.
+ */
+static bool RadioManagement_IsTxDialFrequencyInBand(uint32_t dial_freq)
+{
+    switch (RadioManagement_GetBand(dial_freq))
+    {
+        case BAND_MODE_10:
+            return (dial_freq >= BAND_TX_FREQ_10) && (dial_freq <= (BAND_TX_FREQ_10 + BAND_TX_SIZE_10));
+        case BAND_MODE_4:
+            return (dial_freq >= BAND_TX_FREQ_4) && (dial_freq <= (BAND_TX_FREQ_4 + BAND_TX_SIZE_4));
+        case BAND_MODE_2:
+            return (dial_freq >= BAND_TX_FREQ_2) && (dial_freq <= (BAND_TX_FREQ_2 + BAND_TX_SIZE_2));
+        case BAND_MODE_70:
+            return (dial_freq >= BAND_TX_FREQ_70) && (dial_freq <= (BAND_TX_FREQ_70 + BAND_TX_SIZE_70));
+        default:
+            return true;    // all other bandInfo[] bands already use the upstream amateur limits
+    }
+}
+
 Oscillator_ResultCodes_t RadioManagement_ValidateFrequencyForTX(uint32_t dial_freq)
 {
     // N96K P0-5: out-of-band TX interlock (audit U4). TX outside of the amateur bands is only
     // allowed with CONFIG_TX_OUT_ENABLE / FLAGS1_TX_OUTSIDE_BANDS (default: RX only).
     // This keeps the radio in RX instead of keying the PA on a frequency with a wrong LPF.
     if ((RadioManagement_GetBand(dial_freq) >= MAX_BANDS) && ((ts.flags1 & FLAGS1_TX_OUTSIDE_BANDS) == 0))
+    {
+        return OSC_TUNE_IMPOSSIBLE;
+    }
+
+    // N96K NIZ-fix H1: only the amateur segments of the RX-widened bands may transmit
+    // (CB on 10 m, 142-144 MHz, 70.5-71 MHz, 400-430/440-450 MHz are RX only now).
+    // FLAGS1_TX_OUTSIDE_BANDS stays the explicit user override (dummy load only).
+    if (((ts.flags1 & FLAGS1_TX_OUTSIDE_BANDS) == 0) && (RadioManagement_IsTxDialFrequencyInBand(dial_freq) == false))
     {
         return OSC_TUNE_IMPOSSIBLE;
     }
@@ -1710,7 +1744,7 @@ uint32_t  RadioManagement_NextAlternativeDemodMode( uint32_t  loc_mode )
 
 		case DEMOD_CW:	// FIXME: get rid of ts.cw_lsb
 						// better use it generally to indicate selected side band (also in SSB)
-						ts.cw_lsb  =  true;    break;    // !ts.cw_lsb;
+						ts.cw_lsb  = !ts.cw_lsb;    break;    // N96K NIZ-fix H3: restore CW sideband toggle
 
 
 		case DEMOD_AM:	retval = DEMOD_SAM;

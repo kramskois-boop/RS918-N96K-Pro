@@ -436,6 +436,19 @@ struct mchf_waterfall
 
 #endif
 
+// N96K NIZ-fix H1: the band table above was widened by Nizar for RX (CB on 10 m, 142-146 MHz,
+// 70-71 MHz, 400-450 MHz, ...).  Transmission is only permitted inside the amateur segments
+// below; RadioManagement_ValidateFrequencyForTX() refuses TX outside of them unless the user
+// explicitly enables FLAGS1_TX_OUTSIDE_BANDS (CONFIG_TX_OUT_ENABLE).  RX coverage is unchanged.
+#define BAND_TX_FREQ_10     28000*KHZ_MULT
+#define BAND_TX_SIZE_10      1700*KHZ_MULT
+#define BAND_TX_FREQ_4      70000*KHZ_MULT
+#define BAND_TX_SIZE_4        500*KHZ_MULT
+#define BAND_TX_FREQ_2     144000*KHZ_MULT
+#define BAND_TX_SIZE_2       2000*KHZ_MULT
+#define BAND_TX_FREQ_70    430000*KHZ_MULT
+#define BAND_TX_SIZE_70     10000*KHZ_MULT
+
 //
 //
 //
@@ -534,7 +547,7 @@ typedef enum
 //
 #define	MIC_GAIN_MIN			1
 #define	MIC_GAIN_MAX			150     // 99 NIZZ  pour augmenter en cas de microphone dynamique
-#define	MIC_GAIN_DEFAULT		35		// Default value - close to original fixed setting
+#define	MIC_GAIN_DEFAULT		15		// Default value - close to original fixed setting  // N96K NIZ-fix H2: was 35 (upstream 15)
 //
 //
 #define	TX_POWER_FACTOR_MIN		1		// Minimum power factor setting (3 = 0.03)
