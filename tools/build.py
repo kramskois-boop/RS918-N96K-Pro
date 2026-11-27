@@ -35,8 +35,12 @@ touched.  Exit code is 0 on success and non-zero on the first failure.
 The toolchain is looked up in this order:
   1. --toolchain <dir>            (directory that contains arm-none-eabi-gcc)
   2. $ARM_GCC_BIN                 (same)
-  3. E:\\tools\\gcc-arm\\bin       (default of this project)
-  4. PATH
+  3. E:\\tools\\gcc9\\xpack-arm-none-eabi-gcc-9.3.1-1.3\\bin
+     (REQUIRED compiler: GCC 9.3.1, the toolchain verified on the RS-918
+      hardware; GCC 15.2.1 builds link but HANG on the radio after the
+      start-up screen - see docs/BUILD.md "Toolchain")
+  4. E:\\tools\\gcc-arm\\bin       (fallback, newer GCC - warning printed)
+  5. PATH
 """
 
 from __future__ import annotations
@@ -62,6 +66,9 @@ ECLIPSE_DIR = PROJECT_ROOT / "mchf-eclipse"
 DEFAULT_BUILD_DIR = PROJECT_ROOT / "build"
 
 DEFAULT_TOOLCHAIN_DIRS = [
+    # GCC 9.3.1 is the toolchain verified on the real RS-918; newer GCC (15.x)
+    # produces firmware that hangs after the splash screen on hardware.
+    Path(r"E:\tools\gcc9\xpack-arm-none-eabi-gcc-9.3.1-1.3\bin"),
     Path(r"E:\tools\gcc-arm\bin"),
 ]
 
@@ -233,7 +240,14 @@ def find_toolchain(explicit: str | None) -> Toolchain:
     for cand in candidates:
         for name in ("arm-none-eabi-gcc.exe", "arm-none-eabi-gcc"):
             if (cand / name).is_file():
-                return Toolchain(cand)
+                tc = Toolchain(cand)
+                version = tc.version()
+                if " 9." not in version:
+                    print("WARNING: %s is not GCC 9.3.1.  GCC 15.x builds are "
+                          "known to hang on the RS-918 hardware after the "
+                          "start-up screen; use the GCC 9.3.1 toolchain "
+                          "(docs/BUILD.md)." % version, file=sys.stderr)
+                return tc
     # last resort: PATH
     exe = shutil.which("arm-none-eabi-gcc")
     if exe:

@@ -35,7 +35,7 @@ BL_FLASH_BUDGET = 32 * 1024     # 0x08000000..0x08007FFF
 RAM_BUDGET = 128 * 1024
 CCM_BUDGET = 64 * 1024
 
-REFERENCE_FW_BIN = 320024       # verified v1.0 build (GCC 15.2.1, -O2)
+REFERENCE_FW_BIN = 312216       # verified B6 build (GCC 9.3.1, -O2)
 DEFAULT_TOLERANCE = 8192        # patch-level size drift accepted with a warning
 
 

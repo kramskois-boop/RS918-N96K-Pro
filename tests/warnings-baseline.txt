@@ -15,22 +15,13 @@
 # Generated from: warnings.log
 
 4 basesw/mcHF/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.c: warning: 'packed' attribute ignored for type 'uint32_t *' {aka 'long unsigned int *'} [-Wattributes]
-19 drivers/audio/audio_driver.c: warning: '/*' within comment [-Wcomment]
+19 drivers/audio/audio_driver.c: warning: "/*" within comment [-Wcomment]
 1 drivers/audio/audio_driver.c: warning: 'gain_statique_AGC' defined but not used [-Wunused-variable]
 1 drivers/audio/audio_driver.c: warning: unused variable 'scale_half' [-Wunused-variable]
-1 drivers/freedv/c2wideband.c: warning: argument 3 of type 'MODEL[n_block_frames]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/c2wideband.c: warning: argument 3 of type 'float[L]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/c2wideband.c: warning: argument 5 of type 'MODEL[n_block_frames]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/c2wideband.c: warning: argument 6 of type 'float[n_block_frames]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/c2wideband.c: warning: argument 8 of type 'float[n_block_frames][30]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/c2wideband.c: warning: argument 9 of type 'float[n_block_frames][30]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/cohpsk.c: warning: argument 4 of type 'COMP[14][6]' with mismatched bound [-Warray-parameter=]
-1 drivers/freedv/dct2.c: warning: argument 3 of type 'float[N]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/dct2.c: warning: argument 4 of type 'float[N]' declared as a variable length array [-Wvla-parameter]
-1 drivers/freedv/fdmdv.c: warning: 'fir_filter2' accessing 8 bytes in a region of size 4 [-Wstringop-overflow=]
 2 drivers/ui/lcd/ui_lcd_hy28.c: warning: unsigned conversion from 'int' to 'short unsigned int' changes value from '789516' to '3084' [-Woverflow]
 1 drivers/ui/menu/ui_menu.c: warning: unused variable 'nr_step' [-Wunused-variable]
-12 drivers/ui/radio_management.c: warning: '/*' within comment [-Wcomment]
+12 drivers/ui/radio_management.c: warning: "/*" within comment [-Wcomment]
+1 drivers/ui/ui_driver.c: warning: 'dsp_rx_reenable_timer' defined but not used [-Wunused-variable]
 2 drivers/ui/ui_driver.c: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'int' [-Wformat=]
 1 drivers/ui/ui_driver.c: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'unsigned int' [-Wformat=]
 1 drivers/ui/ui_driver.c: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'unsigned int' [-Wformat=]
@@ -38,14 +29,4 @@
 1 drivers/ui/ui_driver.c: warning: unused variable 'nr_step' [-Wunused-variable]
 1 drivers/ui/ui_driver.c: warning: unused variable 'value' [-Wunused-variable]
 1 drivers/ui/ui_vkeybrd.c: warning: unused variable 'dsp_functions_active' [-Wunused-variable]
-2 link: warning: _close is not implemented and will always fail
-1 link: warning: _fstat is not implemented and will always fail
-1 link: warning: _getpid is not implemented and will always fail
-1 link: warning: _isatty is not implemented and will always fail
-1 link: warning: _kill is not implemented and will always fail
-2 link: warning: _lseek is not implemented and will always fail
-1 link: warning: _open is not implemented and will always fail
-2 link: warning: _read is not implemented and will always fail
-2 link: warning: _write is not implemented and will always fail
 1 link: warning: listing the stack pointer register 'sp' in a clobber list is deprecated [-Wdeprecated]
-1 link: warning: using serial compilation of <N> LTRANS jobs

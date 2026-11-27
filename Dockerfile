@@ -10,13 +10,12 @@
 #   docker create --name n96k rs918-n96k-build && \
 #     docker cp n96k:/src/build/. ./artifacts/ && docker rm n96k
 #
-# Toolchain: xPack GNU Arm Embedded GCC 15.2.1-1.1 (the version verified for
-# v1.0).  The URL format and the SHA256 below were checked against the GitHub
-# release: xPack publishes a ".sha" checksum asset and the archive digest is
-# also available from the GitHub release API.  The archive layout was checked
-# with an HTTP range request - it extracts to
-# xpack-arm-none-eabi-gcc-15.2.1-1.1/.  A full "docker build" has NOT been run
-# on the development host (Docker is not installed there) - see docs/CI.md.
+# Toolchain: xPack GNU Arm Embedded GCC 9.3.1-1.3, the version verified on the
+# real RS-918 hardware.  GCC 15.2.1 firmware links and passes host tests but
+# hangs on the radio after the start-up screen, so it must not be used for
+# release/bench artifacts.  The URL format and the SHA256 below were checked
+# against the GitHub release: xPack publishes a ".sha" checksum asset.  The
+# archive extracts to xpack-arm-none-eabi-gcc-9.3.1-1.3/.
 # =============================================================================
 ARG UBUNTU_VERSION=22.04
 
@@ -26,10 +25,13 @@ ARG UBUNTU_VERSION=22.04
 FROM ubuntu:${UBUNTU_VERSION} AS toolchain
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG XPACK_VERSION=15.2.1-1.1
+ARG XPACK_VERSION=9.3.1-1.3
 ARG XPACK_ARCHIVE=xpack-arm-none-eabi-gcc-${XPACK_VERSION}-linux-x64.tar.gz
-# sha256 of the linux-x64 archive (xPack's ".sha" asset / GitHub API digest)
-ARG XPACK_SHA256=da6a49ad4003944b823c6c93702a8787c922ab34bd7e918ec0eaf6933a9b1ff6
+# sha256 of the linux-x64 archive (xPack's ".sha" asset)
+# NOTE: GCC 9.3.1 is REQUIRED: firmware built with GCC 15.2.1 links and passes
+# the host tests but HANGS on the real RS-918 after the start-up screen (see
+# docs/BUILD.md "Toolchain").
+ARG XPACK_SHA256=4845d261b000d921887fc801427542eed2df1616f63a2969a2640f8be2593686
 ARG XPACK_URL=https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v${XPACK_VERSION}/${XPACK_ARCHIVE}
 
 RUN apt-get update \
@@ -49,7 +51,7 @@ RUN curl -fsSL --retry 3 -o "/tmp/${XPACK_ARCHIVE}" "${XPACK_URL}" \
 FROM ubuntu:${UBUNTU_VERSION} AS build
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG XPACK_VERSION=15.2.1-1.1
+ARG XPACK_VERSION=9.3.1-1.3
 
 # tools/build.py looks for $ARM_GCC_BIN before its Windows default path
 ENV ARM_GCC_BIN=/opt/xpack/xpack-arm-none-eabi-gcc-${XPACK_VERSION}/bin
