@@ -67,6 +67,7 @@
 | B2 | docs-агенты + verifier | TESTPLAN/BOOTLOADER/VSWR/RELEASE + печатные чек-лист и сводная таблица | b2-verify PASS, документы согласованы с кодом |
 | B3 | b3-dsp | VLA в ISR, сброс NR, OOB ALC-кольца, DEBUG-диагностика | host-tests PASS; сборка; fw 322 360 (+968), RAM +52, CCM 0 |
 | B4 | b4-freedv | opt-in FreeDV: `--freedv`, guard-фиксы, MODEM_STATS, docs/FREEDV.md | default-сборка не меняется; FreeDV 565 584/48 836/63 972; стенд впереди |
+| B5 | b5-warn/libs/opt | warning-гейт, фиксы `-Waddress`/`float2fixedstr`, `docs/LIBS.md`, `--opt-level` | host 1754 PASS; warning-гейт OK; default 322 312/42 668/63 476; O3 opt-in 425 500 |
 
 ## 6. Правила работы
 
@@ -118,6 +119,7 @@
 | B1 | **выполнен** (2026-11-27) | тесты/CI/release-автоматизация (без изменения прошивки) |
 | B3 | **выполнен** (ветка `b3-b4`) | VLA/NR/ALC/диагностика; fw 322 360 Б (+968), RAM 42 668, CCM 63 476; на железе нет |
 | B4 | **opt-in реализован** (ветка `b4`) | FreeDV-сборка 565 584 Б; default не меняется; стенд впереди (docs/FREEDV.md) |
+| B5 | **выполнен** (ветка `b5`) | warning-гейт (73 baseline), 2 реальных дефекта `-Waddress`+OOB, docs/LIBS.md, `--opt-level` (O2 default, O3 opt-in); default 322 312 Б |
 | B5 | **частично** (2026-11-27) | публикация: <https://github.com/kramskois-boop/RS918-N96K-Pro>, живой CI и release-job; осталось — защита тегов/бранчей, по желанию |
 
 **Решения:**
