@@ -4,7 +4,7 @@
 
 Reads <build-dir>/build-summary.json written by tools/build.py, checks the
 firmware/bootloader against the flash/RAM/CCM budgets and writes SHA256SUMS.txt.
-The reference size is the verified v1.0 firmware (fw-mchf.bin = 320_024 bytes);
+The reference size is the verified B6 firmware built with GCC 9.3.1 (fw-mchf.bin = 312_216 bytes);
 small deviations caused by the P0/P2 patches are accepted, only a real budget
 violation fails the build.
 

@@ -16,18 +16,19 @@ P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающ
 диффы минимальные; поведение и алгоритмы Nizar не меняются — только исправление дефекта или
 добавление защиты.
 
-Срез статусов — 2026-11-27, `main` HEAD **ee5e06ed** = v1.2 + B1–B5; вторая волна — ветка
-**`nizar-review`**, HEAD **`69ccd736`** (Nizar-audit; фиксы H1/H2/H3 `aa5fdcb9`, H5
-`a4042337`, H4/H6/H9/H10/H11/H13 `69ccd736`; opt-in `--full` `e8a78590`; cleanup;
-docs-rebuild `22fce856`); финальные сборки default/FreeDV/full/O3 и печатные PDF (task-47) готовы;
-H7/H8/H12/VID-PID — стенд/решение lead, H14/H15/H16/N11 — известные отклонения (не исправлялись).
+Срез статусов — 2026-11-27, `main` HEAD **34d28730** = v1.2 + B1–B6 + **обязательный GCC 9.3.1**
+(причина зависания найдена и устранена: GCC 15.2.1-прошивки зависают после splash, GCC 9.3.1
+работает). Коммиты последней волны: Nizar-audit; фиксы H1/H2/H3 `aa5fdcb9`, H5 `a4042337`,
+H4/H6/H9/H10/H11/H13 `69ccd736`; opt-in `--full` `e8a78590`; cleanup; docs; GCC 9.3.1-пересборка
+`34d28730`. **Финальные сборки и пакет пересобраны GCC 9.3.1**; **релизы v1.0–v1.2 и прежний
+GCC15-пакет — невалидны (не загружаются), не прошивать.** H7/H8/H12/VID-PID — стенд/решение lead,
+H14/H15/H16/N11 — известные отклонения (не исправлялись).
 Теги: **v1.0** = `82056486`, **v1.1** = `cf43b068`,
 **v1.2** = annotated `4ca85bba` → commit `dc204cc1` (сборка/версия `619e9187`); артефакты —
-`release/v1.0`…`release/v1.2`, тестовые пакеты `release/fieldtest-2026-11-27` и
-`release/bench-2026-11-27` (B6, собирает lead). Цифры main —
-из свежих проверочных сборок `build-test`/`build-test-freedv`/`build-test-o3` (2026-11-27);
-v1.0/v1.1/v1.2 — из `release/*` и [BUILD.md](BUILD.md). Живой CI: Actions
-(`host-tests` + `docker-build` + release-job по тегу) — см. [CI.md](CI.md) §5.2. Статусы:
+`release/v1.0`…`release/v1.2` (GCC15, исторические), актуальный пакет —
+`release/bench-2026-11-27` (GCC 9.3.1, финализирует lead). Живой CI: Actions
+(`host-tests` + `docker-build` + release-job по тегу) — см. [CI.md](CI.md) §5.2; Dockerfile/CI
+pinned на GCC 9.3.1-1.3, живой прогон — при следующем push. Статусы:
 «реализовано» = код в дереве; «сборка подтверждена» = `python tools/build.py firmware` завершился
 с exit 0; «на железе не проверялось» = полевых испытаний не было.
 
@@ -37,31 +38,28 @@ F3 (A2 — в конфигурации с включённым FreeDV). Неза
 завершено 2026-11-27: A1/A2/сборка/тесты — PASS, P1/P2-дефектов нет, находки только P3
 (`_audit/dev/p-verify3.md`); его замечания по PLAN-DEV закрыты в B1–B5.
 
-Проверенные размеры: **v1.0** — `fw-mchf.bin` 320 024 Б (32,6 %), RAM 42 616 Б, CCM 63 476/65 536;
-`bl-mchf.bin` 31 496 Б (загрузчик 4.1.2). **v1.1** — `fw-mchf.bin` 321 128 Б (32,7 %, финальная
-сборка, тег v1.1), RAM 42 616 Б, CCM 63 476/65 536; `bl-mchf.bin` 31 620 Б (5.0.4, 96,5 %,
-запас 1 148 Б). **v1.2** — `fw-mchf.bin` **321 392 Б** (32,7 % области 960 КиБ, запас
-**661 648 Б**; чистая сборка HEAD `557e39f1` + bump `n96kp3`), RAM 42 616 Б,
-**CCM 63 476/65 536 (свободно 2 060 Б)**; `bl-mchf.bin` 31 620/32 768 Б (5.0.4, запас 1 148 Б).
-Предупреждений: v1.0 — 80 строк; v1.1/v1.2 — **78 строк** (64 предупреждения компилятора,
-24 уникальных текста + 14 строк линковки: 13 newlib-nano + lto-wrapper); этап A новых
-предупреждений не добавил.
+**GCC 9.3.1 — актуальные размеры (main 34d28730, пакет release/bench-2026-11-27):** default
+`fw-mchf.bin` **312 216 Б** (31,8 % области 960 КиБ, запас 670 824; RAM 42 392, CCM 63 476/65 536,
+Build `Nov 27 2026 - 14:55:12`); FreeDV opt-in **555 608 Б** (RAM 48 552, CCM 63 972, `15:05:45`);
+full opt-in **561 720 Б** (RAM 48 552, CCM 63 972, `15:05:12`; стендовая); O3 opt-in **412 536 Б**
+(RAM 42 436, CCM 63 476, `15:06:17`; стендовая); `bl-mchf.bin`: в пакете — известный рабочий 5.0.4
+31 620 Б, GCC9 all-сборка — **32 416/32 768 Б** (запас 352; CI, в пакет не входит). Предупреждений
+**50** (all-сборка; firmware-only 46), 16 различных текстов — baseline warning-гейта; host-тесты
+**1754 PASS** (0 failed, 3 known); версия `2.9.48-n96kp3`. Источник — `build-final-gcc9/`,
+`build-gcc9-full/`, `build-gcc9-freedv/`, `build-gcc9-o3/` (build-summary.json, warnings.log;
+2026-11-27).
 
-**main ee5e06ed (v1.2 + B1–B5):** default `fw-mchf.bin` **322 312 Б** (RAM 42 668, CCM 63 476/65 536,
-запас flash 660 728), `bl-mchf.bin` 31 620 Б (5.0.4), предупреждений **73** (35 текстов; warning-гейт,
-см. B5); FreeDV opt-in **565 552 Б** (RAM 48 836, CCM 63 972); O3 opt-in **425 500 Б** (RAM 42 696,
-CCM 63 476); host-тесты **1754 PASS** (0 failed, 3 known). Сводка статусов — [STATUS.md](STATUS.md).
-
-**nizar-review 69ccd736 (B6, финальные сборки, после H1…H13):** default `fw-mchf.bin`
-**323 304 Б** (+992 Б; RAM **42 684**, CCM 63 476/65 536, запас flash 659 736), `bl-mchf.bin`
-31 620 Б (5.0.4, не менялся), предупреждений **73** = baseline; FreeDV opt-in **567 040 Б**
-(RAM 48 840, CCM 63 972); full opt-in **573 088 Б** (RAM 48 840, CCM 63 972; стендовая конфигурация);
-O3 opt-in **428 236 Б** (RAM 42 700, CCM 63 476; стендовая); host-тесты **1754 PASS** (0 failed,
-3 known); версия `2.9.48-n96kp3`. Источник — `build-bench-default/`, `build-bench-freedv/`,
-`build-bench-full/`, `build-bench-o3/` (build-summary.json, warnings.log; 2026-11-27);
-независимо подтверждено `_audit/dev/b6-verify.md`.
+**Исторические сборки GCC 15.2.1 — НЕВАЛИДНЫ для железа (зависают после splash, не прошивать):**
+v1.0 `fw` 320 024 / bl 31 496 / 80 строк; v1.1 321 128 / 31 620 / 78; v1.2 321 392 / 31 620 / 78;
+main ee5e06ed: 322 312 (RAM 42 668), FreeDV 565 552 (48 836), O3 425 500 (42 696), 73 warnings;
+B6/69ccd736: 323 304 (42 684), FreeDV 567 040 (48 840), full 573 088 (48 840), O3 428 236 (42 700),
+73 warnings. Числа оставлены как история; для железа годятся только GCC9-сборки.
 
 ## Сводная таблица
+
+> Проверки/размеры в строках этой таблицы и в разделах ниже — исторические снимки
+> **GCC 15.2.1** (для железа невалидны); актуальные GCC 9.3.1 — в шапке документа и в разделе
+> «Nizar-review (B6) → Цифры и проверки».
 
 ### v1.0 — тег `v1.0` (закрыто)
 
@@ -97,7 +95,7 @@ O3 opt-in **428 236 Б** (RAM 42 700, CCM 63 476; стендовая); host-те
 | A2 | NR+FreeDV #1749: `AudioNr_Prepare()` при выходе из DIGI; NR pass-through при активном FreeDV | `drivers/audio/audio_nr.c/.h`, `audio_driver.c` | S3c F3 (`p-verify2`), upstream `df9ef3f9`/`27945d8b` | реализовано; сборка (+48 Б), RAM/CCM 0, host-tests PASS; в B4 добавлена opt-in FreeDV-сборка, где гейты активны |
 | B3 | Надёжность/DSP: VLA в audio ISR, согласованный сброс NR, OOB ALC-кольца, диагностика | `drivers/audio/audio_driver.c/.h`, `audio_nr.c/.h`, `codec/uhsdr_hw_i2s.c`, `ui/menu/*` | residual P3 F4/R9/A4, audit §4.6 | реализовано; host-tests 1754 PASS; fw 322 360 (+968), RAM 42 668 (+52), CCM 0, 78 warnings; на железе нет |
 | B4 | FreeDV opt-in: `--freedv`, guard-фиксы, MODEM_STATS, docs/FREEDV.md | `hardware/uhsdr_board.h`, `audio_driver.c`, `audio_filter.c`, `freedv_uhsdr.c`, `drivers/freedv/freedv_api*`, `tools/build.py` | B4 workstream | реализовано; default-сборка не меняется; FreeDV 565 584/48 836/63 972 (после B5 — 565 552); на железе нет |
-| B5 | Warning-гейт, два реальных дефекта `-Waddress`, bounded `float2fixedstr`, docs/LIBS.md, `--opt-level {O2,O3,Os}` | `ui_driver.c`, `ui_vkeybrd.c`, `ui_menu.c`, `tools/check_warnings.py`, `tests/warnings-baseline.txt`, `tools/build.py`, `docs/LIBS.md`, docs/CI.md | B5 (b5-warn/libs/opt, task-35/36/37/38) | реализовано; default 322 312/42 668/63 476/73 warnings; O3 425 500/42 696/63 476/73; host-tests 1754 PASS; warning-гейт в CI; на железе нет |
+| B5 | Warning-гейт, два реальных дефекта `-Waddress`, bounded `float2fixedstr`, docs/LIBS.md, `--opt-level {O2,O3,Os}` | `ui_driver.c`, `ui_vkeybrd.c`, `ui_menu.c`, `tools/check_warnings.py`, `tests/warnings-baseline.txt`, `tools/build.py`, `docs/LIBS.md`, docs/CI.md | B5 (b5-warn/libs/opt, task-35/36/37/38) | реализовано; **GCC 9.3.1:** default 312 216/42 392/63 476, baseline 50/16, O3 412 536/42 436/63 476; host-tests 1754 PASS; исторические GCC15-цифры 322 312/425 500/73 невалидны; на железе нет |
 
 ### B6 — Nizar-review (ветка `nizar-review`, HEAD `69ccd736`)
 
@@ -152,9 +150,11 @@ band/demod/decode ограничиваются допустимыми перед
   `#include ui_menu.h` в `ui_configuration.c`, прототипы ILI9341/ILI7789 в `ui_lcd_hy28.c`.
   Полный разбор — [BUILD.md](BUILD.md) §4.1.
 
-**Проверка (ПОДТВЕРЖДЕНО).** `python tools/build.py all` из чистого дерева: exit 0 за ~30 с,
-оба таргета — `fw-mchf.bin` 320 024 Б (32,6 % flash 960 КиБ, RAM 42 616 Б, CCM 63 476/65 536)
-и `bl-mchf.bin` 31 496 Б (96,1 % 32 КиБ). Вторая сборка `--force` дала те же размеры и ту же
+**Проверка (ПОДТВЕРЖДЕНО; историческая сборка GCC 15.2.1 — невалидна для железа).**
+`python tools/build.py all` из чистого дерева: exit 0 за ~30 с, оба таргета — `fw-mchf.bin`
+320 024 Б (32,6 % flash 960 КиБ, RAM 42 616 Б, CCM 63 476/65 536) и `bl-mchf.bin` 31 496 Б.
+**Актуальная GCC 9.3.1 (main 34d28730):** default fw 312 216 / RAM 42 392 / CCM 63 476, bl all
+32 416 (в пакете known-good 5.0.4 31 620), 50 предупреждений. Вторая сборка `--force` дала те же размеры и ту же
 карту памяти (идентична после нормализации имён LTO-временных файлов); `bl-mchf.bin` побайтно совпал.
 `warnings.log`: 80 строк — 67 предупреждений компилятора (64 уникальных текста) и 13 строк
 линковки newlib-nano; все — существующие в коде Nizar/upstream, ни одного на строках product-патчей. Подробности,
@@ -501,9 +501,10 @@ v1.1 «FreeDV/Codec2 rev 4121 + #1749» относилась к vendor-коду,
 фиксировались.
 
 **Исправление.**
-- `Dockerfile` (79 строк) — 2 стадии: pinned xPack **GNU Arm Embedded GCC 15.2.1-1.1** (URL +
-  SHA-256 `da6a49ad4003944b823c6c93702a8787c922ab34bd7e918ec0eaf6933a9b1ff6`);
-  `python3 tools/build.py all` + тесты + проверка артефактов.
+- `Dockerfile` (83 строки) — 2 стадии: pinned xPack **GNU Arm Embedded GCC 9.3.1-1.3** (URL +
+  SHA-256 `4845d261b000d921887fc801427542eed2df1616f63a2969a2640f8be2593686`; до 2026-11-27 был
+  15.2.1-1.1 — его прошивки на железе зависают); `python3 tools/build.py all` + тесты + проверка
+  артефактов; `docker/verify_artifacts.py` reference **312 216**.
 - `docker/verify_artifacts.py` (180 строк) — наличие/размеры артефактов, бюджеты flash/RAM/CCM,
   запись `SHA256SUMS.txt`.
 - `.github/workflows/build.yml` — job `host-tests` (python) + `docker-build` (buildx, gha-кэш,
@@ -530,8 +531,15 @@ Nizar, (d) все 46 `.c` фильтров в `files.mak`, (e) версия/пр
 Docker); GitHub Actions на момент P2-3 не запускался (не было remote/раннера); проверены только статически (YAML/PyYAML, разбор
 Dockerfile, `verify_artifacts.py` на артефактах v1.0). Первая сборка в Docker качает ~307 МБ; образ
 `ubuntu:22.04` прибит тегом, не digest. Прошивка не воспроизводима побайтно (`__DATE__/__TIME__`) —
-CI контролирует размеры/бюджеты/наличие, а не SHA. Бюджет-гейт bl (32 768) при 31 620 даёт запас
-1 148 Б — следующий рост кода загрузчика может не влезть.
+CI контролирует размеры/бюджеты/наличие, а не SHA. Бюджет-гейт bl (32 768): known-good 5.0.4 —
+31 620 (запас 1 148), GCC9 all-сборка — 32 416 (запас 352; следующий рост кода загрузчика может
+не влезть).
+
+**Обновление GCC 9.3.1 (2026-11-27, main 34d28730).** Причина зависания прошивок на железе
+найдена: GCC 15.2.1 (splash → кратковременно UI → зависание, оба LED); GCC 9.3.1 работает.
+Dockerfile/CI переведены на xPack GCC 9.3.1-1.3, baseline предупреждений — 50 (16 текстов),
+reference — 312 216; живой прогон Actions с новым тулчейном — при следующем push (локального
+Docker нет).
 
 **Обновление 2026-11-27 (B1/live):** Actions запущены и зелёные (`host-tests` 17 с, `docker-build`
 5 мин 39 с, job `release` проверен на временном теге; см. docs/CI.md §5.2); Docker на машине
@@ -672,10 +680,11 @@ bias ON в гистерезисе; прерванный recovery). Release/OFF/T
 **Обновление B4 (2026-11-27).** Opt-in FreeDV-сборка теперь существует: `tools/build.py --freedv`
 включает `USE_FREEDV` при сохранении `IS_SMALL_BUILD`; default-сборка не меняется. Исправлены
 6 guard-мест `IS_SMALL_BUILD↔USE_FREEDV`, порядок `struct my_callback_state` и (только в opt-in
-сборке) удалён `MODEM_STATS` (10,6 КБ) из `struct freedv`. FreeDV-вариант: fw 565 584 Б, RAM 48 836,
-CCM 63 972, 78 warnings (после B5-фиксов — fw 565 552, 73 warnings), 43 FreeDV/Codec2-символа;
-host-tests 1754 PASS. **На железе не испытывался**
-(CPU/стек/звук) — только после стенда по docs/FREEDV.md можно утверждать, что FreeDV «работает».
+сборке) удалён `MODEM_STATS` (10,6 КБ) из `struct freedv`. **GCC 9.3.1:** FreeDV-вариант
+**555 608 Б / RAM 48 552 / CCM 63 972 / 50 warnings**; 43 FreeDV/Codec2-символа; host-tests
+1754 PASS. Исторические GCC15-цифры (565 584/48 836/78, затем 565 552/73) невалидны.
+**На железе не испытывался** (CPU/стек/звук) — только после стенда по docs/FREEDV.md можно
+утверждать, что FreeDV «работает».
 
 ## B5 — Warning-гейт, два реальных дефекта `-Waddress`, bounded `float2fixedstr`, docs/LIBS.md, `--opt-level`
 
@@ -696,7 +705,8 @@ host-tests 1754 PASS. **На железе не испытывался**
   в пределах буфера, неотрицательный стартовый индекс; эквивалентность вывода проверена
   симуляцией на всём домене `freq_cal` (2999 значений) — 0 расхождений (+32 Б).
 - **Warning-гейт:** `tools/check_warnings.py` + `tests/warnings-baseline.txt`
-  (**73 предупреждения / 35 текстов**); шаг в CI job `docker-build`; новое/участившееся
+  (создан на GCC 15.2.1 с 73 предупреждениями / 35 текстами; **актуальный baseline GCC 9.3.1 —
+  50 предупреждений / 16 текстов**); шаг в CI job `docker-build`; новое/участившееся
   предупреждение валит сборку, исчезнувшие — OK; нормализация путей/строк делает baseline
   кроссплатформенным (Windows-хост и Linux-образ).
 - **`docs/LIBS.md`** (b5-libs): пины версий и SHA-1 деревьев CMSIS Core/Device/DSP, HAL F4,
@@ -708,17 +718,20 @@ host-tests 1754 PASS. **На железе не испытывался**
   LTO-настройки проверены (выигрыша нет, `-flto-partition=one` хуже); микрооптимизации кода не
   применялись (обоснование — в отчёте b5-opt).
 
-**Проверки.** default fw **322 312** (RAM 42 668, CCM 63 476, 73 warnings; было 322 360/78);
-FreeDV opt-in **565 552** (48 836/63 972/73); O3 **425 500** (42 696/63 476/73), O3+FreeDV 703 928;
-host-tests **1754 PASS** (0 failed, 3 known); warning-гейт OK для default и O3; workflow-линт OK;
-загрузчик не менялся (31 620 Б, тот же SHA). На железе не проверялось: правки — UI/отображение,
-проверка только по коду и сборке.
+**Проверки (GCC 15.2.1 — исторические, невалидны для железа).** default fw 322 312 (RAM 42 668,
+CCM 63 476, 73 warnings; было 322 360/78); FreeDV opt-in 565 552 (48 836/63 972/73); O3 425 500
+(42 696/63 476/73), O3+FreeDV 703 928; **актуальные GCC9:** default 312 216 (RAM 42 392, CCM 63 476),
+FreeDV 555 608 (48 552/63 972), O3 412 536 (42 436/63 476), baseline 50. host-tests **1754 PASS**
+(0 failed, 3 known); warning-гейт OK для default и O3; workflow-линт OK; загрузчик не менялся
+(known-good 31 620 Б). На железе не проверялось: правки — UI/отображение, проверка только по коду
+и сборке.
 
 ## Nizar-review (B6): аудит и исправления
 
-Ветка `nizar-review` (от `main` `ee5e06ed`), HEAD **`69ccd736`**. Аудит — read-only;
-исправления — коммиты `e8a78590` (`--full`), `22fce856` (docs-rebuild), `aa5fdcb9`
-(H1/H2/H3), `a4042337` (H5), `69ccd736` (H4/H6/H9/H10/H11/H13). В `main` ветка
+Ветка `nizar-review` (от `main` `ee5e06ed`), HEAD **`69ccd736`**; влита в `main` (HEAD **`34d28730`**
+= v1.2 + B1–B6 + GCC 9.3.1). Аудит — read-only; исправления — коммиты `e8a78590` (`--full`),
+`22fce856` (docs-rebuild), `aa5fdcb9` (H1/H2/H3), `a4042337` (H5), `69ccd736` (H4/H6/H9/H10/H11/H13);
+GCC 9.3.1-пересборка — `34d28730`. В `main` ветка
 пока не влита. Финальные сборки, печатные PDF (task-47) и пакет `release/bench-2026-11-27`
 (собирает lead) — готовятся к стенду. Полные отчёты — `_audit/dev/` (вне репозитория).
 
@@ -754,8 +767,9 @@ host-tests **1754 PASS** (0 failed, 3 known); warning-гейт OK для default
   и идентификация устройства не изменились (сравнение ELF до/после).
 - **`--full` (`e8a78590`).** `python tools/build.py all --full` — `-DN96K_FULL_BUILD`
   снимает `IS_SMALL_BUILD` и добавляет `-DN96K_FREEDV` (обязательная конфигурация памяти
-  FreeDV); full 573 088 / 48 840 / 63 972, 73 warnings; default и загрузчик не меняются; сборка
-  стендовая, не продуктовая (heap/стек на границе, CCM 97,6 %).
+  FreeDV); **GCC 9.3.1: full 561 720 / 48 552 / 63 972, 50 warnings** (историческая GCC15-сборка
+  573 088/73 невалидна); default и загрузчик не меняются; сборка стендовая, не продуктовая
+  (heap/стек на границе, CCM 97,6 %).
 - **H4/H6/H9/H10/H11/H13 (`69ccd736`).** H4: PLL reset default 2 (reset при смене IQ-делителя),
   форс «Never» убран, debug-пункт меню возвращён. H6: AGC-дефолты по upstream (slope 70, tau
   4000/2000/500/250/50/500, thresh 60, hang 500/45), `% agc_wdsp.ring_buffsize` вместо `%96`,
@@ -780,15 +794,18 @@ host-tests **1754 PASS** (0 failed, 3 known); warning-гейт OK для default
 
 ### Цифры и проверки
 
-default **323 304 / 42 684 / 63 476**; FreeDV **567 040 / 48 840 / 63 972**; full **573 088 / 48 840 /
-63 972**; O3 **428 236 / 42 700 / 63 476**; `bl-mchf.bin` 31 620 (5.0.4, не менялся);
-warnings **73 = baseline**; host-tests **1754 PASS** (0 failed, 3 known). Дельта к `main`:
-+992 Б default, +1 488 Б FreeDV, +1 472 Б full, +2 736 Б O3, RAM +16 Б, CCM 0. Независимо
-подтверждено `_audit/dev/b6-verify.md` (включая ELF-дескрипторы H5). На железе не проверялось:
-H1 (TX-границы), H2 (спектр TX), H3 (CW-R/CW-USB), H5 (USB-аудио), H4 (PLL), H6 (AGC), H9
-(биения), H10 (CW), H11 (CAT), H13 (тачскрин) — стенд по docs/CHECKLIST.md.
+**Актуальные GCC 9.3.1 (main 34d28730):** default **312 216 / 42 392 / 63 476** (Build
+`Nov 27 2026 - 14:55:12`); FreeDV **555 608 / 48 552 / 63 972**; full **561 720 / 48 552 / 63 972**;
+O3 **412 536 / 42 436 / 63 476**; `bl-mchf.bin`: пакет — known-good 5.0.4 31 620, GCC9 all-сборка —
+32 416; warnings **50 = baseline** (16 текстов; firmware-only 46); host-tests **1754 PASS**
+(0 failed, 3 known). Исторические GCC15-цифры B6 (default 323 304 / FreeDV 567 040 / full 573 088 /
+O3 428 236, 73 warnings) **невалидны** — прошивки зависают после splash. Независимо подтверждено
+для GCC15-среза: `_audit/dev/b6-verify.md` (включая ELF-дескрипторы H5); для GCC9 — сборки и
+пакет проверены в task-52/финализации lead. На железе не проверялось: H1 (TX-границы), H2
+(спектр TX), H3 (CW-R/CW-USB), H5 (USB-аудио), H4 (PLL), H6 (AGC), H9 (биения), H10 (CW), H11
+(CAT), H13 (тачскрин) — стенд по docs/CHECKLIST.md.
 
-## Проверка документации и версии (v1.2)
+## Проверка документации и версии (v1.2; сборка GCC 15.2.1 — историческая, невалидна)
 
 - Версия продукта: `UHSDR_PRODUCT_VERSION`: `2.9.48-n96kp2` → **`2.9.48-n96kp3`**; числовые
   `UHSDR_VER_* = 2.9.48` не менялись (их разбирает Makefile и использует логика версий/EEPROM);
@@ -798,11 +815,12 @@ H1 (TX-границы), H2 (спектр TX), H3 (CW-R/CW-USB), H5 (USB-ауди
   `ui_menu.c:723-728`, запас большой).
 - `tests/check_versions.py` ждёт `2.9.48-n96kp3`; `python tests/run_all.py` — PASS
   (**1754 проверки** после B1 (в v1.2 — 1134), 0 failed, 3 known, 0 skipped). Приватная сборка — PASS.
-- Все цифры v1.2 — из **чистой сборки HEAD `557e39f1` + bump `n96kp3`**
-  (`_tmp/build-p-docs-v12`, см. [BUILD.md](BUILD.md) §3): `fw-mchf.bin` **321 392 Б**, flash 32,7 %
-  (запас **661 648 Б**), RAM **42 616 Б**, **CCM 63 476/65 536** (свободно 2 060), `bl-mchf.bin`
-  31 620/32 768 Б (запас 1 148), предупреждений **78 строк** = fw 70 + bl 8 (64 компилятора:
-  24 уникальных текста + 14 строк линковки: 13 newlib-nano + lto-wrapper; новых от этапа A нет).
+- Все цифры v1.2 — из чистой сборки HEAD `557e39f1` + bump `n96kp3` (GCC 15.2.1; историческая,
+  невалидна): `fw-mchf.bin` 321 392 Б, flash 32,7 % (запас 661 648 Б), RAM 42 616 Б,
+  CCM 63 476/65 536 (свободно 2 060), `bl-mchf.bin` 31 620/32 768 Б (запас 1 148),
+  предупреждений 78 строк = fw 70 + bl 8. **Актуальные GCC 9.3.1 (main 34d28730):** default
+  312 216 / 42 392 / 63 476, FreeDV 555 608, full 561 720, O3 412 536, bl GCC9 all 32 416 (в пакете
+  known-good 31 620), 50 предупреждений (16 текстов).
   **Размер зависит от содержимого строки версии:** тот же код с `n96kp2` даёт 321 384 Б, с
   `n96kp3` — 321 392 Б (+8 Б; проверено A/B-сборками одного дерева, различие — только
   `uhsdr_version.h`). Артефакты `release/v1.2` упакованы, тег **v1.2** — annotated
