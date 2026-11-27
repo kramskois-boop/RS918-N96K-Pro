@@ -128,6 +128,10 @@ struct freedv *freedv_open_advanced(int mode, struct freedv_advanced *adv) {
         return NULL;
 
     f->mode = mode;
+#ifdef N96K_FREEDV
+    f->stats.sync    = 0;      /* N96K B4: minimal stats, struct is not zeroed by MALLOC */
+    f->stats.snr_est = 0.0f;
+#endif
     f->verbose = 0;
     f->test_frames = f->smooth_symbols = 0;
     f->freedv_put_error_pattern = NULL;
@@ -1424,7 +1428,13 @@ static int freedv_comprx_fdmdv_1600(struct freedv *f, COMP demod_in[], int *vali
 
     nin_prev = f->nin;
     fdmdv_demod(f->fdmdv, f->fdmdv_bits, &reliable_sync_bit, ademod_in, &f->nin);
+#ifdef N96K_FREEDV
+    /* N96K B4: minimal replacement for fdmdv_get_demod_stats() - no 10.6 KB MODEM_STATS */
+    f->stats.sync    = f->fdmdv->sync;
+    f->stats.snr_est = calc_snr(f->fdmdv->Nc, f->fdmdv->sig_est, f->fdmdv->noise_est);
+#else
     fdmdv_get_demod_stats(f->fdmdv, &f->stats);
+#endif
     f->sync = f->fdmdv->sync;
     f->snr_est = f->stats.snr_est;
 
@@ -1607,7 +1617,9 @@ static int freedv_comprx_700(struct freedv *f, COMP demod_in_8kHz[], int *valid)
     cohpsk_demod(f->cohpsk, rx_bits, &sync, demod_in, &f->nin);
 
     f->sync = sync;
+#ifndef N96K_FREEDV
     cohpsk_get_demod_stats(f->cohpsk, &f->stats);
+#endif
     f->snr_est = f->stats.snr_est;
 
     memset(f->packed_codec_bits, 0, bytes_per_codec_frame * frames);
@@ -1823,7 +1835,9 @@ static int freedv_comprx_700d(struct freedv *f, short demod_in_8kHz[], float gai
         ofdm_disassemble_modem_frame(ofdm, rx_uw, payload_syms, payload_amps, txt_bits);
 
         f->sync = 1;
+#ifndef N96K_FREEDV
         ofdm_get_demod_stats(f->ofdm, &f->stats);
+#endif
         f->snr_est = f->stats.snr_est;
 
         assert((ofdm_nuwbits+ofdm_ntxtbits+coded_bits_per_frame) == ofdm_bitsperframe);
@@ -2266,6 +2280,7 @@ void freedv_set_data_header(struct freedv *f, unsigned char *header)
 
 void freedv_get_modem_stats(struct freedv *f, int *sync, float *snr_est)
 {
+#ifndef N96K_FREEDV
     if (FDV_MODE_ACTIVE( FREEDV_MODE_1600, f->mode))
         fdmdv_get_demod_stats(f->fdmdv, &f->stats);
     if ((FDV_MODE_ACTIVE( FREEDV_MODE_700, f->mode)) || (FDV_MODE_ACTIVE( FREEDV_MODE_700B, f->mode))  || (FDV_MODE_ACTIVE( FREEDV_MODE_700C, f->mode)))
@@ -2276,6 +2291,7 @@ void freedv_get_modem_stats(struct freedv *f, int *sync, float *snr_est)
     if (FDV_MODE_ACTIVE( FREEDV_MODE_2400B, f->mode)) {
         fmfsk_get_demod_stats(f->fmfsk, &f->stats);
     }
+#endif /* N96K_FREEDV: f->stats is filled by the 1600 RX path, no MODEM_STATS */
     if (sync) *sync = f->stats.sync;
     if (snr_est) *snr_est = f->stats.snr_est;
 }
@@ -2462,6 +2478,12 @@ int freedv_get_n_codec_bits             (struct freedv *f){return f->n_codec_bit
 
 void freedv_get_modem_extended_stats(struct freedv *f, struct MODEM_STATS *stats)
 {
+#ifdef N96K_FREEDV
+    /* N96K B4: no full MODEM_STATS inside struct freedv in the 1600-only build */
+    memset(stats, 0, sizeof(*stats));
+    stats->sync    = f->stats.sync;
+    stats->snr_est = f->stats.snr_est;
+#else
     if (FDV_MODE_ACTIVE( FREEDV_MODE_1600, f->mode))
         fdmdv_get_demod_stats(f->fdmdv, stats);
 
@@ -2482,6 +2504,6 @@ void freedv_get_modem_extended_stats(struct freedv *f, struct MODEM_STATS *stats
     if (FDV_MODE_ACTIVE( FREEDV_MODE_700D, f->mode)) {
         ofdm_get_demod_stats(f->ofdm, stats);
     }
-    
+#endif /* N96K_FREEDV */
 }
 

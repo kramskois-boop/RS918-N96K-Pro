@@ -674,7 +674,9 @@ static  float32_t*  mag_coeffs[ MAGNIFY_NUM ] =
 
 // I- and Q- Filter instances for FreeDV downsampling aliasing filters
 
-#ifndef   IS_SMALL_BUILD
+// N96K B4: FreeDV aliasing filters are used from AudioDriver_RxProcessorFreeDV() under USE_FREEDV,
+// so they must be compiled in the opt-in FreeDV build although IS_SMALL_BUILD remains set.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)
 
 
 static arm_biquad_casd_df1_inst_f32 IIR_biquad_FreeDV_I =
@@ -774,7 +776,8 @@ arm_iir_lattice_instance_f32	IIR_TX_PASS_TOUT_Filter_2;
 arm_iir_lattice_instance_f32	IIR_LPF_Compressor;
 
 
-#ifndef   IS_SMALL_BUILD                                // pour reduire la memoire RAM static avec version small
+// N96K B4: FreeDV RX audio filter, needed by the opt-in FreeDV build (see AudioDriver_RxProcessorFreeDV).
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)      // pour reduire la memoire RAM static avec version small
 arm_iir_lattice_instance_f32	IIR_FreeDV_RX_Filter;   // DL2FW: temporary installed FreeDV RX Audio Filter
 float32_t		                iir_FreeDV_RX_State [ IIR_RX_STATE_ARRAY_SIZE ];   // 44 = 32 + 12em ordre
 #endif
@@ -2123,7 +2126,8 @@ static void AudioDriver_InitFilters(void)
     AudioDriver_Voice_Tx_Filter_Init ( ts.dmod_mode ); // Tx filter HP + LP  filters
 
 
-#ifndef   IS_SMALL_BUILD                    // pour reduire la memoire RAM avec version Small
+// N96K B4: initialize the FreeDV filter instances in the opt-in FreeDV build as well.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)      // pour reduire la memoire RAM avec version Small
     IIR_biquad_FreeDV_I.pCoeffs    = FreeDV_coeffs[0];  // FreeDV Filter test -DL2FW-
     IIR_biquad_FreeDV_Q.pCoeffs    = FreeDV_coeffs[0];
 
@@ -2557,7 +2561,8 @@ static bool AudioDriver_RxProcessorFreeDV (AudioSample_t * const src, float32_t 
 
             // Filter below uses the TX-"Tenor" filter shape for the RX upsampling filter
 
-#ifndef   IS_SMALL_BUILD        // pour reduire la memoire RAM en version Small
+// N96K B4: run the FreeDV RX audio filter in the opt-in FreeDV build as well.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)      // pour reduire la memoire RAM en version Small
             arm_iir_lattice_f32_Nizar ( &IIR_FreeDV_RX_Filter, dst, dst, blockSize );
 #endif
 

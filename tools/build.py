@@ -373,7 +373,10 @@ class Builder:
                 name="firmware",
                 linker_script=LINKER_SCRIPT_FIRMWARE,
                 optflags=["-O2"],
-                defines=[],
+                # N96K B4: --freedv enables the opt-in FreeDV build (USE_FREEDV in uhsdr_board.h)
+                # without touching IS_SMALL_BUILD.  The default build keeps defines=[] so it is
+                # byte-for-byte the same configuration as before.
+                defines=["-DN96K_FREEDV"] if self.args.freedv else [],
                 objects=fw_units,
                 includes=self.include_flags),
             "bootloader": BuildPlan(
@@ -757,7 +760,8 @@ class Builder:
         start = time.time()
         for target in targets:
             if target == "firmware":
-                self.info("=== firmware (BUILDFOR=F4, -O2, %s) ===" % LINKER_SCRIPT_FIRMWARE)
+                self.info("=== firmware (BUILDFOR=F4, -O2%s, %s) ==="
+                          % (", FreeDV" if self.args.freedv else "", LINKER_SCRIPT_FIRMWARE))
                 results["firmware"] = self.build_target("firmware")
             elif target == "bootloader":
                 self.info("=== bootloader (BUILDFOR=F4, -Os -DBOOTLOADER_BUILD, %s) ==="
@@ -795,6 +799,9 @@ def parse_args(argv):
                         help=r"directory containing arm-none-eabi-gcc (default: E:\tools\gcc-arm\bin)")
     parser.add_argument("--build-dir", default=None, help="artifact directory (default: <repo>/build)")
     parser.add_argument("--force", "-f", action="store_true", help="rebuild everything")
+    parser.add_argument("--freedv", action="store_true",
+                        help="opt-in FreeDV build: -DN96K_FREEDV (defines USE_FREEDV, keeps "
+                             "IS_SMALL_BUILD); firmware only, default build is unchanged")
     parser.add_argument("--verbose", "-v", action="store_true", help="show every compiler call")
     args = parser.parse_args(argv)
     targets = []
