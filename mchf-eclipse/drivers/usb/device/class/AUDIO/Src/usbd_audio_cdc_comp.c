@@ -271,37 +271,60 @@ static   volatile   audio_buffer_t   in;
 
 //***************************************************************************************
 
+// N96K NIZ-fix (H5): Nizar disabled the "buffer full" check of the USB-IN
+// (radio -> PC microphone) ring buffer and wrote the second half of the stereo
+// pair at "head+1" without wrap-around.  A full buffer then silently
+// overwrote samples the USB core had not transmitted yet, and at the end of
+// the buffer "head+1" could write past in.buffer[].  Keep one slot free so
+// that the "empty" (head == tail) state stays unambiguous.
+static uint16_t audio_in_buffer_used ( void )
+{
+    uint16_t   temp_head = in.buffer_head;
+
+    return (uint16_t)((((temp_head < in.buffer_tail)?USB_AUDIO_IN_BUF_SIZE:0u) + temp_head) - in.buffer_tail);
+}
+
+static bool audio_in_buffer_has_room ( uint16_t samples )
+{
+    return (uint16_t)(USB_AUDIO_IN_BUF_SIZE - audio_in_buffer_used()) > samples;
+}
+
 void audio_USB_1_output_buffer ( int16_t sample )
 {
-    in.buffer [ in.buffer_head ] = sample;
-                in.buffer_head   = (in.buffer_head + 1)  % USB_AUDIO_IN_BUF_SIZE;
-
-             //   in.buffer_head++;
-             //   if ( in.buffer_head >= USB_AUDIO_IN_BUF_SIZE) { in.buffer_head -= USB_AUDIO_IN_BUF_SIZE; }
-
-                // now test buffer full
- /*   if ( in.buffer_head == in.buffer_tail )
+    if ( audio_in_buffer_has_room ( 1u ) )
     {
-        // ok. We loose data now, should never ever happen, but so what
-        // will cause minor distortion if only a few bytes.
+        in.buffer [ in.buffer_head ] = sample;
+        in.buffer_head = (in.buffer_head + 1u) % USB_AUDIO_IN_BUF_SIZE;
+    }
+    else
+    {
+        // buffer full: drop the sample, never overwrite unsent audio
         in.buffer_overflow++;
     }
-    */
 }
 
 //***************************************************************************************
 
 void audio_USB_2_output_buffer ( int16_t sample )
 {
-    in.buffer [ in.buffer_head   ] = sample;
-    in.buffer [ in.buffer_head +1] = sample;
- //   in.buffer [ in.buffer_head +2] = sample;
- //   in.buffer [ in.buffer_head +3] = sample;
+    // N96K NIZ-fix (H5): the RX audio pipeline delivers 64 samples per DMA
+    // cycle at 96 kHz and the USB microphone stream is 96 kHz *stereo*, so one
+    // mono sample forms both channels of one stereo frame (L == R).  Write
+    // both indices with wrap-around: head+1 may be USB_AUDIO_IN_BUF_SIZE.
+    if ( audio_in_buffer_has_room ( 2u ) )
+    {
+        uint16_t   head = in.buffer_head;
 
-    in.buffer_head   = (in.buffer_head + 2)  % USB_AUDIO_IN_BUF_SIZE;
-
-  //  in.buffer_head+=4;
-  //  if ( in.buffer_head >= USB_AUDIO_IN_BUF_SIZE) { in.buffer_head -= USB_AUDIO_IN_BUF_SIZE; }
+        in.buffer [ head ] = sample;
+        head = (head + 1u) % USB_AUDIO_IN_BUF_SIZE;
+        in.buffer [ head ] = sample;
+        in.buffer_head = (head + 1u) % USB_AUDIO_IN_BUF_SIZE;
+    }
+    else
+    {
+        // buffer full: drop the stereo frame, never overwrite unsent audio
+        in.buffer_overflow++;
+    }
 }
 //****************************************************************************************
 

@@ -103,7 +103,8 @@
 /** @defgroup USBD_COMP_Private_Macros
  * @{
  */
-#define AUDIO_SAMPLE_FREQ(frq)      (uint8_t)((uint32_t)frq<<1),(uint8_t)(((uint32_t)frq>>7)),(uint8_t)(((uint32_t)frq>>15))
+// N96K NIZ-fix (H5): see usbd_desc.h - 24-bit little-endian tSamFreq (Hz).
+#define AUDIO_SAMPLE_FREQ(frq)      (uint8_t)((uint32_t)(frq)),(uint8_t)(((uint32_t)(frq)>>8)),(uint8_t)(((uint32_t)(frq)>>16))
 
 
 /**
@@ -425,15 +426,14 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
 		/* Type III" format descriptor is assigned, but wFormatTag on AS interface desc is set to PCM
 		 * (type III is not PCM). As Type III is not a popular one, it should be of Type I */
         AUDIO_FORMAT_TYPE_I,                  /* bFormatType */
-        0x02,                                 /* bNrChannels */ // Important pour 96000 Hz
+        USBD_AUDIO_OUT_CHANNELS,              /* bNrChannels (was literal 0x02, same value) */
         0x02,                                 /* bSubFrameSize :  2 Bytes per frame (16bits) */
         16,                                   /* bBitResolution (16-bits per sample) */
         0x01,                                 /* bSamFreqType only one frequency supported */
 
-		0x00,                                 // 96000 Hz echantiollannge de la carte audio gténérique USB
-		0x77,
-		0x01,
-        //SAMPLE_FREQ((USBD_AUDIO_FREQ)),    /* Audio sampling frequency coded on 3 bytes */ // NIZ96
+        // N96K NIZ-fix (H5): was literals 0x00,0x77,0x01 (= 96000 Hz); derive it
+        // from the same macro as AUDIO_PACKET_SZE() so a rate change stays consistent.
+        SAMPLE_FREQ(USBD_AUDIO_FREQ),         /* Audio sampling frequency (96000 Hz) coded on 3 bytes */
         /* 11 byte*/
 
         /* Endpoint 1 - Standard Descriptor */
@@ -504,18 +504,15 @@ __ALIGN_BEGIN uint8_t USBD_COMP_CfgDesc[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END =
         AUDIO_INTERFACE_DESCRIPTOR_TYPE,// CS_INTERFACE Descriptor Type (bDescriptorType) 0x24
         AUDIO_STREAMING_FORMAT_TYPE,    // FORMAT_TYPE subtype. (bDescriptorSubtype) 0x02
         0x01,                           // FORMAT_TYPE_I. (bFormatType)
-        0x02,                           // USBD_AUDIO_IN_CHANNELS,         // One or two channel.(bNrChannels) NIZ96 !!!
+        USBD_AUDIO_IN_CHANNELS,         // One or two channel.(bNrChannels) (was literal 0x02, same value)
 
 		0x02,                           // Two bytes per audio subframe.(bSubFrameSize)
         0x10,                           // 16 bits per sample.(bBitResolution)
         0x01,                           // One frequency supported. (bSamFreqType)
 
-
-		0x00,                          // 96000 Hz echantiollannge de la carte audio gténérique USB microphone
-		0x77,
-		0x01,
-
-      //  (((uint32_t)USBD_AUDIO_IN_FREQ<<1)&0xFF),(((uint32_t)USBD_AUDIO_IN_FREQ>>7)&0xFF),(((uint32_t)USBD_AUDIO_IN_FREQ>>15)&0xFF),  //0x00,  // (tSamFreq) (NOT COMPLETE!!!) // NIZ96
+        // N96K NIZ-fix (H5): was literals 0x00,0x77,0x01 (= 96000 Hz); derive it
+        // from the same macro as AUDIO_IN_PACKET (wMaxPacketSize) below.
+        SAMPLE_FREQ(USBD_AUDIO_IN_FREQ),// Microphone sampling frequency (96000 Hz) coded on 3 bytes
 
         /*  USB Microphone Standard Endpoint Descriptor (CODE == 8)*/ //Standard AS Isochronous Audio Data Endpoint Descriptor
 		/* Endpoint 1 - Standard Descriptor */

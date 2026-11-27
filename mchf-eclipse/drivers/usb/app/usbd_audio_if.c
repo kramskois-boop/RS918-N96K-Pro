@@ -165,21 +165,25 @@ static  volatile  uint16_t  out_buffer_underflow;
 
 static void audio_out_put_buffer(int16_t sample)
 {
+    // N96K NIZ-fix (H5): restore the TX ring-buffer overflow protection that
+    // Nizar had commented out.  The upstream test compared next_head against
+    // out_buffer_head, which is always true (the head advances by one), so it
+    // could never detect a full buffer; compare against the consumer's tail
+    // instead.  Dropping one sample is better than overwriting a sample that
+    // has not been consumed yet (that is what garbles the USB TX audio).
+    uint32_t next_head = (out_buffer_head + 1u) % USB_AUDIO_OUT_BUF_SIZE;
 
-   //  uint32_t  next_head = (out_buffer_head + 1) % USB_AUDIO_OUT_BUF_SIZE;
-
- // if (next_head != out_buffer_head)
+    if (next_head != out_buffer_tail)
     {
         out_buffer[ out_buffer_head ] = sample;
-                    out_buffer_head   = (out_buffer_head + 1) % USB_AUDIO_OUT_BUF_SIZE;
+        out_buffer_head = next_head;
     }
- /*   else
+    else
     {
         // ok. We loose data now, should never ever happen, but so what
         // will cause minor distortion if only a few bytes.
         out_buffer_overflow++;
-    }*/
-
+    }
 }
 
 volatile uint16_t audio_out_buffer_fill()

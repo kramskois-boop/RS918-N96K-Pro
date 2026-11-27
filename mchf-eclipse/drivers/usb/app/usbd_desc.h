@@ -88,7 +88,12 @@
 #define AUDIO_STANDARD_ENDPOINT_DESC_SIZE             0x09
 #define AUDIO_STREAMING_ENDPOINT_DESC_SIZE            0x07
 
-#define AUDIO_SAMPLE_FREQ(frq)                       (uint8_t)((uint32_t)frq<<1),(uint8_t)(((uint32_t)frq>>7)),(uint8_t)(((uint32_t)frq>>15))
+// N96K NIZ-fix (H5): 24-bit little-endian USB tSamFreq encoding (value in Hz).
+// Nizar had redefined these macros as (frq<<1),(frq>>7),(frq>>15), which
+// encodes 2*frq (96000 -> 192000); the hardcoded literals in the composite
+// descriptor hid that.  Restore the upstream expression so the descriptors
+// follow USBD_AUDIO_FREQ again.
+#define AUDIO_SAMPLE_FREQ(frq)                       (uint8_t)((uint32_t)(frq)),(uint8_t)(((uint32_t)(frq)>>8)),(uint8_t)(((uint32_t)(frq)>>16))
 
 #define AUDIO_IN_PACKET                              (uint32_t)(((USBD_AUDIO_IN_FREQ*USBD_AUDIO_IN_CHANNELS*2)/1000))
 #define AUDIO_PACKET_SZE(frq,channels)               (uint8_t)((((uint32_t)frq*channels*2)/1000)&0xFF),(uint8_t)(((((uint32_t)frq*channels*2)/1000)>>8)& 0xFF)
@@ -98,7 +103,7 @@
 // #define AUDIO_PACKET_SZE(frq,channels)               (uint8_t)(256&0xFF),(uint8_t)((256>>8)& 0xFF)
 
 
-#define SAMPLE_FREQ(frq)                             (uint8_t)((uint32_t)frq<<1),(uint8_t)(((uint32_t)frq>>7)),(uint8_t)(((uint32_t)frq>>15))
+#define SAMPLE_FREQ(frq)                             (uint8_t)((uint32_t)(frq)),(uint8_t)(((uint32_t)(frq)>>8)),(uint8_t)(((uint32_t)(frq)>>16))
 
 
 
