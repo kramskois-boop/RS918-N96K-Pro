@@ -4,22 +4,25 @@
 Для этого репозитория: `2.9.48` (база upstream) → `nizar-baseline` (импорт дерева Nizar) →
 `cleanup-done` (чистка) → `v1.0` → `v1.1` → `v1.2` (тег 2026-11-27) → `main` **`ee5e06ed`**
 (v1.2 + B1–B5; B3/B4 влиты PR #1, B5 — PR #2; отдельного тега у B1–B5 пока нет).
-Вторая волна — ветка **`nizar-review`** (`a4042337`): Nizar-audit, фиксы H1/H2/H3/H5,
-opt-in `--full`, cleanup, docs-rebuild — сделано; misc-фиксы H4/H6/H9–H12 — в работе; в `main`
-ещё не влита.
+Вторая волна — ветка **`nizar-review`** (HEAD `69ccd736`): Nizar-audit, фиксы H1/H2/H3/H5,
+H4/H6/H9/H10/H11/H13, opt-in `--full`, cleanup, docs-rebuild, финальные сборки, печатные PDF и
+пакет bench-2026-11-27 — сделано; в `main` ещё не влита; остаток (H7/H8/H12/H14/H15/H16/N11) —
+стенд/решения.
 
-## [nizar-review] — вторая волна: Nizar-audit, фиксы H1/H2/H3/H5, opt-in --full, cleanup, docs
+## [nizar-review] — вторая волна: Nizar-audit, фиксы H1…H13, opt-in --full, cleanup, docs, финальные сборки
 
-Ветка `nizar-review` создана от `main` (`ee5e06ed`); HEAD **`a4042337`**. Коммиты второй волны:
-`e8a78590` (`--full`), `22fce856` (docs-rebuild), `aa5fdcb9` (H1/H2/H3), `a4042337` (H5).
+Ветка `nizar-review` создана от `main` (`ee5e06ed`); HEAD **`69ccd736`**. Коммиты второй волны:
+`e8a78590` (`--full`), `22fce856` (docs-rebuild), `aa5fdcb9` (H1/H2/H3), `a4042337` (H5),
+`69ccd736` (H4/H6/H9/H10/H11/H13).
 В `main` вторая волна пока не влита; теги и release-артефакты не менялись.
 Статусы: ✅ сделано / 🔄 в процессе / ⏳ план / ⛔ блок.
 
-**Цифры второй волны** (GCC 15.2.1, 2026-11-27, состояние после H1/H2/H3/H5): default fw **323 096** /
-RAM **42 672** / CCM **63 476** / **73** предупреждения; FreeDV opt-in **566 616** / 48 840 / 63 972;
-полная opt-in **572 664** / 48 840 / 63 972; загрузчик **31 620** (5.0.4, не менялся); host-тесты
-**1754 PASS** (0 failed, 3 known). К `main`: +784 Б default, +1 064 Б FreeDV, +1 048 Б full, +4 Б RAM,
-warnings 73 = 73. После misc-фиксов H4/H6/H9–H12 (в рабочем дереве) цифры будут уточнены.
+**Финальные цифры второй волны** (GCC 15.2.1, 2026-11-27, HEAD `69ccd736`, после H1…H13):
+default fw **323 304** / RAM **42 684** / CCM **63 476** / **73** предупреждения; FreeDV opt-in
+**567 040** / 48 840 / 63 972; полная opt-in **573 088** / 48 840 / 63 972; O3 opt-in **428 236** /
+42 700 / 63 476; загрузчик **31 620** (5.0.4, не менялся); host-тесты **1754 PASS** (0 failed,
+3 known). К `main`: +992 Б default, +1 488 Б FreeDV, +1 472 Б full, +2 736 Б O3, RAM +16 Б,
+warnings 73 = 73. Источник — build-bench-default/freedv/full/o3 (build-summary.json, warnings.log).
 
 ### ✅ Nizar-audit (task-39)
 
@@ -57,7 +60,8 @@ warnings 73 = 73. После misc-фиксов H4/H6/H9–H12 (в рабочем
   была возможна на CB 27 МГц, 142–144, 70,5–71 и 400–430/440–450 МГц с «чужим» LPF. Добавлены
   отдельные TX-лимиты (28,0–29,7 / 70,0–70,5 / 144–146 / 430–440 МГц, `BAND_TX_*` и
   `RadioManagement_IsTxDialFrequencyInBand()`); RX-покрытие и LPF не тронуты, явный override
-  `FLAGS1_TX_OUTSIDE_BANDS` сохранён.
+  `FLAGS1_TX_OUTSIDE_BANDS` сохранён (даёт обычную per-band мощность — минимальную выставлять
+  вручную; только эквивалент).
 - **H2 (aa5fdcb9) — безопасные дефолты TX-аудио.** Было на ~25–30 дБ громче upstream (MIC_GAIN 35,
   ALC_POSTFILT 11, comp out 25, TX treble 20, EQ preset «Trebl7») — глубокая компрессия, «каша»,
   сплэттер на SSB. Возвращено: MIC_GAIN 15, ALC_POSTFILT 1, comp out 10 (×1.0), TX treble 4 (+2 дБ),
@@ -71,13 +75,35 @@ warnings 73 = 73. После misc-фиксов H4/H6/H9–H12 (в рабочем
   и учёт overflow, дублирование L=R — корректное моно→стерео (источник уже 96 кГц, ZOH 48→96k
   не подтверждён); tSamFreq/bNrChannels выводятся из `SAMPLE_FREQ(...)` — байты дескриптора
   не изменились (sha256 дескрипторов в ELF совпал), идентификация устройства та же.
+- **H4/H6/H9/H10/H11/H13 (69ccd736).** H4: Si5351 PLL reset default 2 (reset при смене
+  IQ-делителя), форс «Never» убран, debug-пункт меню возвращён. H6: AGC-дефолты как в upstream
+  (slope 70, tau 4000/2000/500/250/50/500, thresh 60, hang 500/45), `% agc_wdsp.ring_buffsize`
+  вместо `%96`, меню AGC Mode/Threshold возвращены; **Hang-пункты намеренно не возвращены**
+  (активный AGC Nizar без стадии hang, поле `agc_wdsp_hang_enable` переиспользовано как
+  «AGC WDSP OFF Gain»). H9: скрытый сдвиг +15 Гц в SSB-MIC устранён (`tx_bass_sheeft` 0→15 =
+  0 Гц; явная опция −15…+5 Гц остаётся). H10: минимумы CW-декодера 8/24→2/6 (~82 WPM при
+  дефолтном blocksize). H11: CAT TX_STATE (0xBD) отдаёт реальные PWR/SWR nibble. H13:
+  TP_IRQ — `GPIO_PULLUP` + `VERY_HIGH`; сброс DSP (`ts.nr_first_time=1`) на каждом band
+  switch **не убран** — стендовая проверка.
+
+### ✅ Финальные сборки, печать и пакет
+
+- **Сборки:** default 323 304 / 42 684 / 63 476; FreeDV 567 040 / 48 840 / 63 972; full
+  573 088 / 48 840 / 63 972; O3 428 236 / 42 700 / 63 476; bl 31 620; 73 warnings на всех.
+- **Печатные PDF (task-47):** `release/bench-2026-11-27/printable/` — чек-лист 2 стр. A4
+  portrait, сводка 4 стр. A4 landscape (DOCX+PDF), шапка/футер «bench-2026-11-27, коммит
+  `69ccd736`», «стр. X из Y»; финальные числа. После docs-sync печать пересобирается
+  отдельным шагом из обновлённых `docs/CHECKLIST.md`/`docs/CHANGES.md`.
+- **Пакет `release/bench-2026-11-27/`** (собирает lead): default/freedv/full/o3, bootloader
+  5.0.4, rollback-v1.2, docs, printable, README, SHA256SUMS; markdown-копии docs синхронизируются
+  при финализации.
 
 ### ✅ Добавлено (ветка nizar-review)
 
 - **opt-in `--full` (e8a78590).** `python tools/build.py all --full`: `-DN96K_FULL_BUILD` снимает
   `IS_SMALL_BUILD` (FreeDV + const-окна Ханна 512/1024) и `-DN96K_FREEDV` (обязательная конфигурация
   памяти FreeDV — иначе heap/стек уходят в минус); firmware only, загрузчик не меняется. Full:
-  **572 664 / 48 840 / 63 972**, 73 warnings; default без флагов не меняется. Сборка стендовая,
+  **573 088 / 48 840 / 63 972**, 73 warnings; default без флагов не меняется. Сборка стендовая,
   не продукт: FreeDV на железе не проверен, heap/стек на границе (расчётный запас ≈7,6 КБ),
   CCM занята на 97,6 %, EEPROM-индексы DIGI-режимов между сборками различаются.
 - **Cleanup (task-41).** Освобождено **23 789,9 МиБ ≈ 23,2 ГиБ** (рабочая папка 24 812,5 → 2 810,3 МиБ):
@@ -87,26 +113,33 @@ warnings 73 = 73. После misc-фиксов H4/H6/H9–H12 (в рабочем
   PLAN-DEV/CI/RELEASE; CHECKLIST/CHANGES подготовлены к пересборке PDF; исправлены stale-факты
   (тег v1.2, «CI не запускался», FreeDV-формулировки).
 
-### 🔄 В работе
+### ⏳ Осталось на стенд/решение (код не менялся)
 
-- **Nizar-fix misc (task-45, рабочее дерево, без коммита):** H4 (Si5351 PLL reset default/menu),
-  H6 (AGC-дефолты/`ring_buffsize`/меню), H9 (скрытый сдвиг +15 Гц в SSB-MIC), H10 (минимумы
-  CW-декодера), H11 (CAT PWR/SWR nibble), H12 (мёртвый noise gate / USB VID-PID). H7 (пороги
-  ADC-clip) и H8 (кривая RF-гейна) — только стендовые (в коде не меняются).
-- **Docs-final (task-46):** этот раздел + STATUS/CHANGES/README/PATCHES/PLAN-DEV/BUILD/SAFETY/CHECKLIST.
-- ⏳ **После слияния misc-фиксов:** финальные сборки default/FreeDV/full, пакет второй волны
-  (`tools/release.py`), пересборка printable PDF, стенд (H1/H2/H3/H5/H7/H8/H9/H4/H6/H11/H12 —
-  `docs/CHECKLIST.md`), затем v1.3 (тег/пакет/PDF).
+- **Стенд:** H1 TX-границы; H2 спектр/IMD TX; H3 CW-R и CAT-сторона; H5 USB-микрофон/TX;
+  H4 PLL reset; H6 AGC (FAST/MED/SLOW/LONG + OFF Gain; **Hang-пунктов нет**); H9 нулевые биения;
+  H10 CW-декодер 20–80 WPM; H11 CAT 0xBD; H13 тачскрин (TP_IRQ) + 20+ переключений бэнда с
+  NR/DNR (остаток nr_first_time).
+- **Стенд с генератором/аттенюатором:** H7 пороги ADC-clip (22200/10800), H8 кривая RF-гейна и
+  Codec_RestartI2S.
+- **Решение lead:** H12 — мёртвый noise gate (включать/удалить) и USB VID/PID (0x0963/0x5733 или
+  Arduino 0x2341/0x8036 из bit2 реверба; нужна миграция EEPROM для своего/открытого VID).
+- **Известные отклонения (не исправлялись, не считать новыми дефектами):** H14 (скрытые
+  dBm/font/spectrum size, zoom 1x/8x), H15 (bias-reduce/fine power factor отключены),
+  H16 (MIC gain max 150 + codec +20 дБ без клампа), N11 (лицензионная строка «mchf QRP»).
+- **Пакет:** release/bench-2026-11-27 собирает lead; markdown-копии docs синхронизируются
+  при финализации; printable пересобирается после docs-sync.
+- **v1.3:** merge второй волны в main, тег и release-пакет по docs/RELEASE.md — после пакета/стенда.
 
 ### Проверки
 
-- host-тесты: **1754 PASS** (0 failed, 3 known) — после H1/H2/H3/H5.
-- warning-гейт: **73 = 73** на default / FreeDV / full; новых типов предупреждений нет.
-- Сборки: default 323 096 / 42 672 / 63 476; FreeDV 566 616 / 48 840 / 63 972; full 572 664 /
-  48 840 / 63 972; загрузчик 31 620 / 39 700 / 0 (не менялся).
-- Дескрипторы USB не изменились (сравнение ELF до/после, `USBD_COMP_CfgDesc` и
-  `USBD_FS_DeviceDesc` — те же sha256); tSamFreq = 96 000 Гц в spk/mic подтверждён.
-- На железе ничего из второй волны не проверялось: H1/H2/H3/H5/H7/H8 требуют стенда.
+- host-тесты: **1754 PASS** (0 failed, 3 known) — после H1…H13 (независимо подтверждено b6-verify).
+- warning-гейт: **73 = 73** на default / FreeDV / full / O3; новых типов предупреждений нет.
+- Сборки: default 323 304 / 42 684 / 63 476; FreeDV 567 040 / 48 840 / 63 972; full 573 088 /
+  48 840 / 63 972; O3 428 236 / 42 700 / 63 476; загрузчик 31 620 / 39 700 / 0 (не менялся).
+- Дескрипторы USB не изменились (независимое сравнение ELF: `USBD_COMP_CfgDesc` sha256
+  `53609c2f…f9068f`, `USBD_FS_DeviceDesc` `00309c00…4ebb51` — идентичны pre-H5;
+  tSamFreq 96 000 Гц ×2).
+- На железе ничего из второй волны не проверялось: H1/H2/H3/H5/H4/H6/H9/H10/H11/H13/H7/H8 — стенд.
 
 ## [main ee5e06ed] — B5 (2026-11-27, PR #2): warning-гейт, два реальных дефекта, библиотеки, оптимизация
 
