@@ -1,11 +1,14 @@
-# RS918 N96K-Pro CI - N96K P2-2 (audit В§9.3)
+# RS918 N96K-Pro CI - N96K P2-2 (audit §9.3), release automation (B1/F12)
 #
-# Two independent gates:
+# Three jobs:
 #   host-tests    - tests/run_all.py: DSP table / version / EEPROM invariants,
 #                   no toolchain and no third-party Python packages required;
 #   docker-build  - reproducible firmware build with the pinned xPack GCC
 #                   15.2.1-1.1 toolchain, artifact budget verification, and
-#                   the same host tests re-run inside the image.
+#                   the same host tests re-run inside the image;
+#   release       - tag v* only: packs the docker-build artifacts with
+#                   tools/release.py, verifies SHA256SUMS.txt and publishes
+#                   the GitHub Release.
 #
 # The Docker build also verifies the flash/RAM/CCM budget and writes
 # SHA256SUMS.txt for the uploaded firmware.  See docs/CI.md.
@@ -47,6 +50,12 @@ jobs:
           set -euo pipefail
           python3 tests/run_all.py 2>&1 | tee host-tests.log
 
+      - name: Lint the workflow YAML
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/check_workflow.py .github/workflows/build.yml
+
       - name: Upload test log
         if: always()
         uses: actions/upload-artifact@v4
@@ -121,13 +130,14 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-env:
-  PYTHONUNBUFFERED: "1"
-
-jobs:
-  host-tests:
-    name: Host tests (Python only)
+  release:
+    name: GitHub Release (tag v*)
+    # Tag pushes only; the checked docker-build artifacts are the payload.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: docker-build
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,82 +147,38 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run host-side table tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 tests/run_all.py 2>&1 | tee host-tests.log
-
-      - name: Upload test log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: host-tests-log
-          path: host-tests.log
-          if-no-files-found: warn
-
-  docker-build:
-    name: Firmware (pinned Docker toolchain)
-    runs-on: ubuntu-24.04
-    needs: host-tests
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # The image build itself runs: tests/run_all.py -> tools/build.py all ->
-      # docker/verify_artifacts.py.  The toolchain download layer is cached in
-      # the GitHub Actions cache, so the ~307 MB xPack archive is fetched once.
-      - name: Build firmware image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          tags: rs918-n96k-build:ci
-          load: true
-          pull: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Extract firmware artifacts
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker create --name n96k-artifacts rs918-n96k-build:ci
-          mkdir -p artifacts
-          for f in fw-mchf.elf fw-mchf.bin fw-mchf.hex fw-mchf.map \
-                   bl-mchf.elf bl-mchf.bin bl-mchf.hex bl-mchf.map \
-                   build-summary.json compile_commands.json warnings.log \
-                   SHA256SUMS.txt; do
-            docker cp "n96k-artifacts:/src/build/$f" "artifacts/$f"
-          done
-          docker rm n96k-artifacts
-          ls -l artifacts
-
-      - name: Verify exported artifacts (budgets + SHA256SUMS)
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 docker/verify_artifacts.py artifacts
-
-      - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v4
+      - name: Download firmware artifacts
+        uses: actions/download-artifact@v4
         with:
           name: n96k-firmware
-          path: |
-            artifacts/fw-mchf.bin
-            artifacts/fw-mchf.hex
-            artifacts/fw-mchf.elf
-            artifacts/fw-mchf.map
-            artifacts/bl-mchf.bin
-            artifacts/bl-mchf.hex
-            artifacts/bl-mchf.elf
-            artifacts/bl-mchf.map
-            artifacts/build-summary.json
-            artifacts/compile_commands.json
-            artifacts/warnings.log
-            artifacts/SHA256SUMS.txt
-          if-no-files-found: error
-          retention-days: 30
+          path: artifacts
+
+      # tools/release.py renames the bootloader to bl-mchf-<bootloader>.{bin,
+      # hex,elf,map}, writes SHA256SUMS.txt and RELEASE-NOTES.md.  A per-release
+      # summary may be committed as docs/release-notes/<tag>.md; the 4.1.2
+      # known-good bootloader is not part of the CI artifact set (pass it with
+      # --known-good when packing locally).
+      - name: Pack release directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/release.py \
+            --version "${GITHUB_REF_NAME}" \
+            --build-dir artifacts \
+            --out "release/${GITHUB_REF_NAME}"
+
+      - name: Verify release checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "release/${GITHUB_REF_NAME}"
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "RS918 N96K-Pro ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
+          body_path: release/${{ github.ref_name }}/RELEASE-NOTES.md
+          fail_on_unmatched_files: true
+          files: release/${{ github.ref_name }}/*

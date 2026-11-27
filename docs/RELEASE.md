@@ -10,7 +10,8 @@
 > (14 файлов, 13 контрольных сумм проверены); публичного remote у продукта **нет** (в репозитории
 > `origin` указывает на upstream `df8oe/UHSDR`); `docker build` и GitHub Actions не запускались;
 > аппаратных испытаний не было — релиз имеет статус «собран и проверен статически», но не «проверен на
-> железе».
+> железе». Упаковка автоматизирована (`tools/release.py`, job `release`), но workflow пока не
+> исполнялся — см. §4.5 и §6.3.
 
 ## 1. Версии и правила
 
@@ -50,7 +51,7 @@
 | # | Проверка | Команда/критерий | v1.2 |
 |---|---|---|---|
 | 1 | Дерево чистое, нет незакоммиченных правок | `git status --porcelain` — пусто | PASS |
-| 2 | Host-тесты | `python tests/run_all.py` — exit 0, `RESULT: PASS` | 1134 проверки, 0 failed, 3 known |
+| 2 | Host-тесты | `python tests/run_all.py` — exit 0, `RESULT: PASS` | 1754 проверки, 0 failed, 3 known (после B1) |
 | 3 | Чистая сборка | `python tools/build.py clean` затем `python tools/build.py all` — exit 0 | fw + bl собраны |
 | 4 | Размеры/бюджет | `build/build-summary.json` совпадает с документацией; flash ≤ 983 040, RAM ≤ 131 072, CCM ≤ 65 536 | fw 321 392, RAM 42 616, CCM 63 476/65 536 |
 | 5 | Предупреждения | число строк `build/warnings.log` равно зафиксированному; новых на строках патчей быть не должно | 78 строк (fw 70 + bl 8) |
@@ -106,7 +107,8 @@ CCM 63 476/65 536, warnings **78**; `docker/verify_artifacts.py` — **OK**; `bl
 
 ### 4.1. Состав каталога
 
-`release/` в `.gitignore`; каталог создаётся вручную и публикуется как артефакты релиза.
+`release/` в `.gitignore`; каталог собирается скриптом `tools/release.py` (§4.5) или
+вручную и публикуется как артефакты релиза.
 **В git артефактов нет** — храните копию `release/vX` вне рабочей машины и прикладывайте её к Release.
 
 | Файл в `release/vX` | Откуда | Примечание |
@@ -168,7 +170,7 @@ Write-Output ("bad=" + $bad)
 | Лицензия | GNU GPLv3, исходники — тег vX |
 
 Цифры из RELEASE-NOTES обязаны совпадать с `build-summary.json` и документацией; для v1.2 пример —
-`commit 619e9187`, fw 321 392 Б, bl 31 620 Б, CCM 63 476/65 536, 78 строк предупреждений, тесты 1134/0/3.
+`commit 619e9187`, fw 321 392 Б, bl 31 620 Б, CCM 63 476/65 536, 78 строк предупреждений, тесты 1134/0/3 (на момент v1.2; после B1 — 1754/0/3).
 
 ### 4.4. Проверка упаковки
 
@@ -179,6 +181,35 @@ Write-Output ("bad=" + $bad)
 | Версия в `bl-mchf-5.0.4.bin` | `Version: 5.0.4` есть, `4.1.2` нет |
 | SHA256SUMS | 13/13 (или N/N) совпадают, формат верхнего регистра |
 | `git status` | дерево чистое (артефакты не попали в git) |
+
+### 4.5. Автоматическая упаковка (`tools/release.py`)
+
+Скрипт (только stdlib) собирает `release/vX` из `build/` (или из артефактов CI-job'а
+`docker-build`) и снимает ручную рутину §4.1-4.2:
+
+```bash
+python tools/release.py --version v1.3 --build-dir build --out release/v1.3 \
+    [--notes PATH] [--known-good release/v1.2/bl-mchf-4.1.2-known-good.bin] [--force]
+```
+
+* `fw-mchf.{bin,hex,elf,map}` копируются как есть, `bl-mchf.*` переименовываются в
+  `bl-mchf-<версия>.{bin,hex,elf,map}` (версия из `UHSDR_BOOT_VERS` в
+  `mchf-eclipse/src/uhsdr_version.h`);
+* `build-summary.json`, `compile_commands.json`, `warnings.log` (пустой, если лога нет);
+  known-good 4.1.2 — только с `--known-good` (в CI-артефактах его нет);
+* `RELEASE-NOTES.md`: `--notes` -> `docs/release-notes/<version>.md` -> шаблон с TODO-маркерами
+  (шаблон надо просмотреть и заполнить перед публикацией);
+* `SHA256SUMS.txt`: верхний регистр, два пробела, сортировка без учёта регистра — 13 строк при
+  полном наборе с known-good, 12 без него; сам файл в список не входит;
+* перед упаковкой размеры перепроверяются `docker/verify_artifacts.py` (subprocess; при
+  `--no-verify` и для каталогов, не похожих на сырой `build/`, проверка пропускается); после
+  записи скрипт сам сверяет `SHA256SUMS.txt` со всеми файлами;
+* `--force` пересоздаёт непустой каталог; `--out` = корень репозитория, корень `release/`,
+  каталог с `.git` или пересечение с `--build-dir` скрипт удалять откажется. Код возврата 0/1/2.
+
+Полный локальный набор (14 файлов с known-good) совпадает по составу и контрольным суммам с
+`release/v1.2` (проверено на этапе B1). Для CI-релиза — и если шаблон не устраивает — положите
+сводку в `docs/release-notes/<version>.md`: job `release` заберёт её автоматически.
 
 ## 5. Тег и проверка
 
@@ -222,7 +253,8 @@ git push product --tags
 
 После появления remote:
 
-* создать **Release** для тега `vX` и приложить файлы из `release/vX` (все 14, включая RELEASE-NOTES и
+* запушить тег и либо дать job `release` создать GitHub Release автоматически (§6.3), либо создать
+  **Release** вручную и приложить файлы из `release/vX` (все 14, включая RELEASE-NOTES и
   SHA256SUMS); GitHub автоматически отдаст исходники по тегу;
 * заполнить `UHSDR_PRODUCT_REPO` в `mchf-eclipse/src/uhsdr_version.h` и строку «Репозиторий продукта»
   в README (макрос в коде не используется — бинарь не меняется, но пересоберите и сверьте размер,
@@ -237,12 +269,29 @@ git push product --tags
   (3V8MN) — маркеры NIZZ/NIZ96/NIZ32 сохранены; полный список — [docs/CREDITS.md](CREDITS.md);
 * в RELEASE-NOTES указывать лицензию и что исходники — по тегу.
 
-### 6.3. CI-релиз — отдельный этап
+### 6.3. CI-релиз (job `release`)
 
-Сейчас `.github/workflows/build.yml` проверяет host-тесты и Docker-сборку, но **не создаёт GitHub Release**
-и не публикует артефакты (workflow не запускался ни разу — нет remote/раннера; в файле к тому же
-дублируются ключи `env`/`jobs` — известный дефект F12, исправить до включения CI). Автоматическая
-публикация артефактов — отдельная задача; до неё шаги §6.1 выполняются вручную.
+В `.github/workflows/build.yml` три job'а: `host-tests`, `docker-build`, `release`. Job `release`
+запускается **только на push тега `v*`** и только после успешного `docker-build`:
+
+1. `actions/download-artifact@v4` забирает артефакты `n96k-firmware`;
+2. `python tools/release.py --version <tag> --build-dir artifacts --out release/<tag>` собирает
+   каталог релиза (см. §4.5); если в репозитории есть `docs/release-notes/<tag>.md`, он становится
+   `RELEASE-NOTES.md`, иначе генерируется шаблон;
+3. `sha256sum -c SHA256SUMS.txt` проверяет каталог;
+4. `softprops/action-gh-release@v2` создаёт GitHub Release с файлами каталога и `RELEASE-NOTES.md`
+   в описании; `permissions: contents: write` выдан только этому job'у.
+
+Ограничения автоматического релиза: в CI **нет** `bl-mchf-4.1.2-known-good.bin` (артефакт v1.0;
+добавляется через `--known-good` при локальной упаковке) и **нет** `printable/`; job публикует
+13 файлов (fw/bl + JSON/log + RELEASE-NOTES + SHA256SUMS, 12 сумм). Known-good и печатные документы
+при необходимости добавляются в Release вручную после создания.
+
+**Статус:** workflow ещё **не запускался** — у продукта нет публичного remote/раннера (см. §6.1);
+YAML проверен `tools/check_workflow.py`, `tools/release.py` — локально на реальной сборке и на
+фикстуре `release/v1.2`. После появления remote полный прогон возможен сам: `git push product
+--tags` -> job `release` создаёт Release; останется проверить скачивание и суммы. До этого —
+ручной путь по §4.5 и §6.1.
 
 ## 7. Откат релиза
 
@@ -262,7 +311,7 @@ git push product --tags
 | | 2 | Обновлены README/BUILD/PATCHES/SAFETY/CI/CHANGELOG | цифры совпадают с будущим build-summary |
 | | 3 | `git status` чистый | пусто |
 | Сборка | 4 | `python tools/build.py clean` + `all` | exit 0, fw/bl собраны |
-| | 5 | `python tests/run_all.py` | exit 0, RESULT: PASS (1134/0/3 для v1.2) |
+| | 5 | `python tests/run_all.py` | exit 0, RESULT: PASS (1754/0/3 после B1) |
 | | 6 | `python docker/verify_artifacts.py build` | exit 0, SHA256SUMS записан |
 | | 7 | Размеры/бюджеты/warnings | как в документации (v1.2: 321 392/31 620; CCM 63 476; 78 строк) |
 | | 8 | (Опц.) повторная сборка `--force` | размеры/секции те же, bl побайтно |
@@ -274,7 +323,7 @@ git push product --tags
 | Тег | 14 | `git tag -a vX -m "…"` | `git cat-file -t vX` = tag |
 | | 15 | Commit сборки и тега согласованы | diff — только docs (если так), записано в RELEASE-NOTES |
 | Публикация | 16 | `git push product main` + `--tags` | тег и main на remote |
-| | 17 | Release с 14 артефактами + SHA256SUMS | скачивание проверено по сумме |
+| | 17 | Release с артефактами + SHA256SUMS (вручную по §6.1 или job'ом `release`, §6.3) | скачивание проверено по сумме |
 | | 18 | GPLv3: исходники по тегу доступны, атрибуция | LICENCE.md/CREDITS.md, `UHSDR_REPO` |
 | После | 19 | Записать в CHANGELOG статус ревью/испытаний | обновлено |
 | | 20 | Аппаратные проверки (если были) | docs/VSWR.md §6, docs/BOOTLOADER.md §9 — PASS, результаты в отчёте |

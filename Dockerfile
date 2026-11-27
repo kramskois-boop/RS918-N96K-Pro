@@ -12,8 +12,9 @@
 #
 # Toolchain: xPack GNU Arm Embedded GCC 15.2.1-1.1 (the version verified for
 # v1.0).  The URL format and the SHA256 below were checked against the GitHub
-# release assets (the .sha256 asset published by xPack matches the API digest);
-# the archive layout was checked with an HTTP range request - it extracts to
+# release: xPack publishes a ".sha" checksum asset and the archive digest is
+# also available from the GitHub release API.  The archive layout was checked
+# with an HTTP range request - it extracts to
 # xpack-arm-none-eabi-gcc-15.2.1-1.1/.  A full "docker build" has NOT been run
 # on the development host (Docker is not installed there) - see docs/CI.md.
 # =============================================================================
@@ -27,7 +28,7 @@ FROM ubuntu:${UBUNTU_VERSION} AS toolchain
 ARG DEBIAN_FRONTEND=noninteractive
 ARG XPACK_VERSION=15.2.1-1.1
 ARG XPACK_ARCHIVE=xpack-arm-none-eabi-gcc-${XPACK_VERSION}-linux-x64.tar.gz
-# sha256 of the linux-x64 archive, from the release's .sha256 asset
+# sha256 of the linux-x64 archive (xPack's ".sha" asset / GitHub API digest)
 ARG XPACK_SHA256=da6a49ad4003944b823c6c93702a8787c922ab34bd7e918ec0eaf6933a9b1ff6
 ARG XPACK_URL=https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v${XPACK_VERSION}/${XPACK_ARCHIVE}
 

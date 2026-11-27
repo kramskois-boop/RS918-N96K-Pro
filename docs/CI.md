@@ -1,8 +1,9 @@
 # CI и воспроизводимая сборка (Docker)
 
-> N96K P2-2. Этот документ описывает автоматические проверки репозитория
-> **RS918 N96K-Pro**: сборку прошивки в Docker с зафиксированным тулчейном и
-> хост-тесты ЦОС-таблиц. Обычная сборка без Docker — см. [BUILD.md](BUILD.md).
+> N96K P2-2 + релизная автоматизация B1. Этот документ описывает
+> автоматические проверки репозитория **RS918 N96K-Pro**: сборку прошивки в
+> Docker с зафиксированным тулчейном, хост-тесты ЦОС-таблиц и упаковку
+> GitHub Release. Обычная сборка без Docker — см. [BUILD.md](BUILD.md).
 
 ---
 
@@ -13,9 +14,11 @@
 | Хост-тесты ЦОС-таблиц | `tests/run_all.py` | несоответствие `numTaps`/`numStages` длинам таблиц, nan/inf и нулевые коэффициенты, таблицы IQ-фильтров, отсутствие файла фильтра в `files.mak` (регрессия P0-2), инварианты версии/продукта, карту EEPROM |
 | Сборка прошивки | `docker build .` | что дерево собирается фиксированным GCC 15.2.1 **с нуля**; проверяются `fw-mchf`/`bl-mchf` и бюджеты flash/RAM/CCM |
 | Артефакты | `docker/verify_artifacts.py` | наличие `.elf/.bin/.hex/.map`, `build-summary.json`, размеры в бюджете, `SHA256SUMS.txt` |
+| Публикация релиза | job `release` + `tools/release.py` | полнота состава `release/vX`, формат `SHA256SUMS.txt`, тело GitHub Release из `RELEASE-NOTES.md`; только на push тега `v*` |
 
-GitHub Actions (`.github/workflows/build.yml`) запускает это двумя job'ами:
-`host-tests` (чистый Python, быстро) и `docker-build` (образ + артефакты).
+GitHub Actions (`.github/workflows/build.yml`) запускает это тремя job'ами:
+`host-tests` (чистый Python, быстро), `docker-build` (образ + артефакты) и
+`release` (только на тег `v*`: упаковка и GitHub Release).
 
 ---
 
@@ -40,9 +43,9 @@ GitHub Actions (`.github/workflows/build.yml`) запускает это дву�
 Запуск из корня репозитория (или из любого каталога — путь определяется
 относительно `tests/run_all.py`):
 
-`BT`bash
+```bash
 python3 tests/run_all.py
-`BT`
+```
 
 Коды возврата: **0** — всё в порядке (KNOWN/SKIP не считаются ошибкой),
 **1** — есть FAIL, **2** — не удалось запустить сам тест (нет `mchf-eclipse/`
@@ -55,7 +58,7 @@ python3 tests/run_all.py
 | `check_filters.py` | все `arm_fir_*`/`arm_iir_lattice_*` дескрипторы в `mchf-eclipse/drivers/audio/filters/*.c`: `numTaps == len(pCoeffs)`, `numStages == len(pkCoeffs)`, `len(pvCoeffs) == numStages+1`, `pState` (если задан inline) = `2*numStages`; массивы дескрипторов (`FirZoomFFTDecimate[6]`) — поэлементно и против `extern ...[N]`; все коэффициенты конечны (нет nan/inf), не переполняют float32, таблица не «все нули» |
 | `check_iq.py` | большие таблицы Низара: `iq_tx_filter.c` (`IQ_FilterDescriptor`, `.i`/`.q` = `.num_taps`), `iq_rx_filter.c`, `iq_rx_filter_am.c` — размеры массивов = объявленным, сверка с `extern` в `filters.h` и с `FilterPathInfo` в `audio_filter.c` |
 | `check_files_mak.py` | каждый `drivers/audio/filters/*.c` есть в `SRC` из `files.mak` (в т.ч. `iir_2_8k.c`, `iir_16k5_96ks.c` — регрессия P0-2); нет «мёртвых» путей |
-| `check_versions.py` | `UHSDR_VER_*` = 2.9.48 (не менять!), `UHSDR_PRODUCT_VERSION = 2.9.48-n96kp3`, `UHSDR_PRODUCT_NAME`, GPLv3, атрибуция `df8oe/UHSDR`; `UHSDR_BOOT_VERS` — целевое значение 5.0.4 (до завершения параллельного порта загрузчика 4.1.2 принимается как KNOWN) |
+| `check_versions.py` | `UHSDR_VER_*` = 2.9.48 (не менять!), `UHSDR_PRODUCT_VERSION = 2.9.48-n96kp3`, `UHSDR_PRODUCT_NAME`, GPLv3, атрибуция `df8oe/UHSDR`; `UHSDR_BOOT_VERS = 5.0.4` — единственное допустимое значение, 4.1.2 больше не принимается как KNOWN (F5 исправлен: `ACCEPTED_BOOT_VERS` убран, откат версии загрузчика даёт FAIL) |
 | `check_eeprom.py` | карта EEPROM: `MAX_VAR_ADDR = EEPROM_FIRST_UNUSED-1 < NB_OF_VAR`, уникальность адресов, диапазон `[0, MAX_VAR_ADDR]`, наличие `#error`-стража в `ui_configuration.h`, все `EEPROM_*`, на которые ссылается `ui_configuration.c`, определены |
 | `check_audio.py` | статические biquad-инстансы в `audio_driver.c`: `pCoeffs = 5*numStages`, `pState = 4*numStages` |
 
@@ -98,7 +101,7 @@ python3 tests/run_all.py
 
 Сборка и извлечение артефактов:
 
-`BT`bash
+```bash
 # 1) собрать образ (внутри выполняются тесты, сборка и проверка артефактов)
 docker build -t rs918-n96k-build .
 
@@ -110,7 +113,7 @@ docker rm n96k
 
 # 3) (опционально) проверить скачанные артефакты ещё раз
 python3 docker/verify_artifacts.py artifacts
-`BT`
+```
 
 `tools/build.py` ищет компилятор в порядке `--toolchain`, `$ARM_GCC_BIN`,
 `E:\tools\gcc-arm\bin`, `PATH`; в образе задан `ARM_GCC_BIN`, поэтому
@@ -121,7 +124,7 @@ Windows-путь по умолчанию не мешает.
 | Артефакт | Ожидание |
 |---|---|
 | `fw-mchf.bin` | эталон v1.0 — **320 024 байта**; допускается дрейф от патчей (по умолчанию ±8192, вне допуска — предупреждение); жёстко проверяется бюджет flash 983 040 байт (960 КиБ) |
-| `bl-mchf.bin` | только наличие и бюджет 32 768 байт: версия загрузчика 5.0.4 портируется отдельной задачей |
+| `bl-mchf.bin` | наличие и бюджет 32 768 байт; загрузчик 5.0.4 уже собран (31 620 Б в v1.2), проверяется только бюджетами |
 | `fw-mchf.elf/.hex/.map`, `bl-*` | наличие, ненулевой размер, SHA256 в `SHA256SUMS.txt` |
 | `build-summary.json` | flash/RAM/CCM в бюджетах (RAM 128 КиБ, CCM 64 КиБ); CCM < 1 КиБ свободно — предупреждение |
 
@@ -129,18 +132,58 @@ Windows-путь по умолчанию не мешает.
 
 ## 5. GitHub Actions
 
-`.github/workflows/build.yml`:
+`.github/workflows/build.yml` — три job'а; верхнеуровневые ключи (`name`,
+`on`, `permissions`, `concurrency`, `env`, `jobs`) встречаются ровно по
+одному разу. Без PyYAML это проверяется локально:
 
-* **host-tests** — Ubuntu 24.04 + `actions/setup-python` (3.12), запуск
-  `tests/run_all.py`, лог `host-tests.log` в артефактах;
-* **docker-build** — `docker/setup-buildx-action` + `docker/build-push-action`
-  (кэш слоёв в GitHub Actions cache, чтобы не качать 307 МБ тулчейна каждый
-  раз), извлечение артефактов `docker cp`, повторная проверка
-  `verify_artifacts.py`, выгрузка `n96k-firmware` (bin/hex/elf/map,
-  `build-summary.json`, `SHA256SUMS.txt`).
+```bash
+python tools/check_workflow.py .github/workflows/build.yml
+```
+
+| Job | Когда | Что делает |
+|---|---|---|
+| `host-tests` | push/PR, любой ref | Ubuntu 24.04 + `actions/setup-python` 3.12, запуск `tests/run_all.py`, затем `tools/check_workflow.py` (YAML-линт), лог `host-tests.log` в артефактах |
+| `docker-build` | после `host-tests` | `docker/setup-buildx-action` + `docker/build-push-action` (кэш слоёв в GitHub Actions cache, чтобы не качать 307 МБ тулчейна каждый раз), извлечение артефактов `docker cp`, повторная проверка `verify_artifacts.py`, выгрузка `n96k-firmware` (bin/hex/elf/map, `build-summary.json`, `compile_commands.json`, `warnings.log`, `SHA256SUMS.txt`) |
+| `release` | **только push тега `v*`** (`if: startsWith(github.ref, 'refs/tags/v')`, `needs: docker-build`) | `actions/download-artifact@v4` (name `n96k-firmware`) -> `python3 tools/release.py --version <tag> --build-dir artifacts --out release/<tag>` -> `sha256sum -c SHA256SUMS.txt` -> `softprops/action-gh-release@v2` (файлы каталога, тело — `RELEASE-NOTES.md`). `permissions: contents: write` выдан только этому job'у |
 
 Триггеры: push в `main` и теги `v*`, pull request, ручной запуск
-(`workflow_dispatch`).
+(`workflow_dispatch`); job `release` на ручной запуск не реагирует — только на
+тег.
+
+### 5.1. `tools/release.py` — упаковка каталога релиза
+
+Скрипт (только stdlib) собирает `release/vX` из `build/` или из скачанных
+CI-артефактов:
+
+```bash
+python tools/release.py --version v1.3 --build-dir build --out release/v1.3 \
+    [--notes PATH] [--known-good release/v1.2/bl-mchf-4.1.2-known-good.bin] [--force]
+```
+
+* `fw-mchf.{bin,hex,elf,map}` копируются как есть, `bl-mchf.*` — с версией
+  загрузчика из `uhsdr_version.h` (`bl-mchf-5.0.4.*`);
+* `build-summary.json`, `compile_commands.json`, `warnings.log` (если лога нет,
+  создаётся пустой); опционально known-good загрузчик 4.1.2 (`--known-good`):
+  в CI-артефактах его нет, поэтому без флага файл не включается;
+* `RELEASE-NOTES.md` — из `--notes`, затем из `docs/release-notes/<version>.md`,
+  иначе шаблон с TODO-маркерами;
+* `SHA256SUMS.txt` — HEX в верхнем регистре, два пробела, сортировка без учёта
+  регистра (как в `release/v1.0-v1.2`): 13 строк в полном локальном наборе,
+  12 — без known-good; сам файл в список не входит;
+* размеры и бюджеты перепроверяются `docker/verify_artifacts.py` (subprocess;
+  пропускается, если каталог не похож на сырой `build/`, и при `--no-verify`);
+* `--force` пересоздаёт непустой каталог; скрипт откажется удалять репозиторий,
+  `build/` и корень `release/`. Код возврата: 0 — успех, 1 — ошибка упаковки
+  или проверки, 2 — ошибка аргументов.
+
+### 5.2. Статус: Actions ещё не исполнялись
+
+Workflow **ни разу не запускался**: у продукта нет публичного remote и раннера;
+`docker build` локально тоже не выполнялся (Docker не установлен). Проверено:
+YAML — `tools/check_workflow.py` (дубли ключей и набор job'ов),
+`tools/release.py` — на реальной локальной сборке и на фикстуре
+`release/v1.2`. Полный прогон, включая job `release`, возможен после появления
+remote (см. §6.1 [docs/RELEASE.md](RELEASE.md)) и push тега `vX`.
 
 ---
 
@@ -166,9 +209,14 @@ Windows-путь по умолчанию не мешает.
 
 * Полный `docker build` **не проверялся на машине разработки**: Docker там не
   установлен. Проверено статически: Dockerfile-синтаксис, URL/хэш/раскладка
-  архива тулчейна (HTTP range-запрос + `.sha256` из релиза xPack), YAML
-  workflow, `docker/verify_artifacts.py` на реальных артефактах v1.0.
-* GitHub Actions workflow не запускался (нет удалённого репозитория/раннера) —
-  YAML провалидирован локально (PyYAML) и вручную.
+  архива тулчейна (HTTP range-запрос; xPack публикует `.sha`, digest также есть
+  в GitHub API), `docker/verify_artifacts.py` на реальных артефактах v1.0/v1.2.
+* GitHub Actions workflow **не запускался** (нет удалённого репозитория/раннера):
+  YAML проверен локальным скриптом `tools/check_workflow.py` (дубли ключей и
+  набор job'ов, PyYAML не нужен) и вручную; `tools/release.py` — на реальной
+  локальной сборке и на фикстуре `release/v1.2`.
+* Job `release` и `softprops/action-gh-release` вживую не проверялись — нужен
+  публичный remote; полный прогон CI/Release возможен после его появления
+  (см. §6.1 [docs/RELEASE.md](RELEASE.md)).
 * В `docs/BUILD.md` ссылку на этот документ стоит добавить владельцу
   `BUILD.md` (файл вне зоны задачи P2-2).
