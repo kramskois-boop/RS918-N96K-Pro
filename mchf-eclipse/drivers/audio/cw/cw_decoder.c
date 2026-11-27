@@ -584,7 +584,7 @@ bool DataRecognitionFunc(bool* new_char_p)
 					data[data_len].state = 0;                   // Store as Dot
 					cw_times.dot_avg     = cw_times.dot_avg + (t - cw_times.dot_avg) / 8.0; // Update cw_times.dot_avg (e.q. 4.6)
 
-					if (cw_times.dot_avg < 8 )   cw_times.dot_avg = 8;   // NIZZ CW speed limitation
+					if (cw_times.dot_avg < 2 )   cw_times.dot_avg = 2;   // N96K NIZ-fix H10: was 8 (clamped the decoder to ~56 WPM); upstream had no lower clamp - 2 keeps a guard against zero/garbage while allowing high-speed CW
 				}
 				//-----------------------------------
 				// Is it a Dash?
@@ -596,7 +596,7 @@ bool DataRecognitionFunc(bool* new_char_p)
 					{
 						cw_times.dash_avg = cw_times.dash_avg + (t - cw_times.dash_avg) / 8.0; // Update dash_avg (e.q. 4.7)
 
-						if (cw_times.dash_avg < 24 )  cw_times.dash_avg = 24; // NIZZ CW speed limitation
+						if (cw_times.dash_avg < 6 )  cw_times.dash_avg = 6; // N96K NIZ-fix H10: was 24 (clamped the decoder to ~56 WPM); upstream had no lower clamp
 					}
 				}
 

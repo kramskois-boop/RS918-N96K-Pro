@@ -1016,7 +1016,7 @@ void UiDriver_Init()
 	df.tune_new = vfo[is_vfo_b()?VFO_B:VFO_A].band[ts.band].dial_value;		// init "tuning dial" frequency based on restored settings
 	df.tune_old = 0;
 
-	ts.cw_lsb = true; // RadioManagement_CalculateCWSidebandMode();			// determine CW sideband mode from the restored frequency
+	ts.cw_lsb = RadioManagement_CalculateCWSidebandMode();			// determine CW sideband mode from the restored frequency // N96K NIZ-fix H3: restored
 
 	AudioManagement_CalcTxCompLevel();      // calculate current settings for TX speech compressor
 
@@ -3437,7 +3437,7 @@ void   UiDriver_UpdateBand( uint16_t  vfo_sel, uint8_t  curr_band_index, uint8_t
 		if(ts.dmod_mode != new_dmod_mode || (new_dmod_mode == DEMOD_CW && ts.cw_lsb != new_lsb) || isNewDigitalMode)
 		{
 			// Update mode
-			ts.cw_lsb = true; // new_lsb;
+			ts.cw_lsb = new_lsb; // N96K NIZ-fix H3: restore CW sideband
 			RadioManagement_SetDemodMode ( new_dmod_mode,  false );
 		}
 

@@ -850,7 +850,7 @@ static  void  UiVk_ModSelVKeyCallBackShort( uint8_t  KeyNum,  uint32_t  param )
 
 		switch( param & 0xff )
 		{
-			case DEMOD_CW  : 	ts.cw_lsb        = true; /*param2nd;*/     break;
+			case DEMOD_CW  : 	ts.cw_lsb        = param2nd;     break; // N96K NIZ-fix H3: CW-L / CW-U keys
 			case DEMOD_SAM :	ads.sam_sideband = param2nd;		       break;
 			case DEMOD_DIGI:    ts.digi_lsb      = param2nd;
 								ts.digital_mode  = param3rd;		       break;

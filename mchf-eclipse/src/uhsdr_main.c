@@ -213,8 +213,8 @@ void    TransceiverStateInit ( void )
     ts.alc_tx_custom_comp_gain	    = ALC_POSTFILT_GAIN_DEFAULT;	// Post-filter added gain default (used for speech processor/ALC)
     ts.alc_tx_postfilt_gain_var  	= ALC_POSTFILT_GAIN_DEFAULT;	// Post-filter added gain default (used for speech processor/ALC)
     ts.tx_comp_level	            = 0;					// 0=Release Time/Pre-ALC gain manually adjusted, >=1:  Value calculated by this parameter
-    ts.tx_comp_out_gain             = 25;
-    ts.tx_comp_out_gain_float       = 2.5;
+    ts.tx_comp_out_gain             = 10;  // N96K NIZ-fix H2: was 25 (x2.5 -> x1.0)
+    ts.tx_comp_out_gain_float       = 1.0;  // N96K NIZ-fix H2: was 2.5
     //
     ts.freq_step_config		        = 0;				// disabled both marker line under frequency and swapping of STEP buttons
     //
@@ -247,7 +247,7 @@ void    TransceiverStateInit ( void )
     ts.version_number_major         = 0;			// version build - used to detect firmware change
     ts.nb_agc_time_const	        = 0;			// used to calculate the AGC time constant
     ts.cw_offset_mode	            = CW_OFFSET_USB_RX;	// CW offset mode (USB, LSB, etc.)
-    ts.cw_lsb			            = true;		// Flag that indicates CW operates in LSB mode when TRUE
+    ts.cw_lsb			            = false;		// Flag that indicates CW operates in LSB mode when TRUE  // N96K NIZ-fix H3: was forced true (upstream false)
     ts.iq_freq_mode		            = FREQ_IQ_CONV_MODE_DEFAULT;	// used to set/configure the I/Q frequency/conversion mode
     ts.conv_sine_flag	            = 0;			// FALSE until the sine tables for the frequency conversion have been built (normally zero, force 0 to rebuild)
     ts.lsb_usb_auto_select	        = 0;			// holds setting of LSB/USB auto-select above/below 10 MHz
@@ -323,7 +323,7 @@ void    TransceiverStateInit ( void )
     ts.bass_gain                       = 3;		// gain of the RX low  shelf EQ filter
     ts.treble_gain					   = 0;		// gain of the RX high shelf EQ filter
     ts.tx_bass_gain 				   = 3;		// gain of the TX low  shelf EQ filter
-    ts.tx_treble_gain                  = 20;	// gain of the TX high shelf EQ filter
+    ts.tx_treble_gain                  = 4;	// gain of the TX high shelf EQ filter  // N96K NIZ-fix H2: was 20 (+10 dB)
     ts.s_meter                         = 1;		// S-Meter configuration, 0 = old school, 1 = dBm-based, 2=dBm/Hz-based
     ts.display_dbm                     = 0;						// style of dBm display, 0=OFF, 1= dbm, 2= dbm/Hz
 //  ts.dBm_count                       = 0;						// timer start
@@ -332,21 +332,27 @@ void    TransceiverStateInit ( void )
  // twinpeak_tested                    = 0 --> go and test the IQ phase
  // twinpeak_tested                    = 1 --> tested, verified, go and have a nice day!
 //  ts.agc_wdsp                        = 0;
+    // N96K NIZ-fix H6: restore the upstream (ae93edf6) AGC WDSP defaults. The Nizar AGC in
+    // audio_driver.c is a rewrite, but it consumes the same persisted parameters (slope/thresh/
+    // tau_decay per mode), so the old aggressive defaults (slope 80, thresh 32, tau 700 everywhere)
+    // made it pump/"breathe". ts.agc_wdsp_hang_enable keeps its Nizar meaning here: it is the
+    // "AGC WDSP OFF Gain" value (0..123 -> ts.float_Fix_audio_Gain), not the upstream hang enable
+    // flag - the Nizar AGC has no hang implementation (see MENU_AGC_OFF_GAIN handler).
     ts.agc_wdsp_mode                   = 2;
-    ts.agc_wdsp_slope                  = 80;
+    ts.agc_wdsp_slope                  = 70;
     ts.agc_wdsp_hang_enable            = 5;
-    ts.agc_wdsp_hang_time              = 100;
-    ts.agc_wdsp_hang_thresh            = 40;
-    ts.agc_wdsp_thresh                 = 32;
+    ts.agc_wdsp_hang_time              = 500;
+    ts.agc_wdsp_hang_thresh            = 45;
+    ts.agc_wdsp_thresh                 = 60;
     ts.agc_wdsp_action                 = 0;
     ts.agc_wdsp_switch_mode            = 1;
     ts.agc_wdsp_hang_action            = 0;
-    ts.agc_wdsp_tau_decay[0]           = 700;
-    ts.agc_wdsp_tau_decay[1]           = 700;
-    ts.agc_wdsp_tau_decay[2]           = 700;
-    ts.agc_wdsp_tau_decay[3]           = 700;
-    ts.agc_wdsp_tau_decay[4]           = 700;
-    ts.agc_wdsp_tau_decay[5]           = 700;
+    ts.agc_wdsp_tau_decay[0]           = 4000;
+    ts.agc_wdsp_tau_decay[1]           = 2000;
+    ts.agc_wdsp_tau_decay[2]           = 500;
+    ts.agc_wdsp_tau_decay[3]           = 250;
+    ts.agc_wdsp_tau_decay[4]           = 50;
+    ts.agc_wdsp_tau_decay[5]           = 500;
 
     ts.agc_wdsp_tau_hang_decay         = 200;
     ts.dbm_constant                    = 0;
@@ -398,7 +404,7 @@ void    TransceiverStateInit ( void )
     }
     ts.buffered_tx                = false;
     ts.cw_text_entry              = false;
-    ts.debug_si5351a_pllreset     = 3;   // "Never"  //  2  start with "reset on IQ Divider"
+    ts.debug_si5351a_pllreset     = 2;   // N96K NIZ-fix H4: upstream default 2 = PLL reset when the IQ divider changes; 3 ("Never") stays selectable in the DEBUG menu
     ts.switch_pause               = 3590;// pour ne pas corriger IQ coeff lors de switch Tx-->Rx
     ts.RFG_wait                   = 0;   // pour ne pas reafficher "RFG" au lancement
     ts.AFG_wait                   = 0;   // pour ne pas reafficher "AFG" au lancement
@@ -427,12 +433,12 @@ void    TransceiverStateInit ( void )
     ts.paddles_active             = false;  // pour ne pas prendre en consid�ration les GPIO PTT/Paddle avant lancement du Rig
     ts.audio_processor_input_mute_counter   = 0;  // pour passer � la saisie Rx directement
     ts.audio_dac_output_muting_buffer_count = 0;  // pour suspendre les taches audio lourdes au d�marrage y compris le DSP
-    ts.tx_bass_sheeft             =  0;
+    ts.tx_bass_sheeft             = 15;   // N96K NIZ-fix H9: 15 = 0 Hz shift (formula is "value - 15" Hz, range 0..20 -> -15..+5 Hz); 0 caused a hidden -15 Hz TX offset before the EEPROM default (15) was applied
     ts.Noise_Gate_Thresh          = 500;
  // ts.cmpt_volume                = 0;
     ts.reverberation_rate         = 10;   // 16 %
     ts.reverberation_delay        = 48;   // 64 ms = 96 x 0.666666 ms
-    ts.reverberation_enable       = 16;    // 16 + 0  : tx equaliser treble7 , Windows+Android, auto step size = on , Reverberation  OFF
+    ts.reverberation_enable       = 0;     // N96K NIZ-fix H2: was 16 (= TX EQ preset Trebl7), 0 = custom EQ / Win+Linux / auto-step off / reverb off
     ts.enable_display_on_screen   = true;
     ts.FFT_sampling_enable        = true;
     ts.FFT_stand_by               = 0;
@@ -462,7 +468,7 @@ void    TransceiverStateInit ( void )
     ts.pdp_betta_int              = 500;
     // ts.raie_zero                  = 0;
     ts.twenty_watt_meter          = false;
-    ts.tx_equalizer               = 1;
+    ts.tx_equalizer               = 0;  // N96K NIZ-fix H2: was 1 (TX EQ preset Trebl7)
     ts.EQ_custom_display          = false;
     ts.agc_wdsp_pop_thres         = 95;
     ts.float_agc_wdsp_pop_thres   = 4.00 + 0.01 * ts.agc_wdsp_pop_thres;

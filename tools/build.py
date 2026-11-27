@@ -25,6 +25,8 @@ Usage (from the repository root or from anywhere):
     python tools/build.py all          # firmware + bootloader
     python tools/build.py firmware     # fw-mchf.elf/.bin/.map only
     python tools/build.py bootloader   # bl-mchf.elf/.bin/.map only
+    python tools/build.py all --freedv  # opt-in FreeDV (IS_SMALL_BUILD kept)
+    python tools/build.py all --full   # opt-in full build (no IS_SMALL_BUILD; FreeDV + windows)
     python tools/build.py clean        # remove the build/ directory
 
 All artifacts are written to <repo>/build/ (git-ignored), sources are never
@@ -378,7 +380,11 @@ class Builder:
                 # N96K B4: --freedv enables the opt-in FreeDV build (USE_FREEDV in uhsdr_board.h)
                 # without touching IS_SMALL_BUILD.  The default build keeps defines=[] so it is
                 # byte-for-byte the same configuration as before.
-                defines=["-DN96K_FREEDV"] if self.args.freedv else [],
+                # N96K B6: --full adds -DN96K_FULL_BUILD, which in uhsdr_board.h turns the Nizar
+                # IS_SMALL_BUILD limitation off (upstream-like build; USE_FREEDV is then enabled
+                # automatically by the header).  Both flags only affect the firmware plan, the
+                # bootloader plan is always built with the default defines.
+                defines=self._firmware_defines(),
                 objects=fw_units,
                 includes=self.include_flags),
             "bootloader": BuildPlan(
@@ -392,6 +398,21 @@ class Builder:
         return self.plans
 
     # -- flags --------------------------------------------------------------
+    def _firmware_defines(self):
+        """opt-in defines for the firmware plan (N96K B6: --freedv / --full)"""
+        defines = []
+        if self.args.freedv:
+            defines.append("-DN96K_FREEDV")
+        if self.args.full:
+            defines.append("-DN96K_FULL_BUILD")
+            # --full enables USE_FREEDV through uhsdr_board.h (IS_SMALL_BUILD off), so it
+            # must also use the B4 FreeDV memory configuration: N96K_FREEDV removes the
+            # 10.6 KB MODEM_STATS from struct freedv.  Without it freedv_open() needs
+            # ~66 KB heap instead of ~55.6 KB and the F4 stack margin becomes negative.
+            if "-DN96K_FREEDV" not in defines:
+                defines.append("-DN96K_FREEDV")
+        return defines
+
     def compile_flags(self, plan: BuildPlan) -> list:
         return (MACHFLAGS_F4 + COMPILEFLAGS_BASE + plan.optflags + plan.defines)
 
@@ -762,9 +783,11 @@ class Builder:
         start = time.time()
         for target in targets:
             if target == "firmware":
-                self.info("=== firmware (BUILDFOR=F4, -%s%s, %s) ==="
+                self.info("=== firmware (BUILDFOR=F4, -%s%s%s, %s) ==="
                           % (self.args.opt_level,
-                             ", FreeDV" if self.args.freedv else "", LINKER_SCRIPT_FIRMWARE))
+                             ", FreeDV" if self.args.freedv else "",
+                             ", full build" if self.args.full else "",
+                             LINKER_SCRIPT_FIRMWARE))
                 results["firmware"] = self.build_target("firmware")
             elif target == "bootloader":
                 self.info("=== bootloader (BUILDFOR=F4, -Os -DBOOTLOADER_BUILD, %s) ==="
@@ -805,6 +828,11 @@ def parse_args(argv):
     parser.add_argument("--freedv", action="store_true",
                         help="opt-in FreeDV build: -DN96K_FREEDV (defines USE_FREEDV, keeps "
                              "IS_SMALL_BUILD); firmware only, default build is unchanged")
+    # N96K B6: firmware-only opt-in define that disables IS_SMALL_BUILD (see uhsdr_board.h).
+    parser.add_argument("--full", action="store_true",
+                        help="opt-in full build: -DN96K_FULL_BUILD (disables IS_SMALL_BUILD, "
+                             "implies FreeDV + predefined FFT windows); firmware only, "
+                             "default build is unchanged")
     # N96K B5: firmware optimization level. The default must stay O2 (historical
     # build); O3/Os are opt-in experiments, the bootloader always keeps -Os.
     parser.add_argument("--opt-level", default="O2", choices=["O2", "O3", "Os"],

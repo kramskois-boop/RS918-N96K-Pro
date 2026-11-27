@@ -67,15 +67,18 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
     { ConfigEntry_UInt8   , EEPROM_CW_KEYER_WEIGHT        ,&ts.cw_keyer_weight,CW_KEYER_WEIGHT_DEFAULT, CW_KEYER_WEIGHT_MIN, CW_KEYER_WEIGHT_MAX},
     { ConfigEntry_UInt8   , EEPROM_CW_SIDETONE_GAIN       ,&ts.cw_sidetone_gain,DEFAULT_SIDETONE_GAIN,0, SIDETONE_MAX_GAIN},
     { ConfigEntry_Int32_16, EEPROM_FREQ_CAL               ,&ts.freq_cal,0,MIN_FREQ_CAL,MAX_FREQ_CAL},
-    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_MODE          ,&ts.agc_wdsp_mode,             2,  0,   4},
-    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_HANG          ,&ts.agc_wdsp_hang_enable,      5,  0,  123},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_THRESH        ,&ts.agc_wdsp_thresh,          32, 1 , 120},
-    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_SLOPE         ,&ts.agc_wdsp_slope,           80,  0, 250},
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_0   ,&ts.agc_wdsp_tau_decay[0],   700,350,5000},  // very long
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_1   ,&ts.agc_wdsp_tau_decay[1],   700,350,5000},  // Long
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_2   ,&ts.agc_wdsp_tau_decay[2],   700,350,5000},  // Slow
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_3   ,&ts.agc_wdsp_tau_decay[3],   700,350,5000},  // Mid
-    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_4   ,&ts.agc_wdsp_tau_decay[4],   700,350,5000},  // Fast
+    // N96K NIZ-fix H6: restore the upstream (ae93edf6) AGC WDSP defaults/ranges (slope 70, thresh 60,
+    // tau_decay 4000/2000/500/250/50). EEPROM_AGC_WDSP_HANG is the Nizar "AGC WDSP OFF Gain" (0..123,
+    // -> ts.float_Fix_audio_Gain, 5 = x1.4), NOT the upstream hang enable flag - see uhsdr_main.c.
+    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_MODE          ,&ts.agc_wdsp_mode,             2,  0,   4},  // N96K NIZ-fix H6: mode 5 "OFF" is not implemented by the Nizar AGC
+    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_HANG          ,&ts.agc_wdsp_hang_enable,      5,  0,  123},  // N96K NIZ-fix H6: Nizar "AGC WDSP OFF Gain"
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_THRESH        ,&ts.agc_wdsp_thresh,          60, 1 , 120},
+    { ConfigEntry_UInt8   , EEPROM_AGC_WDSP_SLOPE         ,&ts.agc_wdsp_slope,           70,  0, 250},
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_0   ,&ts.agc_wdsp_tau_decay[0],  4000, 50,5000},  // very long
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_1   ,&ts.agc_wdsp_tau_decay[1],  2000, 50,5000},  // Long
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_2   ,&ts.agc_wdsp_tau_decay[2],   500, 50,5000},  // Slow
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_3   ,&ts.agc_wdsp_tau_decay[3],   250, 50,5000},  // Mid
+    { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_DECAY_4   ,&ts.agc_wdsp_tau_decay[4],    50, 50,5000},  // Fast
     { ConfigEntry_Int32_16, EEPROM_AGC_WDSP_TAU_HANG_DECAY,&ts.agc_wdsp_tau_hang_decay, 500, 60,5000},
     // N96K P2: backport of upstream cfbaae73 (#1730) - AGC "Clarity" (pop ratio) is a user AGC setting
     // and was the only one of the AGC menu parameters which was not restored after a reboot.
@@ -194,7 +197,7 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
     { ConfigEntry_Int32_16 , EEPROM_TREBLE_GAIN               ,&ts.treble_gain,0,-20,20},
     { ConfigEntry_UInt8    , EEPROM_TX_FILTER                 ,&ts.tx_filter, TX_FILTER_BASS, 0 ,TX_FILTER_WIDE },
 	{ ConfigEntry_Int32_16 , EEPROM_TX_BASS_GAIN              ,&ts.tx_bass_gain,   3,-20,20},
-    { ConfigEntry_Int32_16 , EEPROM_TX_TREBLE_GAIN            ,&ts.tx_treble_gain, 20 ,-30,30},
+    { ConfigEntry_Int32_16 , EEPROM_TX_TREBLE_GAIN            ,&ts.tx_treble_gain, 4 ,-30,30},  // N96K NIZ-fix H2: was 20 (+10 dB)
     { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_LOCKING_RANGE     ,&ads.pll_fmax_int,2500,50,8000},
     { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_STEP_RESPONSE     ,&ads.zeta_int,65,1,100},
     { ConfigEntry_Int32_16 , EEPROM_SAM_PLL_BANDWIDTH         ,&ads.omegaN_int, 250,15,1000},
@@ -260,12 +263,12 @@ const ConfigEntryDescriptor ConfigEntryInfo[] =
 	// (noise cancel, spike cancel, 3 Goertzels, snap, CW LED) in one EEPROM word.
 	{ ConfigEntry_UInt16  , EEPROM_CW_DECODER_FLAGS     ,  &cw_decoder_config.flags,CW_DECODER_FLAGS_DEFAULT,0,0x7fff},
 	{ ConfigEntry_UInt8   , EEPROM_LCD_BRIGHTNESS       ,  &ts.lcd_backlight_brightness,3,0,5},
-	{ ConfigEntry_Int16   , EEPROM_TX_COMPRESS_OUT_GAIN ,  &ts.tx_comp_out_gain,25,10,40},
-	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_THRESH ,  &ts.agc_wdsp_hang_thresh, 40,1,120},
+	{ ConfigEntry_Int16   , EEPROM_TX_COMPRESS_OUT_GAIN ,  &ts.tx_comp_out_gain,10,10,40},  // N96K NIZ-fix H2: was 25 (x2.5)
+	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_THRESH ,  &ts.agc_wdsp_hang_thresh, 45,1,120},  // N96K NIZ-fix H6: was 40 (upstream default 45)
 	{ ConfigEntry_UInt8   , EEPROM_AGC_WDSP_ATTACK      ,  &ts.agc_wdsp_Attackk, 20 , 10, 90},
 	{ ConfigEntry_UInt8   , EEPROM_TX_BASS_EQUAL_FREQ   ,  &ts.tx_bass_filter_freq,  75, 0, 255},
 	{ ConfigEntry_UInt8   , EEPROM_TX_BASS_EQUAL_BW     ,  &ts.tx_bass_filter_bwidth,  99, 1, 99},
-	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_TIME   ,  &ts.agc_wdsp_hang_time, 100, 60,5000},
+	{ ConfigEntry_Int32_16, EEPROM_AGC_WDSP_HANG_TIME   ,  &ts.agc_wdsp_hang_time, 500, 60,5000},  // N96K NIZ-fix H6: was 100 (upstream default 500)
 	{ ConfigEntry_UInt8   , EEPROM_TX_TREB_EQUAL_FREQ   ,  &ts.tx_treb_filter_freq,  255, 0,255},
 	{ ConfigEntry_UInt8   , EEPROM_TX_TREB_EQUAL_BW,       &ts.tx_treb_filter_bwidth,  85, 70,99},
 	{ ConfigEntry_Int32_16, EEPROM_RX_IQ_40M_GAIN_BALANCE, &ts.rx_iq_gain_balance [IQ_40M].value[IQ_TRANS_ON], 0,  MIN_IQ_GAIN_BALANCE, MAX_IQ_GAIN_BALANCE},
