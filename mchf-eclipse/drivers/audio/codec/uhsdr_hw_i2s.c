@@ -59,8 +59,16 @@ void UhsdrHwI2s_Codec_ClearTxDmaBuffer()
     arm_fill_f32 ( 0,  (float32_t*)  audio_buf.out,  256 ) ;
 }
 
+#ifdef DEBUG_BUILD
+static void AudioDriver_DiagIsrTiming(void);   // N96K B3: defined below the DMA block handler
+#endif
+
 static  void  MchfHw_Codec_HandleBlock ( uint16_t  which )
 {
+#ifdef DEBUG_BUILD
+    AudioDriver_DiagIsrTiming();   // N96K B3: audio real-time deadline monitor
+#endif
+
 #ifdef PROFILE_EVENTS
     // we stop during interrupt
     // at the end we start again
@@ -97,7 +105,42 @@ static  void  MchfHw_Codec_HandleBlock ( uint16_t  which )
 			// profileCycleCount_start();
     profileTimedEventStop( ProfileAudioInterrupt );
 #endif
+
+#ifdef DEBUG_BUILD
+    // N96K B3: remember the longest audio ISR (in DWT cycles) for the debug INFO page. Reuse the
+    // profiling timestamps of this very call; reject values which are clearly a counter wrap.
+    {
+        uint32_t isr_cycles = eventProfile.event[ProfileAudioInterrupt].stop - eventProfile.event[ProfileAudioInterrupt].start;
+        if ( (isr_cycles < AUDIO_ISR_CYCLE_WRAP_LIMIT) && (isr_cycles > audio_diag.isr_max_cycles) )
+        {
+            audio_diag.isr_max_cycles = isr_cycles;
+        }
+    }
+#endif
 }
+
+#ifdef DEBUG_BUILD
+/**
+ * N96K B3: audio real-time deadline monitor (called at the top of every DMA half/full block).
+ * The codec DMA produces a block every AUDIO_ISR_CYCLE_BUDGET cycles, so a callback which starts
+ * more than 1.25 block periods after the previous one means that the audio ISR (or the DSP chain it
+ * runs) could not keep up and the DMA ring was likely overrun. A DMA stop/restart (codec restart)
+ * also shows up here - such events are rare, the counter is a coarse overload indicator.
+ */
+static void AudioDriver_DiagIsrTiming(void)
+{
+    static uint32_t last_isr_start = 0;
+    static bool     last_isr_valid = false;
+
+    uint32_t now = profileCycleCount_get();
+    if ( last_isr_valid && ((now - last_isr_start) > (AUDIO_ISR_CYCLE_BUDGET + AUDIO_ISR_CYCLE_BUDGET / 4u)) )
+    {
+        AudioDriver_DiagInc(&audio_diag.isr_late);
+    }
+    last_isr_start = now;
+    last_isr_valid = true;
+}
+#endif
 
 #ifdef UI_BRD_MCHF
 /**
@@ -171,3 +214,13 @@ void UhsdrHwI2s_Codec_StopDMA(void)
     HAL_SAI_DMAStop(&hsai_BlockB2);
 #endif
 }
+
+#if defined(UI_BRD_MCHF) && defined(DEBUG_BUILD)
+// N96K B3: count audio codec DMA errors for the debug INFO page. In DMA mode the HAL reports DMA
+// transfer errors through this callback (HAL_I2S_ERROR_DMA); OVR/UDR are only detected in the
+// interrupt driven I2S mode, which this firmware does not use. Counting only, recovery is unchanged.
+void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
+{
+    if ( hi2s->ErrorCode != HAL_I2S_ERROR_NONE )  { AudioDriver_DiagInc(&audio_diag.dma_err); }
+}
+#endif

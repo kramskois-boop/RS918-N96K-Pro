@@ -36,6 +36,14 @@ NR_Buffer*   NR_out_buffers[ NR_BUFFER_FIFO_SIZE ];
 static uint16_t  NR_current_buffer_idx = 0;
 static bool      NR_was_here           = false;
 
+// N96K B3: coherent NR pipeline restart (audit R9/A4). AudioNr_Prepare() runs in UI context and
+// only raises this request; the audio DMA ISR consumes it and drops the partially filled input block
+// plus both FIFO queues in the context that owns them (see AudioNr_IsrRestart()).
+__IO bool        NR_restart_request    = false;
+
+// N96K B3: last seen NR enable state, for restarting the pipeline on every off->on transition.
+static bool      NR_enable_seen        = false;
+
 
  const   float32_t   SQRT_von_Hann_256[256]
 = { 0          ,0.01231966 ,0.024637449,0.036951499,0.049259941,0.061560906,0.073852527,0.086132939,
@@ -248,15 +256,58 @@ int32_t NR_out_has_room()
 // first NR blocks after the switch are processed from silence instead of FreeDV data.
 void AudioNr_Prepare(void)
 {
+    // N96K B3: order matters - raise the restart request first so that the audio ISR/PendSV stop
+    // feeding and consuming the pipeline (the ISR then drops its partially filled block), and only
+    // afterwards clear the shared buffers. Same "flags first, then memset" order as upstream.
+    NR_restart_request    = true;
+
     NR_current_buffer_idx = 0;
     NR_was_here           = false;
     memset(&mmb.nr_audio_buff[0].samples[0], 0, NR_BUFFER_NUM * sizeof(mmb.nr_audio_buff[0]));
+}
+
+/**
+ * @brief Drops the queued NR blocks on the audio interrupt side of the pipeline (N96K B3).
+ *
+ * Called from the audio DMA ISR when it sees NR_restart_request. That ISR is the only context which
+ * writes NR_in_head (producer) and NR_out_tail (consumer), so dropping both queues only means making
+ * our own index equal to the one owned by the UI/PendSV side: single 32 bit aligned stores, no
+ * read-modify-write and no buffer clearing here (the buffers are cleared by AudioNr_Prepare()).
+ */
+void AudioNr_IsrRestart(void)
+{
+    NR_in_head  = NR_in_tail;   // drop the unprocessed input blocks
+    NR_out_tail = NR_out_head;  // drop the pending output blocks
+    NR_restart_request = false;
+}
+
+/**
+ * @brief Restarts the NR pipeline when NR is switched on (N96K B3, audit R9/A4).
+ *
+ * Called from AudioDriver_SetRxAudioProcessing() for every DSP filter/mode update. A full restart is
+ * only requested for an off->on transition, because not every UI path passes reset_dsp_nr = true
+ * (e.g. the DSP enable toggle recalls the previous ts.dsp_active value with false).
+ */
+void AudioNr_UpdateEnableState(bool nr_enabled)
+{
+    if (nr_enabled == true && NR_enable_seen == false)
+    {
+        AudioNr_Prepare();
+    }
+    NR_enable_seen = nr_enabled;
 }
 
 //**************************************************************************************************************
 
 void alternateNR_handle()
 {
+    // N96K B3: a coherent restart is still pending - the audio ISR has not dropped the old pipeline
+    // state yet. Do not consume/produce NR blocks in the meantime (they belong to the old state).
+    if (NR_restart_request)
+    {
+        return;
+    }
+
 #ifdef USE_FREEDV
     // N96K A2 (upstream 27945d8b): NR and FreeDV use the same MultiModeBuffer union (mmb); while
     // FreeDV is active the NR algorithm must not run, otherwise it overwrites the FreeDV IQ buffer

@@ -431,13 +431,15 @@ void FreeDv_HandleFreeDv()
     // END Freedv Test DL2FW
 }
 
-struct my_callback_state  my_cb_state;
-
 // FreeDV txt test - will be out of here
 struct my_callback_state {
     char  tx_str[80];
     char *ptx_str;
 };
+
+// N96K B4: declaration moved behind the struct definition - with -DN96K_FREEDV (USE_FREEDV) this
+// was an incomplete-type compile error.
+struct my_callback_state  my_cb_state;
 
 char my_get_next_tx_char(void *callback_state) {
     struct my_callback_state* pstate = (struct my_callback_state*)callback_state;

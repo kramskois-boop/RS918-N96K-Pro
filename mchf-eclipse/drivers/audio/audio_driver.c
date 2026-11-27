@@ -145,6 +145,21 @@ static void AudioDriver_ClearAudioDelayBuffer()
     arm_fill_f32 ( 0, audio_delay_buffer, AUDIO_DELAY_BUFSIZE );   // 320 x float32_t
 }
 
+#ifdef DEBUG_BUILD
+// N96K B3: definition of the cheap audio/CPU diagnostics declared in audio_driver.h.
+AudioDiag_t audio_diag;
+#endif
+
+// N96K B3: fixed size of the NR decimation look-ahead buffer used in
+// AudioDriver_RxProcessorNoiseReduction(). Every call site passes blockSizeDecim = 8 (BS_8) and the
+// optional internal decimation-by-two halves it to 4, so a fixed buffer removes the VLA from the
+// audio DMA ISR stack (audit F4) without changing behaviour.
+#define NR_DEC_BUFFER_SIZE 8
+
+#if NR_DEC_BUFFER_SIZE < 8
+#error "N96K B3: NR_DEC_BUFFER_SIZE must cover blockSizeDecim == 8 (BS_8)"
+#endif
+
 // This is a fast approximation to log2()
 // Y = C[0]*F*F*F + C[1]*F*F + C[2]*F + C[3] + E;
 //log10f is exactly log2(x)/log2(10.0f)
@@ -659,7 +674,9 @@ static  float32_t*  mag_coeffs[ MAGNIFY_NUM ] =
 
 // I- and Q- Filter instances for FreeDV downsampling aliasing filters
 
-#ifndef   IS_SMALL_BUILD
+// N96K B4: FreeDV aliasing filters are used from AudioDriver_RxProcessorFreeDV() under USE_FREEDV,
+// so they must be compiled in the opt-in FreeDV build although IS_SMALL_BUILD remains set.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)
 
 
 static arm_biquad_casd_df1_inst_f32 IIR_biquad_FreeDV_I =
@@ -759,7 +776,8 @@ arm_iir_lattice_instance_f32	IIR_TX_PASS_TOUT_Filter_2;
 arm_iir_lattice_instance_f32	IIR_LPF_Compressor;
 
 
-#ifndef   IS_SMALL_BUILD                                // pour reduire la memoire RAM static avec version small
+// N96K B4: FreeDV RX audio filter, needed by the opt-in FreeDV build (see AudioDriver_RxProcessorFreeDV).
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)      // pour reduire la memoire RAM static avec version small
 arm_iir_lattice_instance_f32	IIR_FreeDV_RX_Filter;   // DL2FW: temporary installed FreeDV RX Audio Filter
 float32_t		                iir_FreeDV_RX_State [ IIR_RX_STATE_ARRAY_SIZE ];   // 44 = 32 + 12em ordre
 #endif
@@ -1519,6 +1537,11 @@ void AudioDriver_SetRxAudioProcessing ( uint8_t  dmod_mode,  bool  reset_dsp_nr 
     {
         AudioNr_Prepare();
     }
+
+    // N96K B3: also restart the NR pipeline whenever NR is switched on again (audit R9/A4). The
+    // previous enable state is tracked in audio_nr.c because not every UI path passes
+    // reset_dsp_nr = true (e.g. the DSP enable toggle recalls ts.dsp_active with false).
+    AudioNr_UpdateEnableState((ts.dsp_active & DSP_NR_ENABLE) != 0);
 #endif
 
     // make sure we have a proper filter path for the given mode
@@ -2103,7 +2126,8 @@ static void AudioDriver_InitFilters(void)
     AudioDriver_Voice_Tx_Filter_Init ( ts.dmod_mode ); // Tx filter HP + LP  filters
 
 
-#ifndef   IS_SMALL_BUILD                    // pour reduire la memoire RAM avec version Small
+// N96K B4: initialize the FreeDV filter instances in the opt-in FreeDV build as well.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)      // pour reduire la memoire RAM avec version Small
     IIR_biquad_FreeDV_I.pCoeffs    = FreeDV_coeffs[0];  // FreeDV Filter test -DL2FW-
     IIR_biquad_FreeDV_Q.pCoeffs    = FreeDV_coeffs[0];
 
@@ -2537,7 +2561,8 @@ static bool AudioDriver_RxProcessorFreeDV (AudioSample_t * const src, float32_t 
 
             // Filter below uses the TX-"Tenor" filter shape for the RX upsampling filter
 
-#ifndef   IS_SMALL_BUILD        // pour reduire la memoire RAM en version Small
+// N96K B4: run the FreeDV RX audio filter in the opt-in FreeDV build as well.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)      // pour reduire la memoire RAM en version Small
             arm_iir_lattice_f32_Nizar ( &IIR_FreeDV_RX_Filter, dst, dst, blockSize );
 #endif
 
@@ -4354,6 +4379,7 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
     static int         outbuff_count    = 0;
     static int         NR_fill_in_pt    = 0;
     static NR_Buffer*  out_buffer       = NULL;
+    static float32_t   NR_dec_buffer[NR_DEC_BUFFER_SIZE];   // N96K B3: fixed ISR buffer (was a VLA)
 
 #ifdef USE_FREEDV
     // N96K A2 (upstream 27945d8b): NR and FreeDV share the same MultiModeBuffer union (mmb). While
@@ -4364,6 +4390,20 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
         return;
     }
 #endif
+
+    // N96K B3: coherent NR pipeline restart (audit R9/A4). AudioNr_Prepare() is called in UI context
+    // and only raises the request; drop the partially filled input block and both FIFO queues here,
+    // in the context which owns them, and pass this one block through untouched (it is still 12 kHz
+    // audio, exactly like the normal output of this function after its decimate/interpolate step).
+    if (NR_restart_request)
+    {
+        trans_count_in = 0;
+        outbuff_count  = 0;
+        NR_fill_in_pt  = 0;
+        out_buffer     = NULL;
+        AudioNr_IsrRestart();
+        return;
+    }
 
     // this would be the right place for another decimation-by-2 to get down to 6ksps
     // in order to further improve the spectral noise reduction
@@ -4377,6 +4417,13 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
     //  decide whether filter < 2k9!!!
 
     uint32_t    no_dec_samples = blockSizeDecim; // only used for the noise reduction decimation-by-two handling
+
+    // N96K B3: all current callers use blockSizeDecim == 8 (BS_8); never let a future caller overrun
+    // the fixed ISR buffer - pass the block through instead of writing out of bounds.
+    if (blockSizeDecim > NR_DEC_BUFFER_SIZE)
+    {
+        return;
+    }
 
     // buffer needs max blockSizeDecim , less if second decimation is done
     // see below
@@ -4420,7 +4467,10 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
     if ( trans_count_in  >= ( NR_FFT_SIZE_128 >> 1u ) )
         //NR_FFT_SIZE_128 has to be an integer mult. of blockSizeDecim!!!
     {
-        NR_in_buffer_add ( &mmb.nr_audio_buff[ NR_fill_in_pt ] ); // save pointer to full buffer
+        if (NR_in_buffer_add ( &mmb.nr_audio_buff[ NR_fill_in_pt ] ) == 0)
+        {
+            N96K_DIAG_INC(audio_diag.nr_in_full);   // N96K B3: NR FFT fell behind, input FIFO is full
+        }
         trans_count_in = 0;                                		  // set counter to 0
         NR_fill_in_pt++;                                   		  // increase pointer index
         NR_fill_in_pt  &= 0x3;   // NR_fill_in_pt  %=  NR_BUFFER_NUM;  // make sure, that index stays in range
@@ -4437,8 +4487,6 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
     {
         NR_out_buffer_peek( &out_buffer );
     }
-
-    float32_t    NR_dec_buffer[ no_dec_samples ];
 
     // N96K P0-3: NR_dec_buffer used to stay uninitialised when no NR output block was available
     // (NR just switched on or the UI thread fell behind); it is read unconditionally below and
@@ -4460,6 +4508,10 @@ static void  AudioDriver_RxProcessorNoiseReduction ( uint16_t blockSizeDecim,  f
             outbuff_count = 0;          NR_out_buffer_remove( &out_buffer );
             out_buffer    = NULL;       NR_out_buffer_peek  ( &out_buffer );
         }
+    }
+    else
+    {
+        N96K_DIAG_INC(audio_diag.nr_out_empty);   // N96K B3: no NR output ready -> silence inserted
     }
 
 
@@ -5634,6 +5686,10 @@ static  void  AudioDriver_TxCompressor ( float32_t* buffer,  int16_t  blockSize,
 {
     static  uint32_t	 alc_delay_inbuf  = 0,
     		             alc_delay_outbuf    ;
+    // N96K B3: geometry (ring length / block size) of the last call, used to re-align the ring
+    // indices when the TX path changes (see the ALC delay buffer block further down).
+    static  uint16_t     alc_delay_ring_len = 0,
+                         alc_delay_block    = 0;
 
     if ( ts.tx_comp_level == 1 )     // ComPressor Not "OFF"
     {
@@ -5702,7 +5758,24 @@ static  void  AudioDriver_TxCompressor ( float32_t* buffer,  int16_t  blockSize,
 	    // 	if (ts.freq_step_config & FREQ_STEP_SWAP_BTN)  // pour tester  si le retard d'action CAG est meilleur ou pas
 
         {
+        // N96K B3 (audit 4.6): 320 is the 48 kHz constant: the AM and FM TX paths call this with
+        // blockSize 32 and get a 288 sample (6.0 ms) look-ahead. SSB TX runs in the 12 kHz domain
+        // (blockSize 8) and uses 176 -> 168 samples (14.0 ms) of look-ahead, Nizar's deliberate
+        // tuning. With block aligned indices both windows fit AUDIO_DELAY_BUFSIZE=320 (max index 319).
         	uint16_t   buffer_boucle =  ts.tx_decimatedIQ ? 176 : 320 ;   // 96 : 320;  // multiple de 8 ou de 32
+
+        // N96K B3: the ring length and the block size change with the TX path (12 kHz SSB 176/8 vs.
+        // 48 kHz AM/FM 320/32). The persistent indices are only block aligned for the geometry they
+        // were advanced with: after SSB->AM/FM the unaligned phase lets the write/read window reach
+        // up to index 343, i.e. up to 24 floats past audio_delay_buffer[AUDIO_DELAY_BUFSIZE] (OOB
+        // read/write in CCM). Re-align the ring whenever the geometry changes.
+        if ( (buffer_boucle != alc_delay_ring_len) || (blockSize != alc_delay_block) )
+        {
+            alc_delay_inbuf    = 0;
+            alc_delay_outbuf   = 0;
+            alc_delay_ring_len = buffer_boucle;
+            alc_delay_block    = blockSize;
+        }
 			alc_delay_inbuf         +=  blockSize;
 			alc_delay_outbuf         =  alc_delay_inbuf + blockSize;
 			alc_delay_inbuf         %=  buffer_boucle;    // 6.66ms circular Buffer delay de 320 cases a 48000 ks/s   // AUDIO_DELAY_BUFSIZE = (128/2)*5 = 320;

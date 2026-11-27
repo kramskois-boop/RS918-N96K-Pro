@@ -112,7 +112,9 @@
 
 // OPTION
 // with IS_SMALL_BUILD we are not automatically including USE_FREEDV as it uses lot of memory both RAM and flash
-#ifndef IS_SMALL_BUILD
+// N96K B4: opt-in FreeDV build.  tools/build.py --freedv passes -DN96K_FREEDV which enables
+// USE_FREEDV although IS_SMALL_BUILD stays set, so the default product configuration is unchanged.
+#if !defined(IS_SMALL_BUILD) || defined(N96K_FREEDV)
     #define USE_FREEDV
 #endif
 // #define DEBUG_FREEDV

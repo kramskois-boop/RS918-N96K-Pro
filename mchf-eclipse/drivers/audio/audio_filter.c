@@ -1252,7 +1252,9 @@ arm_fir_instance_f32    Fir_TxFreeDV_Interpolate_Q;
 // FIXME: Needs comment and check!
 #define FIR_FREEDV_INTERPOLATE_STATE_SIZE ( FIR_TX_FREEDV_INTERPOLATE_NUM_TAPS + IQ_TX_BLOCK_SIZE ) // 62 = 30 + 32
 
-#ifndef   IS_SMALL_BUILD
+// N96K B4: the FreeDV FIR states are referenced from audio_driver.c under USE_FREEDV, so they
+// must exist in the opt-in FreeDV build even though IS_SMALL_BUILD remains set.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)
 static float   __MCHF_SPECIALMEM  Fir_TxFreeDV_Interpolate_State_I[ FIR_FREEDV_INTERPOLATE_STATE_SIZE ]; // 62 = 30 + 32
 static float   __MCHF_SPECIALMEM  Fir_TxFreeDV_Interpolate_State_Q[ FIR_FREEDV_INTERPOLATE_STATE_SIZE ]; // 62 = 30 + 32
 #endif
@@ -1370,7 +1372,8 @@ void AudioFilter_Init_Tx_Hilbert_FIR(void)
     arm_fir_init_f32 ( &Fir_Tx_Hilbert_I, tx_iq_num_taps, fc.fir_tx_hilbert_taps_i, Fir_Tx_Hilbert_State_I, IQ_block_size); // IQ_TX_BLOCK_SIZE);
     arm_fir_init_f32 ( &Fir_Tx_Hilbert_Q, tx_iq_num_taps, fc.fir_tx_hilbert_taps_q, Fir_Tx_Hilbert_State_Q, IQ_block_size); // IQ_TX_BLOCK_SIZE);
 
-#ifndef   IS_SMALL_BUILD
+// N96K B4: initialize the FreeDV TX interpolation filters in the opt-in FreeDV build as well.
+#if !defined(IS_SMALL_BUILD) || defined(USE_FREEDV)
     arm_fir_init_f32 ( &Fir_TxFreeDV_Interpolate_I, Fir_TxFreeDV_Interpolate.numTaps, Fir_TxFreeDV_Interpolate.pCoeffs, Fir_TxFreeDV_Interpolate_State_I, IQ_TX_BLOCK_SIZE);
     arm_fir_init_f32 ( &Fir_TxFreeDV_Interpolate_Q, Fir_TxFreeDV_Interpolate.numTaps, Fir_TxFreeDV_Interpolate.pCoeffs, Fir_TxFreeDV_Interpolate_State_Q, IQ_TX_BLOCK_SIZE);
 #endif

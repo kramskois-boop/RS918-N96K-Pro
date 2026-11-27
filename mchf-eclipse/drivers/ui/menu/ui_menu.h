@@ -65,6 +65,12 @@ enum MENU_INFO_ITEM
     INFO_LICENCE,
     INFO_HWLICENCE,
     INFO_CODEC,
+#ifdef DEBUG_BUILD
+    // N96K B3: cheap audio/CPU diagnostics, see audio_driver.h (AudioDiag_t)
+    INFO_AUDIO_LATE,
+    INFO_AUDIO_NR,
+    INFO_AUDIO_ISR,
+#endif
 };
 
 const char* UiMenu_GetSystemInfo(uint32_t* m_clr_ptr, int info_item);
