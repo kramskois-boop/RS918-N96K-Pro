@@ -295,8 +295,11 @@ void Board_TouchscreenInit()
     GPIO_InitTypeDef      GPIO_InitStructure;
 
     GPIO_InitStructure.Mode 	= GPIO_MODE_INPUT;
-    GPIO_InitStructure.Pull 	= GPIO_NOPULL;    // GPIO_PULLUP;
-    GPIO_InitStructure.Speed 	= GPIO_SPEED_FREQ_LOW;  // GPIO_SPEED_FREQ_VERY_HIGH;  // GPIO_SPEED_FREQ_LOW; // GPIO_SPEED_FREQ_VERY_HIGH; NIZZ
+    // N96K NIZ-fix H13: restore the upstream TP_IRQ configuration (internal pull-up + high speed).
+    // The Nizar change to NOPULL/LOW could leave the touchscreen interrupt line floating. Bench check:
+    // touchscreen reacts reliably and does not generate phantom touches (H13 in b6-misc-fix.md).
+    GPIO_InitStructure.Pull 	= GPIO_PULLUP;
+    GPIO_InitStructure.Speed 	= GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStructure.Pin      = TP_IRQ;
 
     HAL_GPIO_Init(TP_IRQ_PIO, &GPIO_InitStructure);

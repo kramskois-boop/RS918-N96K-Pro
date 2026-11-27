@@ -1214,12 +1214,13 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
         break;
 #endif
 
-/*
+    // N96K NIZ-fix H6: restored AGC WDSP Mode menu item (upstream handler, without the Nizar
+    // "ts.agc_wdsp_mode = 2" force). Modes 0..4 select ts.agc_wdsp_tau_decay[] and the preset
+    // hangtime multipliers in AudioDriver_SetupAgcWdsp(); mode 5 (OFF) is not implemented by the
+    // Nizar AGC and is not offered (the EEPROM range is 0..4 as well).
     case MENU_AGC_WDSP_MODE: // AGC mode
 								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_mode,
 																	  0,  4,  2, 1 );
-
-								ts.agc_wdsp_mode = 2;  // forcer le mode
 
 								switch(ts.agc_wdsp_mode)
 								{
@@ -1228,7 +1229,6 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 									case 2:   txt_ptr = "     SLOW";                break;
 									case 3:   txt_ptr = "      MED";                break;
 									case 4:   txt_ptr = "     FAST";                break;
-									case 5:   txt_ptr = "     OFF ";    clr = Red;  break;
 								}
 
 								if(var_change)
@@ -1244,8 +1244,6 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 								}
 								break;
 
-	*/
-
     case MENU_AGC_OFF_GAIN:
     						var_change = UiDriverMenuItemChangeUInt8( var, mode, &ts.agc_wdsp_hang_enable,
     																				    00, 123,  00, 1 );
@@ -1257,7 +1255,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
     case MENU_AGC_WDSP_SLOPE:      //
 								var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_slope,
-																	                   00, 250,  80, 10 );
+																	                   00, 250,  70, 10 );  // N96K NIZ-fix H6: upstream default 70
 
 								if (ts.agc_wdsp_slope)
 								{
@@ -1273,13 +1271,12 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
 								break;
 
-/*    case MENU_AGC_WDSP_THRESH:      //
-								var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_thresh, 1, 120, 32, 1 );
+    case MENU_AGC_WDSP_THRESH:      //  // N96K NIZ-fix H6: restored AGC WDSP threshold menu item (upstream default 60 dB)
+								var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_thresh, 1, 120, 60, 1 );
 
 								if(var_change) { AudioDriver_SetupAgcWdsp(); }
 								snprintf(options, 32, "  %d dB", ts.agc_wdsp_thresh);
 								break;
-*/
 
 
     case MENU_AGC_WDSP_ATTACK: var_change = UiDriverMenuItemChangeUInt8(var, mode, &ts.agc_wdsp_Attackk,  10, 90, 20, 1 );
@@ -1297,7 +1294,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
     case MENU_AGC_WDSP_TAU_DECAY:      //
 								   var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_tau_decay[ts.agc_wdsp_mode],
-																	       350, 5000, 750, 10 );
+																	       50, 5000, 4000, 10 );  // N96K NIZ-fix H6: upstream range/default (was 350/750, limited AGC speed)
 
 
 								   if (var_change)
@@ -1323,6 +1320,9 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 
 
 /*
+    // N96K NIZ-fix H6: the upstream hang AGC handlers below stay disabled on purpose - the
+    // active Nizar AGC (AudioDriver_RxAgcWdsp) has no hang stage and ts.agc_wdsp_hang_enable is
+    // repurposed by the "AGC WDSP OFF Gain" item (0..123 -> ts.float_Fix_audio_Gain).
     case MENU_AGC_WDSP_TAU_HANG_DECAY:      //
 								   var_change = UiDriverMenuItemChangeInt(var, mode, &ts.agc_wdsp_tau_hang_decay,
 																		   60,  5000,  500,  20 );
@@ -4721,7 +4721,7 @@ void UiMenu_UpdateItem(uint16_t select, uint16_t mode, int pos, int var, char* o
 																														3,
 																														0,
 																														1);
-										ts.debug_si5351a_pllreset = 3 ; // forc� � "NEVER"
+										// N96K NIZ-fix H4: do not force the value to 3 ("Never") - the user selects 0..3 here (default 2 from uhsdr_main.c)
 
 										switch(ts.debug_si5351a_pllreset)
 										{

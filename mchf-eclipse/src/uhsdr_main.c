@@ -332,21 +332,27 @@ void    TransceiverStateInit ( void )
  // twinpeak_tested                    = 0 --> go and test the IQ phase
  // twinpeak_tested                    = 1 --> tested, verified, go and have a nice day!
 //  ts.agc_wdsp                        = 0;
+    // N96K NIZ-fix H6: restore the upstream (ae93edf6) AGC WDSP defaults. The Nizar AGC in
+    // audio_driver.c is a rewrite, but it consumes the same persisted parameters (slope/thresh/
+    // tau_decay per mode), so the old aggressive defaults (slope 80, thresh 32, tau 700 everywhere)
+    // made it pump/"breathe". ts.agc_wdsp_hang_enable keeps its Nizar meaning here: it is the
+    // "AGC WDSP OFF Gain" value (0..123 -> ts.float_Fix_audio_Gain), not the upstream hang enable
+    // flag - the Nizar AGC has no hang implementation (see MENU_AGC_OFF_GAIN handler).
     ts.agc_wdsp_mode                   = 2;
-    ts.agc_wdsp_slope                  = 80;
+    ts.agc_wdsp_slope                  = 70;
     ts.agc_wdsp_hang_enable            = 5;
-    ts.agc_wdsp_hang_time              = 100;
-    ts.agc_wdsp_hang_thresh            = 40;
-    ts.agc_wdsp_thresh                 = 32;
+    ts.agc_wdsp_hang_time              = 500;
+    ts.agc_wdsp_hang_thresh            = 45;
+    ts.agc_wdsp_thresh                 = 60;
     ts.agc_wdsp_action                 = 0;
     ts.agc_wdsp_switch_mode            = 1;
     ts.agc_wdsp_hang_action            = 0;
-    ts.agc_wdsp_tau_decay[0]           = 700;
-    ts.agc_wdsp_tau_decay[1]           = 700;
-    ts.agc_wdsp_tau_decay[2]           = 700;
-    ts.agc_wdsp_tau_decay[3]           = 700;
-    ts.agc_wdsp_tau_decay[4]           = 700;
-    ts.agc_wdsp_tau_decay[5]           = 700;
+    ts.agc_wdsp_tau_decay[0]           = 4000;
+    ts.agc_wdsp_tau_decay[1]           = 2000;
+    ts.agc_wdsp_tau_decay[2]           = 500;
+    ts.agc_wdsp_tau_decay[3]           = 250;
+    ts.agc_wdsp_tau_decay[4]           = 50;
+    ts.agc_wdsp_tau_decay[5]           = 500;
 
     ts.agc_wdsp_tau_hang_decay         = 200;
     ts.dbm_constant                    = 0;
@@ -398,7 +404,7 @@ void    TransceiverStateInit ( void )
     }
     ts.buffered_tx                = false;
     ts.cw_text_entry              = false;
-    ts.debug_si5351a_pllreset     = 3;   // "Never"  //  2  start with "reset on IQ Divider"
+    ts.debug_si5351a_pllreset     = 2;   // N96K NIZ-fix H4: upstream default 2 = PLL reset when the IQ divider changes; 3 ("Never") stays selectable in the DEBUG menu
     ts.switch_pause               = 3590;// pour ne pas corriger IQ coeff lors de switch Tx-->Rx
     ts.RFG_wait                   = 0;   // pour ne pas reafficher "RFG" au lancement
     ts.AFG_wait                   = 0;   // pour ne pas reafficher "AFG" au lancement
@@ -427,7 +433,7 @@ void    TransceiverStateInit ( void )
     ts.paddles_active             = false;  // pour ne pas prendre en consid�ration les GPIO PTT/Paddle avant lancement du Rig
     ts.audio_processor_input_mute_counter   = 0;  // pour passer � la saisie Rx directement
     ts.audio_dac_output_muting_buffer_count = 0;  // pour suspendre les taches audio lourdes au d�marrage y compris le DSP
-    ts.tx_bass_sheeft             =  0;
+    ts.tx_bass_sheeft             = 15;   // N96K NIZ-fix H9: 15 = 0 Hz shift (formula is "value - 15" Hz, range 0..20 -> -15..+5 Hz); 0 caused a hidden -15 Hz TX offset before the EEPROM default (15) was applied
     ts.Noise_Gate_Thresh          = 500;
  // ts.cmpt_volume                = 0;
     ts.reverberation_rate         = 10;   // 16 %

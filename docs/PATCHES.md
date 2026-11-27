@@ -16,9 +16,10 @@ P1-1…P1-5 — новая серия (PA/КСВ/EEPROM/CAT), совпадающ
 диффы минимальные; поведение и алгоритмы Nizar не меняются — только исправление дефекта или
 добавление защиты.
 
-Срез статусов — 2026-11-27, `main` HEAD **ee5e06ed** = v1.2 + B1–B5; рабочая ветка
-**`nizar-review`** (вторая волна: Nizar-audit/full-build, cleanup, docs-rebuild) — в процессе,
-её изменения в этот каталог ещё не входят. Теги: **v1.0** = `82056486`, **v1.1** = `cf43b068`,
+Срез статусов — 2026-11-27, `main` HEAD **ee5e06ed** = v1.2 + B1–B5; вторая волна — ветка
+**`nizar-review`**, HEAD **`a4042337`** (Nizar-audit, фиксы H1/H2/H3 `aa5fdcb9`, H5
+`a4042337`, opt-in `--full` `e8a78590`, cleanup, docs-rebuild `22fce856`); misc-фиксы
+H4/H6/H9–H12 — в рабочем дереве (без коммита), H7/H8 — только стенд. Теги: **v1.0** = `82056486`, **v1.1** = `cf43b068`,
 **v1.2** = annotated `4ca85bba` → commit `dc204cc1` (сборка/версия `619e9187`); артефакты —
 `release/v1.0`…`release/v1.2` и тестовый пакет `release/fieldtest-2026-11-27`. Цифры main —
 из свежих проверочных сборок `build-test`/`build-test-freedv`/`build-test-o3` (2026-11-27);
@@ -47,6 +48,13 @@ F3 (A2 — в конфигурации с включённым FreeDV). Неза
 запас flash 660 728), `bl-mchf.bin` 31 620 Б (5.0.4), предупреждений **73** (35 текстов; warning-гейт,
 см. B5); FreeDV opt-in **565 552 Б** (RAM 48 836, CCM 63 972); O3 opt-in **425 500 Б** (RAM 42 696,
 CCM 63 476); host-тесты **1754 PASS** (0 failed, 3 known). Сводка статусов — [STATUS.md](STATUS.md).
+
+**nizar-review a4042337 (B6, после H1/H2/H3/H5):** default `fw-mchf.bin` **323 096 Б** (+784 Б;
+RAM **42 672**, CCM 63 476/65 536, запас flash 659 944), `bl-mchf.bin` 31 620 Б (5.0.4, не менялся),
+предупреждений **73** = baseline; FreeDV opt-in **566 616 Б** (RAM 48 840, CCM 63 972); full opt-in
+**572 664 Б** (RAM 48 840, CCM 63 972; стендовая конфигурация); host-тесты **1754 PASS** (0 failed,
+3 known). Источник — `build/build-summary.json`, `build-freedv/`, `build-full/` (2026-11-27).
+Misc-фиксы H4/H6/H9–H12 в рабочем дереве — после слияния цифры уточняются.
 
 ## Сводная таблица
 
@@ -85,6 +93,20 @@ CCM 63 476); host-тесты **1754 PASS** (0 failed, 3 known). Сводка с�
 | B3 | Надёжность/DSP: VLA в audio ISR, согласованный сброс NR, OOB ALC-кольца, диагностика | `drivers/audio/audio_driver.c/.h`, `audio_nr.c/.h`, `codec/uhsdr_hw_i2s.c`, `ui/menu/*` | residual P3 F4/R9/A4, audit §4.6 | реализовано; host-tests 1754 PASS; fw 322 360 (+968), RAM 42 668 (+52), CCM 0, 78 warnings; на железе нет |
 | B4 | FreeDV opt-in: `--freedv`, guard-фиксы, MODEM_STATS, docs/FREEDV.md | `hardware/uhsdr_board.h`, `audio_driver.c`, `audio_filter.c`, `freedv_uhsdr.c`, `drivers/freedv/freedv_api*`, `tools/build.py` | B4 workstream | реализовано; default-сборка не меняется; FreeDV 565 584/48 836/63 972 (после B5 — 565 552); на железе нет |
 | B5 | Warning-гейт, два реальных дефекта `-Waddress`, bounded `float2fixedstr`, docs/LIBS.md, `--opt-level {O2,O3,Os}` | `ui_driver.c`, `ui_vkeybrd.c`, `ui_menu.c`, `tools/check_warnings.py`, `tests/warnings-baseline.txt`, `tools/build.py`, `docs/LIBS.md`, docs/CI.md | B5 (b5-warn/libs/opt, task-35/36/37/38) | реализовано; default 322 312/42 668/63 476/73 warnings; O3 425 500/42 696/63 476/73; host-tests 1754 PASS; warning-гейт в CI; на железе нет |
+
+### B6 — Nizar-review (ветка `nizar-review`, HEAD `a4042337`)
+
+| ID | Тема | Файлы (основные) | Источник | Статус |
+|---|---|---|---|---|
+| Nizar-audit | классификация изменений Nizar: 16 вредных/критичных (H1–H16), 14+ положительных, ~12 нейтральных | — (read-only) | task-39; `_audit/dev/nizar-audit.md` | сделано |
+| H1 | TX только в любительских участках четырёх расширенных RX-бэндов (10 м 28,0–29,7; 4 м 70,0–70,5; 2 м 144–146; 70 см 430–440 МГц) | `hardware/uhsdr_board.h`, `drivers/ui/radio_management.c` | `aa5fdcb9` | исправлено; на железе не проверялось |
+| H2 | безопасные дефолты TX-аудио (MIC 15, ALC postfilt 1, comp out 10, treble 4, EQ CUSTOM) + reset-default в меню | `src/uhsdr_main.c`, `drivers/audio/audio_driver.h`, `ui_configuration.c`, `ui_menu.c` | `aa5fdcb9` | исправлено; спектр TX — стенд |
+| H3 | CW-R/CW-USB: меню CW LSB/USB и CW Offset, переключение стороной, CAT 0x02/0x03, дефолт CW-USB | `src/uhsdr_main.c`, `cat/cat_driver.c`, `ui/radio_management.c`, `ui/ui_driver.c`, `ui/ui_vkeybrd.c`, `ui/menu/ui_menu*.c` | `aa5fdcb9` | исправлено; на железе не проверялось |
+| H5 | USB-TX guard/overflow, индексация/overflow USB-микрофона, tSamFreq/bNrChannels из макросов | `usb/app/usbd_audio_if.c`, `usb/device/class/AUDIO/Src/usbd_audio_cdc_comp.c`, `usb/app/usbd_desc.h`, `usb/device/class/composite/usbd_composite_desc.c` | `a4042337`; `_audit/dev/b6-usb-fix.md` | исправлено; байты дескрипторов не изменились; USB — стенд |
+| --full | opt-in полная сборка без `IS_SMALL_BUILD` (FreeDV + const-окна; firmware only) | `tools/build.py`, `hardware/uhsdr_board.h` | `e8a78590`; `_audit/dev/nizar-full.md` | сделано; стендовая, не продукт |
+| misc | H4 Si5351 PLL reset, H6 AGC-дефолты/меню, H9 сдвиг +15 Гц, H10 CW-декодер, H11 CAT PWR/SWR, H12 noise gate/USB ID | `src`, `drivers/audio`, `drivers/cat`, `drivers/ui`, `drivers/ui/oscillator`, `hardware` | task-45 | в работе (рабочее дерево, без коммита) |
+| H7/H8 | пороги ADC-clip и кривая RF-гейна — требуют стенда | — | `nizar-audit.md` §2 | только стенд (в коде не меняются) |
+| cleanup | −23,2 ГиБ мусора; docs-rebuild | `_audit/dev/cleanup.md`, `docs/**` | task-41/42; `22fce856` | сделано |
 
 ---
 
@@ -497,8 +519,8 @@ Nizar, (d) все 46 `.c` фильтров в `files.mak`, (e) версия/пр
 `IIR_biquad_Zoom_FFT_I/_Q` — placeholder-инициализатор (10 вместо 20 `pCoeffs`; заменяется в runtime
 до первого запуска, но латентный UB/OOB-read).
 
-**Ограничения.** `docker build` **не запускался** (на машине разработки нет Docker);
-GitHub Actions не запускался (нет remote/раннера); проверены только статически (YAML/PyYAML, разбор
+**Ограничения (на момент P2-3).** `docker build` **не запускался** (на машине разработки нет
+Docker); GitHub Actions на момент P2-3 не запускался (не было remote/раннера); проверены только статически (YAML/PyYAML, разбор
 Dockerfile, `verify_artifacts.py` на артефактах v1.0). Первая сборка в Docker качает ~307 МБ; образ
 `ubuntu:22.04` прибит тегом, не digest. Прошивка не воспроизводима побайтно (`__DATE__/__TIME__`) —
 CI контролирует размеры/бюджеты/наличие, а не SHA. Бюджет-гейт bl (32 768) при 31 620 даёт запас
@@ -685,24 +707,56 @@ host-tests **1754 PASS** (0 failed, 3 known); warning-гейт OK для default
 загрузчик не менялся (31 620 Б, тот же SHA). На железе не проверялось: правки — UI/отображение,
 проверка только по коду и сборке.
 
-## Nizar-review (вторая волна, в процессе)
+## Nizar-review (B6): аудит и исправления
 
-Ветка `nizar-review` (от `main` `ee5e06ed`); на момент среза изменения не закоммичены
-(коммитит lead), поэтому статусов «закрыто» здесь нет:
+Ветка `nizar-review` (от `main` `ee5e06ed`), HEAD **`a4042337`**. Аудит — read-only;
+исправления — коммиты `e8a78590` (`--full`), `22fce856` (docs-rebuild), `aa5fdcb9`
+(H1/H2/H3), `a4042337` (H5) плюс misc-правки в рабочем дереве (без коммита). В `main` ветка
+пока не влита. Полные отчёты — `_audit/dev/` (вне репозитория).
 
-- **Nizar-audit** (task-39): классификация diff `ae93edf6..nizar-baseline` — что вредит/критично
-  (`IS_SMALL_BUILD`, лимиты мощности/усиления, выключенные функции/меню, буферы 96k/12k) и что
-  стоит внести в общую сборку; отчёт `_audit/dev/nizar-audit.md`.
-- **Nizar-full** (task-40): opt-in `--full` (снятие `IS_SMALL_BUILD`; FreeDV + predefined FFT
-  windows) — сборка/замеры flash/RAM/CCM/warnings, host-тесты; default не меняется; отчёт
-  `_audit/dev/nizar-full.md`. На момент среза в работе `tools/build.py` + `hardware/uhsdr_board.h`.
-- **Cleanup** (task-41): удаление мусора вне исходников/бэкапа/аудита/релизов; отчёт
-  `CLEANUP-REPORT.md`.
-- **Docs-rebuild** (task-42): `docs/STATUS.md`, `docs/CHANGES.md`, обновление README/PLAN-DEV/
-  CHANGELOG/PATCHES/CI/RELEASE, подготовка CHECKLIST/CHANGES к пересборке PDF.
+### Что нашли (Nizar-audit, task-39)
 
-Итоговые цифры второй волны (включая `--full`) появятся после сборок; до этого они не являются
-финальными.
+- Диф `ae93edf6..nizar-baseline`: 152 файла, +39 536 / −19 299; в текущем HEAD 615 маркеров NIZ
+  (с нашими B-маркерами).
+- Ядро форка (RX 96 кГц / TX 12 кГц integer) работоспособно и самоценно — откат не рекомендуется.
+- **16 вредных/критичных:** H1 (расширенные бэнды → TX вне любительских участков), H2 (перекомпрессия
+  TX-аудио), H3 (CW-R удалён), H5 (USB-буферы/дескрипторы), H4 (Si5351 PLL reset), H6 (AGC),
+  H7 (ADC-clip), H8 (RF-гейн), H9 (+15 Гц), H10 (CW-декодер), H11 (CAT PWR/SWR), H12 (noise gate/VID),
+  H13 (тачскрин/DSP), H14 (скрытые меню), H15 (bias-reduce выключен), H16 (MIC gain+boost).
+- **14+ положительных:** 96k/12k integer, 32-бит кодек WM8731, новые фильтры, TX EQ/компрессор/ALC,
+  11 точек IQ-калибровки, новые меню, CAT 0x65/E7/E8/PTT-STATE, USB 96k, порядок инициализации кодека,
+  «тренировка» реле, paddles_active, частоты в Гц, DEBUG info, per-band SWR-коэффициенты.
+- Опасных «лимитов PA» нет: `TX_POWER_FACTOR_MAX_INTERNAL = 0.55` сохранён; главный остаточный
+  риск — отсутствие стенда.
+
+### Что исправлено в ветке
+
+- **H1 + H2 + H3 (`aa5fdcb9`).** TX-лимиты `BAND_TX_*` и
+  `RadioManagement_IsTxDialFrequencyInBand()` (RX-покрытие Nizar сохранено, override
+  `FLAGS1_TX_OUTSIDE_BANDS` сохранён); дефолты TX-аудио MIC 35→15, ALC_POSTFILT 11→1,
+  comp out 25→10, treble 20→4, EQ preset→custom (+ reset-default в меню); CW-R восстановлен —
+  7 жёстких `ts.cw_lsb = true` убраны (логика по upstream), меню «CW LSB/USB Select» и
+  «CW Freq. Offset» возвращены, CAT 0x02/0x03 различаются, длинное нажатие Mode переключает сторону.
+- **H5 (`a4042337`).** USB-TX — возвращены guard и счётчик overflow (сравнение с tail, дословная
+  upstream-проверка «мёртвая» и переполнение не ловила); USB-микрофон — индексация с wrap и учёт
+  overflow, дублирование L/R — корректное моно→стерео (источник уже 96 кГц, ZOH 48→96k не подтверждён);
+  частоты/каналы дескриптора — через `SAMPLE_FREQ`/`USBD_AUDIO_*` макросы; байты дескрипторов
+  и идентификация устройства не изменились (сравнение ELF до/после).
+- **`--full` (`e8a78590`).** `python tools/build.py all --full` — `-DN96K_FULL_BUILD`
+  снимает `IS_SMALL_BUILD` и добавляет `-DN96K_FREEDV` (обязательная конфигурация памяти
+  FreeDV); full 572 664 / 48 840 / 63 972, 73 warnings; default и загрузчик не меняются; сборка
+  стендовая, не продуктовая (heap/стек на границе, CCM 97,6 %).
+- **misc (в работе, task-45).** H4 Si5351 PLL reset, H6 AGC-дефолты/меню, H9 +15 Гц, H10 CW-декодер,
+  H11 CAT PWR/SWR, H12 noise gate/USB ID — правки в рабочем дереве; H7/H8 — только стенд. После
+  слияния — финальные сборки и уточнение чисел.
+
+### Цифры и проверки
+
+default **323 096 / 42 672 / 63 476**; FreeDV **566 616 / 48 840 / 63 972**; full **572 664 / 48 840 /
+63 972**; `bl-mchf.bin` 31 620 (5.0.4, не менялся); warnings **73 = baseline**; host-tests
+**1754 PASS** (0 failed, 3 known). Дельта к `main`: +784 Б default, +1 064 Б FreeDV, +1 048 Б full,
++4 Б RAM, CCM 0. На железе не проверялось: H1 (TX-границы), H2 (спектр TX), H3 (CW-R/CW-USB),
+H5 (USB-аудио), H7/H8 — стенд по docs/CHECKLIST.md.
 
 ## Проверка документации и версии (v1.2)
 

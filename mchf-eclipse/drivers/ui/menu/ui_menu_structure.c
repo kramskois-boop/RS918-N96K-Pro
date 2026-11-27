@@ -276,14 +276,18 @@ const  MenuDescriptor  agcGroup[] =
 	//  { MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_MODE               , NULL, "AGC STD Mode"           , UiMenuDesc("Standard AGC: Automatic Gain Control Mode setting. You may select preconfigured settings (SLOW,MED,FAST), define settings yourself (CUSTOM) or use MANUAL (no AGC, use RFG to control gain") },
 	//  { MENU_AGC_WDSP, MENU_ITEM, MENU_CUSTOM_AGC             , NULL, "AGC STD Custom Speed (+=Slower)", UiMenuDesc("Standard AGC:  If AGC STD Mode is set to CUSTOM, this controls the speed setting of AGC") },
 
-//		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_MODE          , NULL, "AGC WDSP Mode"          , UiMenuDesc("Choose a bundle of preset AGC parameters for the WDSP AGC: FAST / MED / SLOW / LONG / very LONG or switch OFF the AGC.") },
-//		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_THRESH        , NULL, "AGC WDSP Threshold"     , UiMenuDesc("´Threshold´ = ´Knee´ of the AGC: input signal level from which on the AGC action takes place. AGC threshold should be placed/adjusted just above the band noise for every particular RX situation to allow for optimal AGC action. The blue AGC box indicates when AGC action takes place and helps in adjusting this threshold.") },
+		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_MODE          , NULL, "AGC WDSP Mode"          , UiMenuDesc("Choose a bundle of preset AGC parameters for the WDSP AGC: FAST / MED / SLOW / LONG / very LONG or switch OFF the AGC.") }, // N96K NIZ-fix H6: restored
+		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_THRESH        , NULL, "AGC WDSP Threshold"     , UiMenuDesc("´Threshold´ = ´Knee´ of the AGC: input signal level from which on the AGC action takes place. AGC threshold should be placed/adjusted just above the band noise for every particular RX situation to allow for optimal AGC action. The blue AGC box indicates when AGC action takes place and helps in adjusting this threshold.") }, // N96K NIZ-fix H6: restored
 		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_OFF_GAIN           , NULL, "AGC WDSP OFF Gain"      , UiMenuDesc("Slope of the AGC is the difference between the loudest signal and the quietest signal after the AGC action has taken place. Given in dB.") },
 		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_SLOPE         , NULL, "AGC WDSP Slope"         , UiMenuDesc("Slope of the AGC is the difference between the loudest signal and the quietest signal after the AGC action has taken place. Given in dB.") },
 		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_TAU_DECAY     , NULL, "AGC WDSP Decay"         , UiMenuDesc("Time constant for the AGC decay (speed of recovery of the AGC gain) in milliseconds.") },
 		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_ATTACK        , NULL, "AGC WDSP Attack Coeff"  , UiMenuDesc("Coeff d'attaque du AGC ") },
 		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_DYN_CLARITY   , NULL, "AGC WDSP Clarity"       , UiMenuDesc("Time constant for the AGC dynamic clarity for pulse signals behavior.") },
 
+// N96K NIZ-fix H6: the upstream hang AGC items below stay hidden on purpose: the active Nizar AGC
+// (AudioDriver_RxAgcWdsp) has no hang stage, and ts.agc_wdsp_hang_enable is repurposed by the
+// "AGC WDSP OFF Gain" item (0..123 -> float_Fix_audio_Gain). Re-enabling "Hang enable" would corrupt
+// that setting; hang time/threshold/decay would be no-ops. Benched decision - see b6-misc-fix.md.
 //		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_HANG_ENABLE   , NULL, "AGC WDSP Hang enable"   , UiMenuDesc("Enable/Disable Hang AGC function: If enabled: after the signal has decreased, the gain of the AGC is held constant for a certain time period (the hang time) in order to allow for speech pauses without disturbing noise because of fast acting AGC.") },
 //		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_HANG_TIME     , NULL, "AGC WDSP Hang time"     , UiMenuDesc("Hang AGC: hang time is the time period over which the AGC gain is held constant when in AGC Hang mode. After this period the gain is increased fast.") },
 //		{ MENU_AGC_WDSP, MENU_ITEM, MENU_AGC_WDSP_HANG_THRESH   , NULL, "AGC WDSP Hang threshold", UiMenuDesc("´Threshold´ for the Hang AGC: Hang AGC is useful for medium to strong signals. The Hang threshold determines the signal strength a signal has to exceed for Hang AGC to take place.") },
@@ -600,7 +604,7 @@ const MenuDescriptor debugGroup[] =
 
 //  { MENU_DEBUG, MENU_ITEM, MENU_DEBUG_RTTY_ATC           , NULL,"RTTY ATC Enable", UiMenuDesc("Enable automatic threshold correction ATC for RTTY decoding") },
 
-// 	{ MENU_DEBUG, MENU_ITEM, MENU_DEBUG_OSC_SI5351_PLLRESET, NULL,"Si5351a PLL Reset", UiMenuDesc("Debug Setting: Select when the Si5351a does a PLL RESET") },
+ 	{ MENU_DEBUG, MENU_ITEM, MENU_DEBUG_OSC_SI5351_PLLRESET, NULL,"Si5351a PLL Reset", UiMenuDesc("Debug Setting: Select when the Si5351a does a PLL RESET") }, // N96K NIZ-fix H4: restored (default 2 = reset on IQ divider change)
 	{ MENU_DEBUG, MENU_STOP, 0                             , NULL, NULL, UiMenuDesc("") }
 };
 

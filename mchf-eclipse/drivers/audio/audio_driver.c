@@ -2901,7 +2901,7 @@ loadWcpAGC(a);
     agc_wdsp.attack_buffsize   = 48; // 4ms //  (int) ceil(sample_rate * agc_wdsp.n_tau * agc_wdsp.tau_attack); // 48 = 12000 * 4 * 0.001
 
     agc_wdsp.in_index          = agc_wdsp.out_index  + 48 ; //  + 46 ;  // agc_wdsp.attack_buffsize; // out_index + attack_buffsize can be more than  ring_bufsize !!!
-    agc_wdsp.in_index         %= 96;    // 192 ;        //  agc_wdsp.ring_buffsize;  // need to keep this within the index boundaries
+    agc_wdsp.in_index         %= agc_wdsp.ring_buffsize; // N96K NIZ-fix H6: was a hard-coded 96 (trap if AGC_WDSP_RB_SIZE changes); need to keep this within the index boundaries
 
     agc_wdsp.attack_mult       = ((float32_t)ts.agc_wdsp_Attackk)/1000.0;  // 0.05 ;    //  0.08    // 1.0 - expf(-1.0 / (sample_rate * agc_wdsp.tau_attack));
 
@@ -2988,7 +2988,7 @@ void   AudioDriver_RxAgcWdsp ( const uint16_t  blockSize, float32_t  *AGC_buffer
     //******************************************  AGC ON *******************************************************
     //**********************************************************************************************************
 
-	const uint32_t     AGC_Buffer_Size_96  = 96;
+	const uint32_t     AGC_Buffer_Size_96  = AGC_WDSP_RB_SIZE; // N96K NIZ-fix H6: keep the wrap-around in sync with the ring buffer size
 	const uint16_t     Out_inp_sheeft      = 48 ; // + 46;    // original  48
 	const float32_t    coeff_moyennage     = 0.000333;   // original  0.0003332  equivalent de moyennage sur 250ms
 	const float32_t    zzero               = 0.0 ;

@@ -1220,14 +1220,12 @@ static void CatDriver_HandleCommands()
 									}
 									else
 									{
+										// N96K NIZ-fix H11: return the real PWR/SWR nibbles (upstream ae93edf6 behaviour)
+										// instead of the fixed 0x31/0x00, so loggers/WSJT-X/HRD see the actual power and SWR.
 										// PWR / SWR
-										// resp[0] = (limit_4bits(roundf(swrm.fwd_pwr))<<4)+limit_4bits(roundf(swrm.vswr_dampened));
+										resp[0] = (limit_4bits(roundf(swrm.fwd_pwr))<<4)+limit_4bits(roundf(swrm.vswr_dampened));
 										// ALC / MOD
-										// resp[1] = (limit_4bits(0)<<4)+limit_4bits(0);
-
-
-										resp[0] =  0x31;   // NIZZ
-										resp[1] =  0x00;   // NIZZ
+										resp[1] = (limit_4bits(0)<<4)+limit_4bits(0);
 										bc = 2;
 									}
 

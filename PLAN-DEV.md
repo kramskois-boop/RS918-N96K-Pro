@@ -5,8 +5,10 @@
 **База:** официальный UHSDR v2.9.48 (github.com/df8oe/UHSDR, коммит ae93edf6) + рабочие доработки Nizar (импортированы коммитом baseline, тег nizar-baseline).
 **Расположение:** E:\harnet\sdr 11\RS918_Nizar96K_Pro (исходная архив-папка не изменяется).
 **Лицензия:** GNU GPLv3 (наследуется от UHSDR; изменения остаются GPLv3, атрибуция UHSDR и Nizar сохраняется).
-**Статус на 2026-11-27:** `main` ee5e06ed = v1.2 + B1–B5; идёт вторая волна — ветка `nizar-review`
-(Nizar-audit/full-build, cleanup, docs-rebuild); полевые испытания (C) — план. Актуальный статус — [docs/STATUS.md](docs/STATUS.md).
+**Статус на 2026-11-27:** `main` ee5e06ed = v1.2 + B1–B5; вторая волна — ветка `nizar-review`
+(HEAD `a4042337`): Nizar-audit закрыт, исправлены H1/H2/H3 (`aa5fdcb9`) и H5 (`a4042337`),
+opt-in `--full` (`e8a78590`), cleanup, docs-rebuild (`22fce856`); misc-фиксы H4/H6/H9–H12 —
+в рабочем дереве. Полевые испытания (C) — план. Актуальный статус — [docs/STATUS.md](docs/STATUS.md).
 
 ---
 
@@ -32,7 +34,7 @@
 | Каталог | RS918_Nizar96K_Pro |
 | Версия прошивки (числовая) | 2.9.48 (сохраняется для совместимости EEPROM-логики) |
 | Строка продукта | 2.9.48-n96kp3 (UHSDR_PRODUCT_VERSION, v1.2) |
-| Ветка git | main (теги nizar-baseline -> cleanup-done -> v1.0 -> v1.1 -> v1.2; HEAD ee5e06ed = v1.2+B1–B5); рабочая ветка текущего этапа — nizar-review |
+| Ветка git | main (теги nizar-baseline -> cleanup-done -> v1.0 -> v1.1 -> v1.2; HEAD ee5e06ed = v1.2+B1–B5); рабочая ветка второй волны — nizar-review (HEAD a4042337: Nizar-audit, H1/H2/H3/H5, --full, cleanup, docs) |
 | Атрибуция | UHSDR / DF8OE, Nizar 3V8MN, RS918 N96K-Pro |
 
 ## 4. Каталог патчей (P0 — дефекты аудита)
@@ -70,7 +72,10 @@
 | B3 | b3-dsp | VLA в ISR, сброс NR, OOB ALC-кольца, DEBUG-диагностика | host-tests PASS; сборка; fw 322 360 (+968), RAM +52, CCM 0 |
 | B4 | b4-freedv | opt-in FreeDV: `--freedv`, guard-фиксы, MODEM_STATS, docs/FREEDV.md | default-сборка не меняется; FreeDV 565 584/48 836/63 972 (после B5 — 565 552); стенд впереди |
 | B5 | b5-warn/libs/opt | warning-гейт, фиксы `-Waddress`/`float2fixedstr`, `docs/LIBS.md`, `--opt-level` | host 1754 PASS; warning-гейт OK; default 322 312/42 668/63 476; O3 opt-in 425 500 |
-| B6 | nizar-audit/full/cleanup/docs | вторая волна (ветка `nizar-review`): классификация ограничений Nizar, opt-in `--full` (снятие `IS_SMALL_BUILD`), cleanup, docs-rebuild | в процессе; цифры/статусы — после второй волны (docs/STATUS.md) |
+| B6a | nizar-audit + фиксы | Nizar-audit (16 вредных/критичных, 14+ положительных); H1 TX-границы, H2 дефолты TX-аудио, H3 CW-R/CW-USB, H5 USB-аудио | сделано (`aa5fdcb9`, `a4042337`); default 323 096/42 672/63 476; 73 warnings; 1754 PASS |
+| B6b | opt-in `--full` | полная сборка без `IS_SMALL_BUILD` (FreeDV + const-окна), firmware only; default не меняется | сделано (`e8a78590`); full 572 664/48 840/63 972, 73 warnings; стендовая, не продукт |
+| B6c | misc-фиксы | H4 Si5351 PLL reset, H6 AGC-дефолты/меню, H9 +15 Гц, H10 CW-декодер, H11 CAT PWR/SWR, H12 noise gate/USB ID; H7/H8 — только стенд | в работе (task-45, рабочее дерево); после слияния — финальные сборки |
+| B6d | cleanup + docs | −23,2 ГиБ мусора; docs-rebuild (STATUS/CHANGES/CHANGELOG/PATCHES/README/PLAN-DEV/CI/RELEASE); docs-final | сделано (task-41/42); release 55/55 SHA OK; docs-final — в работе |
 
 ## 6. Правила работы
 
@@ -108,15 +113,17 @@
 B3 (аудио/DSP hardening), B4 (opt-in FreeDV), B5 (warning-гейт, фиксы `-Waddress`/`float2fixedstr`,
 docs/LIBS.md, `--opt-level`); репозиторий опубликован, CI и release-job проверены вживую.
 
-1. **B6 / Nizar-review (в процессе, ветка `nizar-review`):** классификация ограничений Nizar
-   (Nizar-audit), opt-in `--full` без `IS_SMALL_BUILD` (Nizar-full: замеры flash/RAM/CCM/warnings),
-   cleanup мусора, docs-rebuild (STATUS/CHANGES/PATCHES/README/PLAN-DEV + PDF). Итоговые цифры —
-   после сборок второй волны и решения lead по `--full`.
+1. **B6 / Nizar-review (ветка `nizar-review`, HEAD `a4042337`):** сделано — Nizar-audit
+   (16 вредных/критичных, 14+ положительных), фиксы H1/H2/H3 (`aa5fdcb9`) и H5 (`a4042337`),
+   opt-in `--full` (`e8a78590`: full 572 664/48 840/63 972, стенд), cleanup (≈23,2 ГиБ),
+   docs-rebuild (`22fce856`); в работе — misc-фиксы H4/H6/H9–H12 (рабочее дерево, без коммита);
+   H7/H8 — только стенд. После слияния misc-фиксов — финальные сборки default/FreeDV/full, пакет
+   второй волны и печатные PDF (числа в STATUS/CHANGES обновляются по build-summary.json).
 2. **Полевые испытания (C):** RS-918 по `docs/TESTPLAN.md` и `docs/CHECKLIST.md` — приём/передача,
    КСВ-защита и A1, 96k-панорама, цифровые виды, CAT/Hamlib, USB-аудио, загрузчик 5.0.4, FreeDV-стенд.
    Остаточные риски: F1 (ложные foldback-trip), watchdog выключен, первые ~50 мс TX без КСВ-защиты.
-3. **v1.3:** после второй волны и полевых данных — итоговые цифры, пересборка printable PDF,
-   тег и release-пакет (процедура — docs/RELEASE.md).
+3. **v1.3:** после второй волны (финальные сборки после misc-фиксов) и полевых данных — итоговые
+   цифры, пересборка printable PDF (CHECKLIST/CHANGES), тег и release-пакет (процедура — docs/RELEASE.md).
 4. **B6+ (после C/решений):** FreeDV-интеграция API 2.12.2 (700D/squelch), аналоговая защита PA,
    watchdog IWDG, остальные бэкпорты 2.12.2 (#1664 DMA size, #1744 CW buffer), EEPROM-стратегия,
    USB-аудио дескрипторы 96k; бюджетные запасы (CCM 2 060, загрузчик 1 148) держать под гейтом.
@@ -139,14 +146,17 @@ docs/LIBS.md, `--opt-level`); репозиторий опубликован, CI 
 | B5 | **выполнен** (PR #2) | warning-гейт (73 baseline), 2 реальных дефекта `-Waddress`+OOB, docs/LIBS.md, `--opt-level` (O2 default, O3 opt-in); default 322 312 Б |
 | Публикация | **выполнена** (2026-11-27) | <https://github.com/kramskois-boop/RS918-N96K-Pro>: PR #1/#2 merged, живой CI и release-job; осталось — защита веток/тегов (по желанию) |
 | main ee5e06ed | **актуальный HEAD** | v1.2 + B1–B5; CI на main — success; статус — docs/STATUS.md |
-| B6 / Nizar-review | **в процессе** (ветка `nizar-review`) | Nizar-audit, opt-in `--full` (снятие `IS_SMALL_BUILD`), cleanup, docs-rebuild; цифры после второй волны |
+| B6 / Nizar-review | **выполнено частично** (ветка `nizar-review`, `a4042337`) | Nizar-audit (16 вредных/критичных, 14+ положительных); H1/H2/H3/H5 исправлены (`aa5fdcb9`, `a4042337`); opt-in `--full` (`e8a78590`, full 572 664/48 840/63 972 — стенд); cleanup ≈23,2 ГиБ; docs-rebuild (`22fce856`). В работе: misc-фиксы H4/H6/H9–H12; H7/H8 — стенд; финальные сборки/PDF — после |
+| `--full` (стенд) | **выполнено, стендовая** | `python tools/build.py all --full`: снятие `IS_SMALL_BUILD`, FreeDV + const-окна; default не меняется; heap/стек на границе, FreeDV на железе не проверен |
 | v1.3 | **план** | после второй волны и полевых данных: итоговые цифры, PDF, тег и release-пакет |
 
 **Решения:**
 
 - **F7/H7: поддержка сохраняется** — vendor-деревья не удаляются (решение пользователя 2026-11-27).
 - **FreeDV:** по умолчанию выключен; **B4 — opt-in сборка** `tools/build.py --freedv` (после B5: fw **565 552 Б**, RAM 48 836, CCM 63 972; запас стека ≈7,8 КБ), default не меняется; перед передачей — стенд (docs/FREEDV.md).
-- **Nizar-review (B6, в процессе):** opt-in `--full` (снятие `IS_SMALL_BUILD`) — только после второй волны и решения lead; default-сборка обязана оставаться прежней.
+- **Nizar-review (B6, ветка `nizar-review`):** вторая волна даёт Nizar-audit, фиксы H1/H2/H3/H5,
+  opt-in `--full` (только для стенда; default остаётся продуктом) и cleanup/docs; в `main`
+  вливается решением lead после финальных сборок. Misc-фиксы H4/H6/H9–H12 — в работе; H7/H8 — стенд.
 - **Загрузчик:** целевой 5.0.4 (запись только SWD/ROM-DFU с BOOT0; `BAND+`/`BAND−` обрабатывает сам загрузчик), 4.1.2 — known-good для отката.
 - **Полевые тесты:** обязательны до любых выводов о VSWR/загрузчике; чек-лист — `docs/CHECKLIST.md`.
 

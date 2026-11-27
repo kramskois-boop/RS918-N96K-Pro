@@ -7,7 +7,10 @@
 спектр — плюс патчи качества и безопасности: P0-1…P0-6 в v1.0, P1/P2 в v1.1, A1/A2 в v1.2 и
 инструментальные этапы B1–B5 в `main` (воспроизводимая сборка, host-тесты, живой CI, документация,
 аудио/DSP-hardening, opt-in FreeDV, warning-гейт и `--opt-level`; **FreeDV по умолчанию выключен,
-есть opt-in сборка `--freedv`** — B4, [docs/FREEDV.md](docs/FREEDV.md)).
+есть opt-in сборка `--freedv`** — B4, [docs/FREEDV.md](docs/FREEDV.md)). Во второй волне (ветка
+`nizar-review`) — аудит доработок Nizar (16 вредных/критичных и 14+ положительных изменений),
+фиксы H1/H2/H3/H5 (TX только в любительских участках, безопасные дефолты TX-аудио, CW-R/CW-USB,
+USB-аудио) и opt-in `--full` — стендовая сборка без `IS_SMALL_BUILD` (FreeDV + const-окна).
 
 | Параметр | Значение |
 |---|---|
@@ -20,7 +23,7 @@
 | Загрузчик | UHSDR bootloader **5.0.4** (`UHSDR_BOOT_VERS`, P2-1; 4.1.2 тоже совместим) |
 | Репозиторий продукта | **публичный:** [github.com/kramskois-boop/RS918-N96K-Pro](https://github.com/kramskois-boop/RS918-N96K-Pro) — CI (host-тесты + Docker-сборка) зелёный |
 | Лицензия | GNU GPLv3 — [LICENCE.md](LICENCE.md), атрибуция — [docs/CREDITS.md](docs/CREDITS.md) |
-| Состояние | теги **v1.0**, **v1.1**, **v1.2** (v1.2 — annotated `4ca85bba` → commit `dc204cc1`, сборка/версия `619e9187`); **`main` ee5e06ed = v1.2 + B1–B5**: fw **322 312 Б**, RAM 42 668, CCM 63 476, **73** предупреждения (baseline-гейт), **1754** теста, живой CI; текущая работа — ветка `nizar-review`, статус — [docs/STATUS.md](docs/STATUS.md); полевых испытаний не было — см. дисклеймер ниже |
+| Состояние | теги **v1.0**, **v1.1**, **v1.2** (v1.2 — annotated `4ca85bba` → commit `dc204cc1`, сборка/версия `619e9187`); **`main` ee5e06ed = v1.2 + B1–B5**: fw **322 312 Б**, RAM 42 668, CCM 63 476, **73** предупреждения (baseline-гейт), **1754** теста, живой CI. Ветка **`nizar-review`** (HEAD `a4042337`) — вторая волна: Nizar-audit, фиксы H1/H2/H3/H5, opt-in `--full`: default fw **323 096 Б**, RAM 42 672, CCM 63 476, 73 warnings; FreeDV **566 616 Б**; full **572 664 Б**; misc-фиксы H4/H6/H9–H12 — в работе. Подробно — [docs/STATUS.md](docs/STATUS.md); полевых испытаний не было — см. дисклеймер ниже |
 
 > Это **не** официальный UHSDR и не сборка DF8OE. Это самостоятельный форк для конкретного
 > железа; всё, что связано с передатчиком, антенной и питанием — на ответственности оператора.
@@ -83,7 +86,7 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
 | Защита PA по КСВ (VSWR foldback), guard `fwd_pwr` | есть (с 2018-12) | портировано **P0-4**; в v1.1 — настраиваемый порог в EEPROM/меню, индикация `SWR!`, быстрое срабатывание и safe retry (**P1-1…P1-3**); в v1.2 — инвариант «смена мощности не возвращает драйв при активной защите» и завершение trial в гистерезисе (**A1**) |
 | TX только в любительских бэндах, блокировка CAT при TX | частично | закрыто **P0-5**; остаточные CAT-лазейки закрыты **P1-5** |
 | Bootloader | 5.0.4 | **5.0.4** (P2-1, обновлён с 4.1.2; проверен сборкой, на железе не испытывался) |
-| FreeDV/Codec2 rev 4121, фикс #1749 | есть | vendor обновлён (**P2-2**, rev 4121); по умолчанию **не включён** (`IS_SMALL_BUILD`); **B4** — opt-in сборка `--freedv` (после B5: fw **565 552 Б**, RAM 48 836, CCM 63 972), на железе не испытывалась; NR+FreeDV-гейты — **A2** |
+| FreeDV/Codec2 rev 4121, фикс #1749 | есть | vendor обновлён (**P2-2**, rev 4121); по умолчанию **не включён** (`IS_SMALL_BUILD`); **B4** — opt-in сборка `--freedv` (после второй волны: fw **566 616 Б**, RAM 48 840, CCM 63 972), на железе не испытывалась; NR+FreeDV-гейты — **A2** |
 | CAT/Hamlib 4.3: `get_vfo`, фиксы FT-817/WINTEST | есть | фиксы `get_vfo` уже были в базе Nizar; добавлена эмуляция 0x65 (**P1-5**) |
 | AGC restore #1730, Tune Power #1750, CW-декодер #1881 | есть | порт выполнен (**P2-4**, см. docs/PATCHES.md) |
 | EEPROM signature #1675, DMA #1664 | есть | нет (follow-up) |
@@ -95,7 +98,7 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
 
 ## Патчи качества и безопасности
 
-Каждый патч помечен в коде комментарием `// N96K P0-x / P1-x / P2 / A1 / A2 / B3 / B4 / B5: …`. Принципы: минимальный
+Каждый патч помечен в коде комментарием `// N96K P0-x / P1-x / P2 / A1 / A2 / B3 / B4 / B5 / NIZ-fix: …`. Принципы: минимальный
 дифф, поведение Nizar не меняется, только исправление дефекта или добавление защиты.
 
 | ID | Тема | Что исправляет |
@@ -118,8 +121,11 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
 | A1 | VSWR: инвариант драйва | при активном foldback смена мощности (PWR-энкодер/меню/CAT/Tune) не возвращает полный драйв; trial в зоне гистерезиса завершается mute; `ts.power_level` восстанавливается после release |
 | A2 | NR+FreeDV #1749 | сброс NR-статики и общего буфера при выходе из DIGI (`AudioNr_Prepare()`); NR pass-through при активном FreeDV — в default-сборке вырезаны, в opt-in FreeDV-сборке B4 активны |
 | B3 | Надёжность/DSP | фиксированный буфер вместо VLA в audio ISR, согласованный сброс NR (A4/R9), фикс OOB ALC-кольца при смене SSB↔AM/FM, DEBUG-диагностика (ISR%/DMA/NR); fw +968 Б |
-| B4 | FreeDV opt-in | `--freedv`: fw **565 552 Б** (после B5) / RAM 48 836 / CCM 63 972; default-сборка не меняется; перед передачей — стенд (docs/FREEDV.md) |
+| B4 | FreeDV opt-in | `--freedv`: fw **566 616 Б** (после второй волны; после B5 было 565 552) / RAM 48 840 / CCM 63 972; default-сборка не меняется; перед передачей — стенд (docs/FREEDV.md) |
 | B5 | Warning-гейт и оптимизация | 73 warnings baseline + `tools/check_warnings.py` в CI; 2 реальных `-Waddress`-дефекта (`strcmp`), bounded `float2fixedstr` (OOB); docs/LIBS.md; `--opt-level O2/O3/Os` (default O2) |
+| B6 | Nizar-audit + H1/H2/H3/H5 | Аудит доработок Nizar: 16 вредных/критичных и 14+ положительных изменений; TX только в любительских участках (H1), безопасные дефолты TX-аудио (H2), CW-R/CW-USB (H3), USB-буферы/дескрипторы (H5). Коммиты `aa5fdcb9`, `a4042337`; default 323 096 / 42 672 / 63 476, FreeDV 566 616, full 572 664, 73 warnings, 1754 теста |
+| B6 | `--full` (стенд) | `python tools/build.py all --full` — снятие `IS_SMALL_BUILD` (FreeDV + const-окна Ханна), только прошивка; default не меняется. Коммит `e8a78590`; full 572 664 / RAM 48 840 / CCM 63 972, 73 warnings; heap/стек на границе, FreeDV на железе не проверен |
+| B6 | misc-фиксы (в работе) | H4 Si5351 PLL reset, H6 AGC-дефолты/меню, H9 сдвиг +15 Гц, H10 CW-декодер, H11 CAT PWR/SWR, H12 noise gate/USB ID; H7/H8 — только стенд; правки в рабочем дереве, без коммита, после слияния — финальные сборки |
 
 Полный каталог (файлы, обоснование, статус, проверка) — **[docs/PATCHES.md](docs/PATCHES.md)**.
 История версий — [docs/CHANGELOG.md](docs/CHANGELOG.md).
@@ -141,8 +147,13 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
   GitHub Actions: `host-tests` + `docker-build` (+ warning-гейт) + `release` (по тегу) — живые прогоны
   PASS (2026-11-27), последний на `main` ee5e06ed: [run 45971492786](https://github.com/kramskois-boop/RS918-N96K-Pro/actions/runs/45971492786);
   см. [docs/CI.md](docs/CI.md).
-- **FreeDV (opt-in):** `python tools/build.py all --freedv` — отдельная сборка с FreeDV;
-  default-прошивка не меняется (см. [docs/FREEDV.md](docs/FREEDV.md)).
+- **FreeDV (opt-in):** `python tools/build.py all --freedv --build-dir build-freedv` — отдельная
+  сборка с FreeDV (после второй волны: fw **566 616 Б**, RAM 48 840, CCM 63 972); default-прошивка
+  не меняется (см. [docs/FREEDV.md](docs/FREEDV.md)).
+- **Полная сборка (opt-in, стенд):** `python tools/build.py all --full --build-dir build-full` —
+  снятие `IS_SMALL_BUILD` (FreeDV + const-окна Ханна 512/1024), только прошивка; full
+  **572 664 Б** / RAM 48 840 / CCM 63 972, 73 warnings. Это **стендовая** конфигурация (heap/стек на
+  границе, CCM 97,6 %, FreeDV на железе не проверен), default остаётся продуктом — [docs/BUILD.md](docs/BUILD.md).
 - Собирается **только F4** (RS-918/mcHF). `.dfu` и handbook CLI-скриптом не генерируются.
 - Побайтовая воспроизводимость между сборками не гарантируется: в прошивку вшивается дата и
   время сборки (`UHSDR_BUILD_DAT`). Повторная сборка без изменения исходников даёт тот же размер,
@@ -198,8 +209,8 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
 - **FreeDV по умолчанию не включён** (сборка с `IS_SMALL_BUILD`, `USE_FREEDV` не определён — как
   в форке Nizar): в обычной прошивке FreeDV-функций нет. В **B4** сделана **opt-in сборка**:
   `python tools/build.py all --freedv` (флаг `-DN96K_FREEDV`, `USE_FREEDV` включается при сохранении
-  `IS_SMALL_BUILD`); default-сборка не меняется. FreeDV-вариант (после B5): fw **565 552 Б**, RAM static
-  **48 836**, CCM **63 972** (свободно 1 564); бюджет heap/стека сходится только с удалением
+  `IS_SMALL_BUILD`); default-сборка не меняется. FreeDV-вариант (после второй волны): fw **566 616 Б**,
+  RAM static **48 840**, CCM **63 972** (свободно 1 564); бюджет heap/стека сходится только с удалением
   `MODEM_STATS` (10,6 КБ) из `struct freedv` в opt-in сборке; запас стека ≈7,8 КБ, риск №1 —
   реальная глубина/CPU на железе. Сборка и host-тесты проходят, **на железе не испытывалась**:
   перед передачей — стенд по `docs/FREEDV.md`, откат на default-прошивку. NR+FreeDV-фиксы #1749
@@ -221,7 +232,10 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
   разработки), воспроизводимость обеспечивает CI-раннер; бюджет flash/CCM проверяет
   `docker/verify_artifacts.py`.
 - **TX вне любительских диапазонов (R6):** поведение отличается от 2.9.48 — TX OOB по умолчанию
-  заблокирован (design P0-5); сообщения пользователю при отказе TX нет.
+  заблокирован (design P0-5); сообщения пользователю при отказе TX нет. В ветке `nizar-review`
+  дополнительно закрыты расширенные Nizar RX-участки (H1): TX разрешён только в любительских
+  отрезках 10 м/4 м/2 м/70 см; явный override `FLAGS1_TX_OUTSIDE_BANDS` — только осознанно,
+  на эквивалент. RX на CB/142–144/70,5–71/400–450 продолжает работать.
 - **R9 (NR):** статики NR не сбрасываются при рестарте шумопонижения как таковом (P0-3 лечит
   неинициализированный буфер; в v1.2 **A2** дополнительно сбрасывает NR-статику и общий буфер при
   выходе из DIGI/FreeDV).
@@ -233,7 +247,15 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
   зависит от содержимого строки версии (`n96kp2` → 321 384 Б, `n96kp3` → 321 392 Б; A/B-сборки
   одного дерева); сверяйте с `build-summary.json` релизной сборки. Для **`main` ee5e06ed
   (v1.2+B1–B5)**: fw **322 312 Б**, RAM 42 668, CCM 63 476, 73 предупреждения, FreeDV opt-in
-  565 552 Б, O3 opt-in 425 500 Б — см. [docs/STATUS.md](docs/STATUS.md).
+  565 552 Б, O3 opt-in 425 500 Б. Для ветки **`nizar-review`** (после H1/H2/H3/H5):
+  default **323 096 Б** / 42 672 / 63 476, FreeDV **566 616 Б**, full **572 664 Б** — см.
+  [docs/STATUS.md](docs/STATUS.md).
+- **Вторая волна (ветка `nizar-review`, в `main` не влита):** Nizar-audit закрыт (16 вредных/
+  критичных, 14+ положительных изменений); исправлены H1 (TX-границы), H2 (дефолты TX-аудио),
+  H3 (CW-R/CW-USB), H5 (USB-аудио); `--full` — только стенд. В работе — misc-фиксы
+  H4/H6/H9–H12; H7 (пороги ADC-clip) и H8 (кривая RF-гейна) требуют стенда. После обновления
+  поверх старой прошивки значения TX-аудио в EEPROM сохраняются — для новых дефолтов H2 нужен
+  Load Defaults или ручная установка (Mic 15, ALC postfilt 1.0, Comp out 1.0, Treble +2 дБ, EQ CUSTOM).
 - Поддержка только F4/mcHF; каталоги F7/H7 (OVI40, `basesw/ovi40*`, `f7-*.mak`/`h7-*.mak`) в дереве
   upstream остались, но этим продуктом не поддерживаются и CLI-сборкой не собираются.
 - ЦОС-цепочка Nizar проверена по коду и статически (аудит §7.3), но не валидирована измерениями
@@ -270,16 +292,16 @@ vendor FreeDV/Codec2 (в default-сборке FreeDV **не включён**, е
 
 | Документ | Содержание |
 |---|---|
-| [docs/STATUS.md](docs/STATUS.md) | **актуальный статус**: сделано / в процессе / план / блоки, цифры main ee5e06ed |
-| [PLAN-DEV.md](PLAN-DEV.md) | план и статус разработки (v1.2 + B1–B5, вторая волна), этапы, критерии приёмки |
+| [docs/STATUS.md](docs/STATUS.md) | **актуальный статус**: сделано / в процессе / план / блоки, цифры main ee5e06ed и ветки nizar-review (H1/H2/H3/H5, --full) |
+| [PLAN-DEV.md](PLAN-DEV.md) | план и статус разработки (v1.2 + B1–B5, вторая волна Nizar-review), этапы, критерии приёмки |
 | [docs/BUILD.md](docs/BUILD.md) | сборка CLI/Eclipse, артефакты, прошивка, диагностика |
-| [docs/PATCHES.md](docs/PATCHES.md) | каталог патчей P0/P1/P2/A1/A2 и этапов B1–B5: файлы, обоснование, статус, доказательства |
+| [docs/PATCHES.md](docs/PATCHES.md) | каталог патчей P0/P1/P2/A1/A2, этапов B1–B5 и второй волны B6 (H1/H2/H3/H5, --full): файлы, обоснование, статус, доказательства |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | история изменений (nizar-review → B5 → B3/B4 → B1 → v1.2 → v1.1 → v1.0 → базовые теги) |
 | [docs/TESTPLAN.md](docs/TESTPLAN.md) | **протокол полевых испытаний v1.2**: 112 тестов (уникальных ID; 113 строк-тестов включают пример журнала VSWR-03 в §10.2) — артефакты, прошивка, RX/TX, VSWR, CAT/USB, регрессия |
 | [docs/BOOTLOADER.md](docs/BOOTLOADER.md) | загрузчик 5.0.4/4.1.2: проверка версии, обновление SWD/ROM-DFU, откат, коды ошибок |
 | [docs/VSWR.md](docs/VSWR.md) | защита PA по КСВ: порог/меню, индикация, тайминги, калибровка датчика, сценарии проверки |
 | [docs/RELEASE.md](docs/RELEASE.md) | процедура релиза: версия, сборка, артефакты, SHA256, тег, чек-лист, откат |
-| [docs/CHANGES.md](docs/CHANGES.md) | **сводная таблица изменений**: Nizar baseline, было → стало → что даёт (P0/P1/P2/A1/A2/B1–B5), метрики до/после |
+| [docs/CHANGES.md](docs/CHANGES.md) | **сводная таблица изменений**: Nizar baseline, вредные/положительные изменения Nizar (H1/H2/H3/H5 и др.), было → стало → что даёт (P0/P1/P2/A1/A2/B1–B5/B6), метрики до/после |
 | [docs/CHECKLIST.md](docs/CHECKLIST.md) | **печатный чек-лист must-pass** для полевой проверки (PDF/DOCX — в release/vX/printable/) |
 | [docs/SAFETY.md](docs/SAFETY.md) | правила безопасной эксплуатации и прошивки |
 | [docs/CI.md](docs/CI.md) | CI/Docker: сборка в контейнере, host-тесты, warning-гейт, 3 job'а (включая release), ограничения |
